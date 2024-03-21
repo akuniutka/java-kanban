@@ -1,25 +1,20 @@
 package io.github.akuniutka.kanban.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Epic extends Task {
-    private final HashMap<Long, Object> subtaskIds;
+    private ArrayList<Long> subtaskIds;
 
     public Epic() {
-        this.subtaskIds = new HashMap<>();
+        this.subtaskIds = new ArrayList<>();
     }
 
     public ArrayList<Long> getSubtaskIds() {
-        ArrayList<Long> subtaskIdList = new ArrayList<>();
-        for (long subtaskId : subtaskIds.keySet()) {
-            subtaskIdList.add(subtaskId);
-        }
-        return subtaskIdList;
+        return new ArrayList<>(subtaskIds);
     }
 
     public void addSubtaskId(long subtaskId) {
-        subtaskIds.put(subtaskId, null);
+        subtaskIds.add(subtaskId);
     }
 
     public void removeSubtaskId(long subtaskId) {
@@ -27,7 +22,7 @@ public class Epic extends Task {
     }
 
     public boolean containsSubtask(long subtaskId) {
-        return subtaskIds.containsKey(subtaskId);
+        return subtaskIds.contains(subtaskId);
     }
 
     @Override
@@ -44,7 +39,7 @@ public class Epic extends Task {
         } else {
             string += ", description.length=" + getDescription().length();
         }
-        string += ", subtaskIds=" + subtaskIds.keySet();
+        string += ", subtaskIds=" + subtaskIds;
         if (getStatus() == null) {
             string += ", status=null";
         } else {
