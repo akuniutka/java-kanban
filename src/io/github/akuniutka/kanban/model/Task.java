@@ -1,7 +1,7 @@
 package io.github.akuniutka.kanban.model;
 
 public class Task {
-    private int id;
+    private long id;
     private String title;
     private String description;
     private TaskStatus status;
@@ -10,11 +10,11 @@ public class Task {
         this.status = TaskStatus.NEW;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -56,7 +56,7 @@ public class Task {
 
     @Override
     public int hashCode() {
-        return id;
+        return Long.hashCode(id);
     }
 
     @Override

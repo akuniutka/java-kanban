@@ -4,29 +4,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Epic extends Task {
-    private final HashMap<Integer, Object> subtaskIds;
+    private final HashMap<Long, Object> subtaskIds;
 
     public Epic() {
         this.subtaskIds = new HashMap<>();
     }
 
-    public ArrayList<Integer> getSubtaskIds() {
-        ArrayList<Integer> subtaskIdList = new ArrayList<>();
-        for (int subtaskId : subtaskIds.keySet()) {
+    public ArrayList<Long> getSubtaskIds() {
+        ArrayList<Long> subtaskIdList = new ArrayList<>();
+        for (long subtaskId : subtaskIds.keySet()) {
             subtaskIdList.add(subtaskId);
         }
         return subtaskIdList;
     }
 
-    public void addSubtaskId(int subtaskId) {
+    public void addSubtaskId(long subtaskId) {
         subtaskIds.put(subtaskId, null);
     }
 
-    public void removeSubtaskId(int subtaskId) {
+    public void removeSubtaskId(long subtaskId) {
         subtaskIds.remove(subtaskId);
     }
 
-    public boolean containsSubtask(int subtaskId) {
+    public boolean containsSubtask(long subtaskId) {
         return subtaskIds.containsKey(subtaskId);
     }
 

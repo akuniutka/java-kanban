@@ -11,15 +11,16 @@ import java.util.HashMap;
 
 public class TaskManager {
     private static final Logger LOGGER = new Logger();
-    private final HashMap<Integer, Task> tasks;
-    private final HashMap<Integer, Subtask> subtasks;
-    private final HashMap<Integer, Epic> epics;
-    private int lastUsedId = 0;
+    private final HashMap<Long, Task> tasks;
+    private final HashMap<Long, Subtask> subtasks;
+    private final HashMap<Long, Epic> epics;
+    private long lastUsedId;
 
     public TaskManager() {
         this.tasks = new HashMap<>();
         this.subtasks = new HashMap<>();
         this.epics = new HashMap<>();
+        lastUsedId = 0L;
     }
 
     public ArrayList<Task> getAllTasks() {
@@ -32,7 +33,7 @@ public class TaskManager {
         tasks.clear();
     }
 
-    public Task getTaskById(int id) {
+    public Task getTaskById(long id) {
         LOGGER.logInfo("Retrieving task by id=" + id);
         return tasks.get(id);
     }
@@ -43,7 +44,7 @@ public class TaskManager {
             LOGGER.logError("Cannot create null task!");
             return null;
         }
-        int taskId = generateId();
+        long taskId = generateId();
         task.setId(taskId);
         tasks.put(taskId, task);
         return task;
@@ -63,7 +64,7 @@ public class TaskManager {
         return task;
     }
 
-    public Task removeTask(int id) {
+    public Task removeTask(long id) {
         LOGGER.logInfo("Removing task by id=" + id);
         if (!tasks.containsKey(id)) {
             LOGGER.logError("Cannot remove unknown task!");
@@ -83,7 +84,7 @@ public class TaskManager {
         epics.clear();
     }
 
-    public Epic getEpicById(int id) {
+    public Epic getEpicById(long id) {
         LOGGER.logInfo("Retrieving epic by id=" + id);
         return epics.get(id);
     }
@@ -98,9 +99,9 @@ public class TaskManager {
             LOGGER.logError("Cannot create apic with unknown subtasks!");
             return null;
         }
-        int epicId = generateId();
+        long epicId = generateId();
         epic.setId(epicId);
-        for (int subtaskId : epic.getSubtaskIds()) {
+        for (long subtaskId : epic.getSubtaskIds()) {
             reassignSubtaskToNewEpic(subtasks.get(subtaskId), epicId);
         }
         recalculateEpicStatus(epic);
@@ -125,20 +126,20 @@ public class TaskManager {
         }
         storedEpic.setTitle(epic.getTitle());
         storedEpic.setDescription(epic.getDescription());
-        for (int subtaskId : epic.getSubtaskIds()) {
+        for (long subtaskId : epic.getSubtaskIds()) {
             Subtask subtask = subtasks.get(subtaskId);
             if (subtask.getEpicId() != storedEpic.getId()) {
                 storedEpic.addSubtaskId(subtaskId);
                 reassignSubtaskToNewEpic(subtask, storedEpic.getId());
             }
         }
-        ArrayList<Integer> removedSubtaskIds = new ArrayList<>();
-        for (int subtaskId : storedEpic.getSubtaskIds()) {
+        ArrayList<Long> removedSubtaskIds = new ArrayList<>();
+        for (long subtaskId : storedEpic.getSubtaskIds()) {
             if (!epic.containsSubtask(subtaskId)) {
                 removedSubtaskIds.add(subtaskId);
             }
         }
-        for (int subtaskId : removedSubtaskIds) {
+        for (long subtaskId : removedSubtaskIds) {
             storedEpic.removeSubtaskId(subtaskId);
             subtasks.remove(subtaskId);
         }
@@ -146,14 +147,14 @@ public class TaskManager {
         return storedEpic;
     }
 
-    public Epic removeEpic(int id) {
+    public Epic removeEpic(long id) {
         LOGGER.logInfo("Removing epic by id=" + id);
         Epic epic = epics.remove(id);
         if (epic == null) {
             LOGGER.logError("Cannot remove unknown epic!");
             return null;
         }
-        for (int subtaskId : epic.getSubtaskIds()) {
+        for (long subtaskId : epic.getSubtaskIds()) {
             LOGGER.logInfo("Removing subtask: " + subtasks.get(subtaskId));
             subtasks.remove(subtaskId);
         }
@@ -168,8 +169,8 @@ public class TaskManager {
     public void removeAllSubtasks() {
         LOGGER.logInfo("Removing all subtasks");
         for (Epic epic : epics.values()) {
-            ArrayList<Integer> subtaskIds = epic.getSubtaskIds();
-            for (int subtaskId : subtaskIds) {
+            ArrayList<Long> subtaskIds = epic.getSubtaskIds();
+            for (long subtaskId : subtaskIds) {
                 epic.removeSubtaskId(subtaskId);
             }
             recalculateEpicStatus(epic);
@@ -177,7 +178,7 @@ public class TaskManager {
         subtasks.clear();
     }
 
-    public Subtask getSubtaskById(int id) {
+    public Subtask getSubtaskById(long id) {
         LOGGER.logInfo("Retrieving subtask by id=" + id);
         return subtasks.get(id);
     }
@@ -193,7 +194,7 @@ public class TaskManager {
             LOGGER.logError("Cannot create subtask of unknown epic!");
             return null;
         }
-        int subtaskId = generateId();
+        long subtaskId = generateId();
         subtask.setId(subtaskId);
         epic.addSubtaskId(subtaskId);
         subtasks.put(subtaskId, subtask);
@@ -224,7 +225,7 @@ public class TaskManager {
         return subtask;
     }
 
-    public Subtask removeSubtask(int id) {
+    public Subtask removeSubtask(long id) {
         LOGGER.logInfo("Removing subtask by id=" + id);
         Subtask subtask = subtasks.remove(id);
         if (subtask == null) {
@@ -237,27 +238,27 @@ public class TaskManager {
         return subtask;
     }
 
-    public ArrayList<Subtask> getEpicSubtasks(int epicId) {
+    public ArrayList<Subtask> getEpicSubtasks(long epicId) {
         LOGGER.logInfo("Retrieving all subtasks of epic id=" + epicId);
         Epic epic = epics.get(epicId);
         if (epic == null) {
             LOGGER.logError("Cannot retrieve subtasks of unknown epic!");
             return null;
         }
-        ArrayList<Integer> subtaskIds = epic.getSubtaskIds();
+        ArrayList<Long> subtaskIds = epic.getSubtaskIds();
         ArrayList<Subtask> subtaskList = new ArrayList<>();
-        for (int subtaskId : subtaskIds) {
+        for (long subtaskId : subtaskIds) {
             subtaskList.add(subtasks.get(subtaskId));
         }
         return subtaskList;
     }
 
-    private int generateId() {
+    private long generateId() {
         return ++lastUsedId;
     }
 
     private boolean containsUnknownSubtasks(Epic epic) {
-        for (int subtaskId : epic.getSubtaskIds()) {
+        for (long subtaskId : epic.getSubtaskIds()) {
             if (!subtasks.containsKey(subtaskId)) {
                 return true;
             }
@@ -265,7 +266,7 @@ public class TaskManager {
         return false;
     }
 
-    private void reassignSubtaskToNewEpic(Subtask subtask, int newEpicId) {
+    private void reassignSubtaskToNewEpic(Subtask subtask, long newEpicId) {
         LOGGER.logInfo("Reassigning subtask to epic id=" + newEpicId + ": " + subtask);
         Epic oldEpic = epics.get(subtask.getEpicId());
         oldEpic.removeSubtaskId(subtask.getId());
@@ -276,7 +277,7 @@ public class TaskManager {
     private void recalculateEpicStatus(Epic epic) {
         boolean areAllSubtasksNew = true;
         boolean areAllSubtasksDone = true;
-        for (int subtaskId : epic.getSubtaskIds()) {
+        for (long subtaskId : epic.getSubtaskIds()) {
             Subtask subtask = subtasks.get(subtaskId);
             if (subtask.getStatus() != TaskStatus.NEW) {
                 areAllSubtasksNew = false;

@@ -1,13 +1,13 @@
 package io.github.akuniutka.kanban.model;
 
 public class Subtask extends Task {
-    private int epicId;
+    private long epicId;
 
-    public int getEpicId() {
+    public long getEpicId() {
         return epicId;
     }
 
-    public void setEpicId(int epicId) {
+    public void setEpicId(long epicId) {
         this.epicId = epicId;
     }
 
