@@ -10,18 +10,6 @@ public class Task {
         this.status = TaskStatus.NEW;
     }
 
-    public static Task copyOf(Task task) {
-        Task newTask = null;
-        if (task != null) {
-            newTask = new Task();
-            newTask.id = task.id;
-            newTask.title = task.title;
-            newTask.description = task.description;
-            newTask.status = task.status;
-        }
-        return newTask;
-    }
-
     public int getId() {
         return id;
     }

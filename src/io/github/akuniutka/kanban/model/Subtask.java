@@ -3,19 +3,6 @@ package io.github.akuniutka.kanban.model;
 public class Subtask extends Task {
     private int epicId;
 
-    public static Subtask copyOf(Subtask subtask) {
-        Subtask newSubtask = null;
-        if (subtask != null) {
-            newSubtask = new Subtask();
-            newSubtask.setId(subtask.getId());
-            newSubtask.setEpicId(subtask.getEpicId());
-            newSubtask.setTitle(subtask.getTitle());
-            newSubtask.setDescription(subtask.getDescription());
-            newSubtask.setStatus(subtask.getStatus());
-        }
-        return newSubtask;
-    }
-
     public int getEpicId() {
         return epicId;
     }

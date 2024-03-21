@@ -10,21 +10,6 @@ public class Epic extends Task {
         this.subtaskIds = new HashMap<>();
     }
 
-    public static Epic copyOf(Epic epic) {
-        Epic newEpic = null;
-        if (epic != null) {
-            newEpic = new Epic();
-            newEpic.setId(epic.getId());
-            newEpic.setTitle(epic.getTitle());
-            newEpic.setDescription(epic.getDescription());
-            for (int subtaskId : epic.subtaskIds.keySet()) {
-                newEpic.addSubtaskId(subtaskId);
-            }
-            newEpic.setStatus(epic.getStatus());
-        }
-        return newEpic;
-    }
-
     public ArrayList<Integer> getSubtaskIds() {
         ArrayList<Integer> subtaskIdList = new ArrayList<>();
         for (int subtaskId : subtaskIds.keySet()) {
