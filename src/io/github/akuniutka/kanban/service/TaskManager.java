@@ -4,7 +4,6 @@ import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
-import io.github.akuniutka.kanban.util.IdGenerator;
 import io.github.akuniutka.kanban.util.Logger;
 
 import java.util.ArrayList;
@@ -12,10 +11,10 @@ import java.util.HashMap;
 
 public class TaskManager {
     private static final Logger LOGGER = new Logger();
-    private static final IdGenerator ID_GENERATOR = new IdGenerator();
     private final HashMap<Integer, Task> tasks;
     private final HashMap<Integer, Subtask> subtasks;
     private final HashMap<Integer, Epic> epics;
+    private int lastUsedId = 0;
 
     public TaskManager() {
         this.tasks = new HashMap<>();
@@ -44,7 +43,7 @@ public class TaskManager {
             LOGGER.logError("Cannot create null task!");
             return null;
         }
-        int taskId = ID_GENERATOR.nextId();
+        int taskId = generateId();
         task.setId(taskId);
         tasks.put(taskId, task);
         return task;
@@ -99,7 +98,7 @@ public class TaskManager {
             LOGGER.logError("Cannot create apic with unknown subtasks!");
             return null;
         }
-        int epicId = ID_GENERATOR.nextId();
+        int epicId = generateId();
         epic.setId(epicId);
         for (int subtaskId : epic.getSubtaskIds()) {
             reassignSubtaskToNewEpic(subtasks.get(subtaskId), epicId);
@@ -194,7 +193,7 @@ public class TaskManager {
             LOGGER.logError("Cannot create subtask of unknown epic!");
             return null;
         }
-        int subtaskId = ID_GENERATOR.nextId();
+        int subtaskId = generateId();
         subtask.setId(subtaskId);
         epic.addSubtaskId(subtaskId);
         subtasks.put(subtaskId, subtask);
@@ -251,6 +250,10 @@ public class TaskManager {
             subtaskList.add(subtasks.get(subtaskId));
         }
         return subtaskList;
+    }
+
+    private int generateId() {
+        return ++lastUsedId;
     }
 
     private boolean containsUnknownSubtasks(Epic epic) {
