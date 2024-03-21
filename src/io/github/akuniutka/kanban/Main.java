@@ -80,9 +80,11 @@ public class Main {
         printAllEpics(taskManager);
         System.out.println();
 
-        buyHouseEpic.setDescription("Buy a new house on the Black Sea");
-        buyHouseEpic.setStatus(TaskStatus.IN_PROGRESS);
-        taskManager.updateEpic(buyHouseEpic);
+        buyCarEpic.setId(buyHouseEpic.getId());
+        buyCarEpic.setTitle(buyHouseEpic.getTitle());
+        buyCarEpic.setDescription("Buy a new house on the Black Sea");
+        buyCarEpic.setStatus(TaskStatus.IN_PROGRESS);
+        taskManager.updateEpic(buyCarEpic);
         printAllEpics(taskManager);
         System.out.println();
 

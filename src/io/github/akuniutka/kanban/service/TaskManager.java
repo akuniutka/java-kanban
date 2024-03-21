@@ -117,15 +117,8 @@ public class TaskManager {
             LOGGER.logError("Cannot create null epic!");
             return null;
         }
-        if (containsUnknownSubtasks(epic)) {
-            LOGGER.logError("Cannot create apic with unknown subtasks!");
-            return null;
-        }
         long epicId = generateId();
         epic.setId(epicId);
-        for (long subtaskId : epic.getSubtaskIds()) {
-            reassignSubtaskToNewEpic(subtasks.get(subtaskId), epicId);
-        }
         updateEpicStatus(epic);
         epics.put(epicId, epic);
         LOGGER.logInfo("1 epic(s) created");
@@ -143,30 +136,8 @@ public class TaskManager {
             LOGGER.logError("Epic not found!");
             return null;
         }
-        if (containsUnknownSubtasks(epic)) {
-            LOGGER.logError("Cannot update apic with unknown subtasks!");
-            return null;
-        }
         storedEpic.setTitle(epic.getTitle());
         storedEpic.setDescription(epic.getDescription());
-        for (long subtaskId : epic.getSubtaskIds()) {
-            Subtask subtask = subtasks.get(subtaskId);
-            if (subtask.getEpicId() != storedEpic.getId()) {
-                storedEpic.addSubtaskId(subtaskId);
-                reassignSubtaskToNewEpic(subtask, storedEpic.getId());
-            }
-        }
-        ArrayList<Long> removedSubtaskIds = new ArrayList<>();
-        for (long subtaskId : storedEpic.getSubtaskIds()) {
-            if (!epic.containsSubtask(subtaskId)) {
-                removedSubtaskIds.add(subtaskId);
-            }
-        }
-        for (long subtaskId : removedSubtaskIds) {
-            storedEpic.removeSubtaskId(subtaskId);
-            subtasks.remove(subtaskId);
-        }
-        updateEpicStatus(storedEpic);
         LOGGER.logInfo("1 epic(s) updated");
         return storedEpic;
     }
@@ -292,15 +263,6 @@ public class TaskManager {
 
     private long generateId() {
         return ++lastUsedId;
-    }
-
-    private boolean containsUnknownSubtasks(Epic epic) {
-        for (long subtaskId : epic.getSubtaskIds()) {
-            if (!subtasks.containsKey(subtaskId)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void reassignSubtaskToNewEpic(Subtask subtask, long newEpicId) {

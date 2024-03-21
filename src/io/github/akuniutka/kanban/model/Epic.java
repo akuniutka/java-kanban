@@ -21,10 +21,6 @@ public class Epic extends Task {
         subtaskIds.remove(subtaskId);
     }
 
-    public boolean containsSubtask(long subtaskId) {
-        return subtaskIds.contains(subtaskId);
-    }
-
     @Override
     public String toString() {
         String string = "Epic{";
