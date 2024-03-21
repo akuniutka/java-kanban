@@ -218,17 +218,12 @@ public class TaskManager {
             LOGGER.logError("Subtask not found!");
             return null;
         }
-        if (!epics.containsKey(subtask.getEpicId())) {
-            LOGGER.logError("Cannot update subtask of unknown epic!");
-            return null;
-        }
-        if (storedSubtask.getEpicId() != subtask.getEpicId()) {
-            reassignSubtaskToNewEpic(storedSubtask, subtask.getEpicId());
-        }
-        subtasks.put(subtask.getId(), subtask);
-        updateEpicStatus(epics.get(subtask.getEpicId()));
+        storedSubtask.setTitle(subtask.getTitle());
+        storedSubtask.setDescription(subtask.getDescription());
+        storedSubtask.setStatus(subtask.getStatus());
+        updateEpicStatus(epics.get(storedSubtask.getEpicId()));
         LOGGER.logInfo("1 subtask(s) updated");
-        return subtask;
+        return storedSubtask;
     }
 
     public Subtask removeSubtask(long id) {
@@ -263,14 +258,6 @@ public class TaskManager {
 
     private long generateId() {
         return ++lastUsedId;
-    }
-
-    private void reassignSubtaskToNewEpic(Subtask subtask, long newEpicId) {
-        LOGGER.logInfo("Reassigning subtask to epic id=" + newEpicId + ": " + subtask);
-        Epic oldEpic = epics.get(subtask.getEpicId());
-        oldEpic.removeSubtaskId(subtask.getId());
-        updateEpicStatus(oldEpic);
-        subtask.setEpicId(newEpicId);
     }
 
     private void updateEpicStatus(Epic epic) {
