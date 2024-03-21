@@ -1,11 +1,11 @@
-package service;
+package io.github.akuniutka.kanban.service;
 
-import model.Epic;
-import model.Subtask;
-import model.Task;
-import model.TaskStatus;
-import util.IdGenerator;
-import util.Logger;
+import io.github.akuniutka.kanban.model.Epic;
+import io.github.akuniutka.kanban.model.Subtask;
+import io.github.akuniutka.kanban.model.Task;
+import io.github.akuniutka.kanban.model.TaskStatus;
+import io.github.akuniutka.kanban.util.IdGenerator;
+import io.github.akuniutka.kanban.util.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;

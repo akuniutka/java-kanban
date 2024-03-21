@@ -1,4 +1,4 @@
-package model;
+package io.github.akuniutka.kanban.model;
 
 public class Subtask extends Task {
     private int epicId;

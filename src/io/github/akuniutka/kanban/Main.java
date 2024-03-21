@@ -1,8 +1,10 @@
-import model.Task;
-import model.Subtask;
-import model.Epic;
-import model.TaskStatus;
-import service.TaskManager;
+package io.github.akuniutka.kanban;
+
+import io.github.akuniutka.kanban.model.Task;
+import io.github.akuniutka.kanban.model.Subtask;
+import io.github.akuniutka.kanban.model.Epic;
+import io.github.akuniutka.kanban.model.TaskStatus;
+import io.github.akuniutka.kanban.service.TaskManager;
 
 import java.util.ArrayList;
 

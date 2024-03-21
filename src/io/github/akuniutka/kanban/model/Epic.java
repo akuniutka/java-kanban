@@ -1,4 +1,4 @@
-package model;
+package io.github.akuniutka.kanban.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;

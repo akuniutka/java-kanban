@@ -1,4 +1,4 @@
-package util;
+package io.github.akuniutka.kanban.util;
 
 public class Logger {
     public void logInfo(String info) {
