@@ -137,19 +137,22 @@ public class TaskManager {
         return subtask;
     }
 
-    public Subtask updateSubtask(Subtask subtask) {
+    public void updateSubtask(Subtask subtask) {
         if (subtask == null) {
-            return null;
+            return;
         }
-        Subtask storedSubtask = subtasks.get(subtask.getId());
+        final long id = subtask.getId();
+        final long epicId = subtask.getEpicId();
+        final Subtask storedSubtask = subtasks.get(subtask.getId());
         if (storedSubtask == null) {
-            return null;
+            return;
         }
-        storedSubtask.setTitle(subtask.getTitle());
-        storedSubtask.setDescription(subtask.getDescription());
-        storedSubtask.setStatus(subtask.getStatus());
+        final Epic epic = epics.get(epicId);
+        if (epic == null) {
+            return;
+        }
+        subtasks.put(id, subtask);
         updateEpicStatus(epics.get(storedSubtask.getEpicId()));
-        return storedSubtask;
     }
 
     public Subtask removeSubtask(long id) {
