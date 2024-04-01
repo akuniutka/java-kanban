@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class TaskManager {
+    private static final long WRONG_ARGUMENT = -1L;
     private final Map<Long, Task> tasks;
     private final Map<Long, Subtask> subtasks;
     private final Map<Long, Epic> epics;
@@ -35,14 +36,14 @@ public class TaskManager {
         return tasks.get(id);
     }
 
-    public Task addTask(Task task) {
+    public long addTask(Task task) {
         if (task == null) {
-            return null;
+            return WRONG_ARGUMENT;
         }
         final long id = generateId();
         task.setId(id);
         tasks.put(id, task);
-        return task;
+        return id;
     }
 
     public void updateTask(Task task) {
@@ -69,15 +70,15 @@ public class TaskManager {
         return epics.get(id);
     }
 
-    public Epic addEpic(Epic epic) {
+    public long addEpic(Epic epic) {
         if (epic == null) {
-            return null;
+            return WRONG_ARGUMENT;
         }
         final long id = generateId();
         epic.setId(id);
         updateEpicStatus(epic);
         epics.put(id, epic);
-        return epic;
+        return id;
     }
 
     public void updateEpic(Epic epic) {
@@ -123,21 +124,21 @@ public class TaskManager {
         return subtasks.get(id);
     }
 
-    public Subtask addSubtask(Subtask subtask) {
+    public long addSubtask(Subtask subtask) {
         if (subtask == null) {
-            return null;
+            return WRONG_ARGUMENT;
         }
         final long epicId = subtask.getEpicId();
         final Epic epic = epics.get(epicId);
         if (epic == null) {
-            return null;
+            return WRONG_ARGUMENT;
         }
         final long id = generateId();
         subtask.setId(id);
         epic.addSubtaskId(id);
         subtasks.put(id, subtask);
         updateEpicStatus(epic);
-        return subtask;
+        return id;
     }
 
     public void updateSubtask(Subtask subtask) {
