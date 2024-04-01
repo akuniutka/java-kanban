@@ -5,13 +5,15 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
 
+import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class TaskManager {
-    private final HashMap<Long, Task> tasks;
-    private final HashMap<Long, Subtask> subtasks;
-    private final HashMap<Long, Epic> epics;
+    private final Map<Long, Task> tasks;
+    private final Map<Long, Subtask> subtasks;
+    private final Map<Long, Epic> epics;
     private long lastUsedId;
 
     public TaskManager() {
@@ -21,7 +23,7 @@ public class TaskManager {
         lastUsedId = 0L;
     }
 
-    public ArrayList<Task> getTasks() {
+    public List<Task> getTasks() {
         return new ArrayList<>(tasks.values());
     }
 
@@ -54,7 +56,7 @@ public class TaskManager {
         tasks.remove(id);
     }
 
-    public ArrayList<Epic> getEpics() {
+    public List<Epic> getEpics() {
         return new ArrayList<>(epics.values());
     }
 
@@ -102,13 +104,13 @@ public class TaskManager {
         }
     }
 
-    public ArrayList<Subtask> getSubtasks() {
+    public List<Subtask> getSubtasks() {
         return new ArrayList<>(subtasks.values());
     }
 
     public void removeSubtasks() {
         for (Epic epic : epics.values()) {
-            final ArrayList<Long> subtaskIds = epic.getSubtaskIds();
+            final List<Long> subtaskIds = epic.getSubtaskIds();
             for (long subtaskId : subtaskIds) {
                 epic.removeSubtaskId(subtaskId);
             }
@@ -166,13 +168,13 @@ public class TaskManager {
         }
     }
 
-    public ArrayList<Subtask> getEpicSubtasks(long epicId) {
+    public List<Subtask> getEpicSubtasks(long epicId) {
         final Epic epic = epics.get(epicId);
         if (epic == null) {
             return null;
         }
-        final ArrayList<Long> subtaskIds = epic.getSubtaskIds();
-        final ArrayList<Subtask> subtaskList = new ArrayList<>();
+        final List<Long> subtaskIds = epic.getSubtaskIds();
+        final List<Subtask> subtaskList = new ArrayList<>();
         for (long subtaskId : subtaskIds) {
             subtaskList.add(subtasks.get(subtaskId));
         }
