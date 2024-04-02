@@ -37,11 +37,7 @@ public class Epic extends Task {
             string += ", description.length=" + getDescription().length();
         }
         string += ", subtaskIds=" + subtaskIds;
-        if (getStatus() == null) {
-            string += ", status=null";
-        } else {
-            string += ", status=" + getStatus();
-        }
+        string += ", status=" + getStatus();
         string += "}";
         return string;
     }

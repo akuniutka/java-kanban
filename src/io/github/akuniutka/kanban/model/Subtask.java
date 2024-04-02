@@ -1,9 +1,9 @@
 package io.github.akuniutka.kanban.model;
 
 public class Subtask extends Task {
-    private long epicId;
+    private Long epicId;
 
-    public long getEpicId() {
+    public Long getEpicId() {
         return epicId;
     }
 
@@ -26,11 +26,7 @@ public class Subtask extends Task {
         } else {
             string += ", description.length=" + getDescription().length();
         }
-        if (getStatus() == null) {
-            string += ", status=null";
-        } else {
-            string += ", status=" + getStatus();
-        }
+        string += ", status=" + getStatus();
         string += "}";
         return string;
     }

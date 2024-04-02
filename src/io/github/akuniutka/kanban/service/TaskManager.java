@@ -21,7 +21,7 @@ public class TaskManager {
         this.tasks = new HashMap<>();
         this.subtasks = new HashMap<>();
         this.epics = new HashMap<>();
-        lastUsedId = 0L;
+        lastUsedId = -1L;
     }
 
     public List<Task> getTasks() {
@@ -85,7 +85,7 @@ public class TaskManager {
         if (epic == null) {
             return;
         }
-        final long id = epic.getId();;
+        final Long id = epic.getId();;
         final String title = epic.getTitle();
         final String description = epic.getDescription();
         final Epic savedEpic = epics.get(id);
@@ -128,7 +128,7 @@ public class TaskManager {
         if (subtask == null) {
             return WRONG_ARGUMENT;
         }
-        final long epicId = subtask.getEpicId();
+        final Long epicId = subtask.getEpicId();
         final Epic epic = epics.get(epicId);
         if (epic == null) {
             return WRONG_ARGUMENT;
@@ -145,8 +145,8 @@ public class TaskManager {
         if (subtask == null) {
             return;
         }
-        final long id = subtask.getId();
-        final long epicId = subtask.getEpicId();
+        final Long id = subtask.getId();
+        final Long epicId = subtask.getEpicId();
         final Subtask storedSubtask = subtasks.get(id);
         if (storedSubtask == null) {
             return;

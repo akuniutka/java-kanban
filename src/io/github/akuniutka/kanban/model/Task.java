@@ -1,7 +1,9 @@
 package io.github.akuniutka.kanban.model;
 
+import java.util.Objects;
+
 public class Task {
-    private long id;
+    private Long id;
     private String title;
     private String description;
     private TaskStatus status;
@@ -10,7 +12,7 @@ public class Task {
         this.status = TaskStatus.NEW;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -51,12 +53,15 @@ public class Task {
             return false;
         }
         Task task = (Task) o;
-        return id == task.id;
+        return Objects.equals(id, task.id);
     }
 
     @Override
     public int hashCode() {
-        return Long.hashCode(id);
+        if (id == null) {
+            return super.hashCode();
+        }
+        return id.hashCode();
     }
 
     @Override
@@ -73,11 +78,7 @@ public class Task {
         } else {
             string += ", description.length=" + description.length();
         }
-        if (status == null) {
-            string += ", status=null";
-        } else {
-            string += ", status=" + status;
-        }
+        string += ", status=" + status;
         string += "}";
         return string;
     }
