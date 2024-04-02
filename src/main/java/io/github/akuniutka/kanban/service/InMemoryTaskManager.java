@@ -15,13 +15,15 @@ public class InMemoryTaskManager implements TaskManager {
     private final Map<Long, Task> tasks;
     private final Map<Long, Subtask> subtasks;
     private final Map<Long, Epic> epics;
+    private final HistoryManager historyManager;
     private long lastUsedId;
 
-    public InMemoryTaskManager() {
+    public InMemoryTaskManager(HistoryManager historyManager) {
         this.tasks = new HashMap<>();
         this.subtasks = new HashMap<>();
         this.epics = new HashMap<>();
-        lastUsedId = -1L;
+        this.historyManager = historyManager;
+        this.lastUsedId = -1L;
     }
 
     @Override
@@ -36,7 +38,11 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Task getTask(long id) {
-        return tasks.get(id);
+        Task task = tasks.get(id);
+        if (task != null) {
+            historyManager.add(copyOf(task));
+        }
+        return task;
     }
 
     @Override
@@ -76,7 +82,11 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Epic getEpic(long id) {
-        return epics.get(id);
+        Epic epic = epics.get(id);
+        if (epic != null) {
+            historyManager.add(copyOf(epic));
+        }
+        return epic;
     }
 
     @Override
@@ -136,7 +146,11 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Subtask getSubtask(long id) {
-        return subtasks.get(id);
+        Subtask subtask = subtasks.get(id);
+        if (subtask != null) {
+            historyManager.add(copyOf(subtask));
+        }
+        return subtask;
     }
 
     @Override
@@ -201,6 +215,11 @@ public class InMemoryTaskManager implements TaskManager {
         return subtaskList;
     }
 
+    @Override
+    public List<Task> getHistory() {
+        return historyManager.getHistory();
+    }
+
     private long generateId() {
         return ++lastUsedId;
     }
@@ -224,5 +243,36 @@ public class InMemoryTaskManager implements TaskManager {
         } else {
             epic.setStatus(TaskStatus.IN_PROGRESS);
         }
+    }
+
+    private Task copyOf(Task task) {
+        Task copy = new Task();
+        copy.setId(task.getId());
+        copy.setTitle(task.getTitle());
+        copy.setDescription(task.getDescription());
+        copy.setStatus(task.getStatus());
+        return copy;
+    }
+
+    private Epic copyOf(Epic epic) {
+        Epic copy = new Epic();
+        copy.setId(epic.getId());
+        copy.setTitle(epic.getTitle());
+        copy.setDescription(epic.getDescription());
+        for (Long subtaskId : epic.getSubtaskIds()) {
+            copy.addSubtaskId(subtaskId);
+        }
+        copy.setStatus(epic.getStatus());
+        return copy;
+    }
+
+    private Subtask copyOf(Subtask subtask) {
+        Subtask copy = new Subtask();
+        copy.setId(subtask.getId());
+        copy.setEpicId(subtask.getEpicId());
+        copy.setTitle(subtask.getTitle());
+        copy.setDescription(subtask.getDescription());
+        copy.setStatus(subtask.getStatus());
+        return copy;
     }
 }
