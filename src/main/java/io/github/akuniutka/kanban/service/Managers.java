@@ -1,6 +1,6 @@
 package io.github.akuniutka.kanban.service;
 
-public class Managers {
+public final class Managers {
     private Managers() {}
 
     public static TaskManager getDefault() {

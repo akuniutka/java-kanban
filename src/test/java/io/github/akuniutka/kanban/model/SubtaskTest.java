@@ -1,6 +1,8 @@
 package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -8,61 +10,62 @@ class SubtaskTest {
     @Test
     public void shouldCreateSubtask() {
         Subtask subtask = new Subtask();
-        assertNotNull(subtask);
+        assertNotNull(subtask, "subtask was not created");
     }
 
     @Test
     public void shouldHaveIdOfIntegerType() {
         long id = 1L;
         Subtask subtask = new Subtask();
+
         subtask.setId(id);
         long actualId = subtask.getId();
-        assertEquals(id, actualId);
+
+        assertEquals(id, actualId, "subtask has wrong id");
     }
 
     @Test
     public void shouldKeepEpicId() {
         long epicId = 1L;
         Subtask subtask = new Subtask();
+
         subtask.setEpicId(epicId);
-        assertEquals(epicId, subtask.getEpicId());
+        long actualEpicId = subtask.getEpicId();
+
+        assertEquals(epicId, actualEpicId, "subtask has wrong epic id");
     }
 
     @Test
     public void shouldHaveTitle() {
         String title = "Title";
         Subtask subtask = new Subtask();
+
         subtask.setTitle(title);
-        assertEquals(title, subtask.getTitle());
+        String actualTitle = subtask.getTitle();
+
+        assertEquals(title, actualTitle, "subtask has wrong title");
     }
 
     @Test
     public void shouldHaveDescription() {
         String description = "Description";
         Subtask subtask = new Subtask();
+
         subtask.setDescription(description);
-        assertEquals(description, subtask.getDescription());
+        String actualDescription = subtask.getDescription();
+
+        assertEquals(description, actualDescription, "subtask has wrong description");
     }
 
-    @Test
-    public void shouldSupportStatusNew() {
+    @ParameterizedTest
+    @EnumSource(TaskStatus.class)
+    public void shouldSupportAllStatuses(TaskStatus status) {
         Subtask subtask = new Subtask();
-        subtask.setStatus(TaskStatus.NEW);
-        assertEquals(TaskStatus.NEW, subtask.getStatus());
-    }
 
-    @Test
-    public void shouldSupportStatusInProgress() {
-        Subtask subtask = new Subtask();
-        subtask.setStatus(TaskStatus.IN_PROGRESS);
-        assertEquals(TaskStatus.IN_PROGRESS, subtask.getStatus());
-    }
+        subtask.setStatus(status);
+        TaskStatus actualStatus = subtask.getStatus();
 
-    @Test
-    public void shouldSupportStatusDone() {
-        Subtask subtask = new Subtask();
-        subtask.setStatus(TaskStatus.DONE);
-        assertEquals(TaskStatus.DONE, subtask.getStatus());
+        assertEquals(status, actualStatus, "subtask has wrong status");
     }
 
     @Test
@@ -76,7 +79,8 @@ class SubtaskTest {
         subtask.setStatus(TaskStatus.IN_PROGRESS);
         Subtask anotherSubtask = new Subtask();
         anotherSubtask.setId(id);
-        assertEquals(subtask, anotherSubtask);
+
+        assertEquals(subtask, anotherSubtask, "subtasks with same id must be considered equal");
     }
 
     @Test
@@ -99,6 +103,7 @@ class SubtaskTest {
         anotherSubtask.setTitle(title);
         anotherSubtask.setDescription(description);
         anotherSubtask.setStatus(status);
-        assertNotEquals(subtask, anotherSubtask);
+
+        assertNotEquals(subtask, anotherSubtask, "tasks with different ids may not considered equal");
     }
 }

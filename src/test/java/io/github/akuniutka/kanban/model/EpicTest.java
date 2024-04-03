@@ -1,6 +1,8 @@
 package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,75 +13,79 @@ class EpicTest {
     @Test
     public void shouldCreateEpic() {
         Epic epic = new Epic();
-        assertNotNull(epic);
+        assertNotNull(epic, "epic was not created");
     }
 
     @Test
     public void shouldHaveIdOfIntegerType() {
         long id = 1L;
         Epic epic = new Epic();
+
         epic.setId(id);
         long actualId = epic.getId();
-        assertEquals(id, actualId);
+
+        assertEquals(id, actualId, "epic has wrong id");
     }
 
     @Test
     public void shouldHaveTitle() {
         String title = "Title";
         Epic epic = new Epic();
+
         epic.setTitle(title);
-        assertEquals(title, epic.getTitle());
+        String actualTitle = epic.getTitle();
+
+        assertEquals(title, actualTitle, "epic has wrong title");
     }
 
     @Test
     public void shouldHaveDescription() {
         String description = "Description";
         Epic epic = new Epic();
+
         epic.setDescription(description);
-        assertEquals(description, epic.getDescription());
+        String actualDescription = epic.getDescription();
+
+        assertEquals(description, actualDescription, "epic has wrong description");
     }
 
     @Test
     public void shouldKeepSubtaskIds() {
-        List<Long> expected = new ArrayList<>();
-        expected.add(5L);
-        expected.add(3L);
+        List<Long> expectedIds = new ArrayList<>();
+        expectedIds.add(5L);
+        expectedIds.add(3L);
         Epic epic = new Epic();
+
         epic.addSubtaskId(5L);
         epic.addSubtaskId(3L);
-        assertEquals(expected, epic.getSubtaskIds());
+        List<Long> actualIds = epic.getSubtaskIds();
+
+        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
     }
 
     @Test
     public void shouldDropSubtaskId() {
-        List<Long> expected = new ArrayList<>();
-        expected.add(3L);
+        List<Long> expectedIds = new ArrayList<>();
+        expectedIds.add(3L);
         Epic epic = new Epic();
+
         epic.addSubtaskId(5L);
         epic.addSubtaskId(3L);
         epic.removeSubtaskId(5L);
-        assertEquals(expected, epic.getSubtaskIds());
+        List<Long> actualIds = epic.getSubtaskIds();
+
+        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
     }
 
-    @Test
-    public void shouldSupportStatusNew() {
+    @ParameterizedTest
+    @EnumSource(TaskStatus.class)
+    public void shouldSupportAllStatuses(TaskStatus status) {
         Epic epic = new Epic();
-        epic.setStatus(TaskStatus.NEW);
-        assertEquals(TaskStatus.NEW, epic.getStatus());
-    }
 
-    @Test
-    public void shouldSupportStatusInProgress() {
-        Epic epic = new Epic();
-        epic.setStatus(TaskStatus.IN_PROGRESS);
-        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus());
-    }
+        epic.setStatus(status);
+        TaskStatus actualStatus = epic.getStatus();
 
-    @Test
-    public void shouldSupportStatusDone() {
-        Epic epic = new Epic();
-        epic.setStatus(TaskStatus.DONE);
-        assertEquals(TaskStatus.DONE, epic.getStatus());
+        assertEquals(status, actualStatus, "epic has wrong status");
     }
 
     @Test
@@ -92,7 +98,8 @@ class EpicTest {
         epic.setStatus(TaskStatus.IN_PROGRESS);
         Epic anotherEpic = new Epic();
         anotherEpic.setId(id);
-        assertEquals(epic, anotherEpic);
+
+        assertEquals(epic, anotherEpic, "epics with same id must be considered equal");
     }
 
     @Test
@@ -112,6 +119,7 @@ class EpicTest {
         epic.setTitle(title);
         epic.setDescription(description);
         epic.setStatus(status);
-        assertNotEquals(epic, anotherEpic);
+
+        assertNotEquals(epic, anotherEpic, "epics with different ids may not considered equal");
     }
 }
