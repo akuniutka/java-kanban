@@ -5,10 +5,10 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
 
-import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class InMemoryTaskManager implements TaskManager {
     private static final long WRONG_ARGUMENT = -1L;
@@ -106,7 +106,7 @@ public class InMemoryTaskManager implements TaskManager {
         if (epic == null) {
             return;
         }
-        final Long id = epic.getId();;
+        final Long id = epic.getId();
         final String title = epic.getTitle();
         final String description = epic.getDescription();
         final Epic savedEpic = epics.get(id);

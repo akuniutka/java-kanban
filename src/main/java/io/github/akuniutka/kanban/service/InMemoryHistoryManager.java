@@ -1,8 +1,9 @@
 package io.github.akuniutka.kanban.service;
 
-import java.util.List;
-import java.util.ArrayList;
 import io.github.akuniutka.kanban.model.Task;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class InMemoryHistoryManager implements HistoryManager {
     private static final int MAX_HISTORY_SIZE = 10;

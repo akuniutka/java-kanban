@@ -1,10 +1,10 @@
 package io.github.akuniutka.kanban.model;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Epic extends Task {
-    private List<Long> subtaskIds;
+    private final List<Long> subtaskIds;
 
     public Epic() {
         this.subtaskIds = new ArrayList<>();
