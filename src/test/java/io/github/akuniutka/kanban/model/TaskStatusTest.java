@@ -9,12 +9,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskStatusTest {
     @Test
     public void shouldSupportThreeStatuses() {
-        assertEquals(3, TaskStatus.values().length);
+        assertEquals(3, TaskStatus.values().length, "wrong number of task statuses supported");
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"NEW", "IN_PROGRESS", "DONE"})
     public void shouldSupportStatusesRequired(String status) {
-        assertNotNull(TaskStatus.valueOf(status));
+        assertNotNull(TaskStatus.valueOf(status), "task status is not supported");
     }
 }
