@@ -31,6 +31,7 @@ Additionally,
 - retrieving the list of subtasks of an epic,
 - retrieving the list of all tasks/ epics/ subtasks,
 - removing all tasks/ epics/ subtasks,
+- keeping the list of the last ten tasks/ epics/ subtasks retrieved
 
 ## Contact
 
