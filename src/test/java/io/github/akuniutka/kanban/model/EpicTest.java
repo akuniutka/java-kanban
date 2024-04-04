@@ -1,8 +1,6 @@
 package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +8,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EpicTest {
+    private static final long TEST_ID = 1L;
+    private static final long ANOTHER_TEST_ID = 2L;
+    private static final String TEST_TITLE = "Title";
+    private static final String TEST_DESCRIPTION = "Description";
+    private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
+
     @Test
     public void shouldCreateEpic() {
         Epic epic = new Epic();
@@ -18,35 +22,32 @@ class EpicTest {
 
     @Test
     public void shouldHaveIdOfIntegerType() {
-        long id = 1L;
         Epic epic = new Epic();
 
-        epic.setId(id);
+        epic.setId(TEST_ID);
         long actualId = epic.getId();
 
-        assertEquals(id, actualId, "epic has wrong id");
+        assertEquals(TEST_ID, actualId, "epic has wrong id");
     }
 
     @Test
     public void shouldHaveTitle() {
-        String title = "Title";
         Epic epic = new Epic();
 
-        epic.setTitle(title);
+        epic.setTitle(TEST_TITLE);
         String actualTitle = epic.getTitle();
 
-        assertEquals(title, actualTitle, "epic has wrong title");
+        assertEquals(TEST_TITLE, actualTitle, "epic has wrong title");
     }
 
     @Test
     public void shouldHaveDescription() {
-        String description = "Description";
         Epic epic = new Epic();
 
-        epic.setDescription(description);
+        epic.setDescription(TEST_DESCRIPTION);
         String actualDescription = epic.getDescription();
 
-        assertEquals(description, actualDescription, "epic has wrong description");
+        assertEquals(TEST_DESCRIPTION, actualDescription, "epic has wrong description");
     }
 
     @Test
@@ -64,7 +65,22 @@ class EpicTest {
     }
 
     @Test
-    public void shouldDropSubtaskId() {
+    public void shouldDoNothingWhenAlreadyContainsSubtaskIdBeingAdded() {
+        List<Long> expectedIds = new ArrayList<>();
+        expectedIds.add(5L);
+        expectedIds.add(3L);
+        Epic epic = new Epic();
+
+        epic.addSubtaskId(5L);
+        epic.addSubtaskId(3L);
+        epic.addSubtaskId(3L);
+        List<Long> actualIds = epic.getSubtaskIds();
+
+        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
+    }
+
+    @Test
+    public void shouldDropSubtaskIdWhenContainsIt() {
         List<Long> expectedIds = new ArrayList<>();
         expectedIds.add(3L);
         Epic epic = new Epic();
@@ -77,48 +93,56 @@ class EpicTest {
         assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
     }
 
-    @ParameterizedTest
-    @EnumSource(TaskStatus.class)
-    public void shouldSupportAllStatuses(TaskStatus status) {
+    @Test
+    public void shouldDoNothingWhenDoesNotContainSubtaskIdBeingDropped() {
+        List<Long> expectedIds = new ArrayList<>();
+        expectedIds.add(5L);
+        expectedIds.add(3L);
         Epic epic = new Epic();
 
-        epic.setStatus(status);
+        epic.addSubtaskId(5L);
+        epic.addSubtaskId(3L);
+        epic.removeSubtaskId(4L);
+        List<Long> actualIds = epic.getSubtaskIds();
+
+        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
+    }
+
+    @Test
+    public void shouldHaveStatus() {
+        Epic epic = new Epic();
+
+        epic.setStatus(TEST_STATUS);
         TaskStatus actualStatus = epic.getStatus();
 
-        assertEquals(status, actualStatus, "epic has wrong status");
+        assertEquals(TEST_STATUS, actualStatus, "epic has wrong status");
     }
 
     @Test
     public void shouldBeEqualWhenEqualIds() {
-        long id = 1L;
         Epic epic = new Epic();
-        epic.setId(id);
-        epic.setTitle("Title");
-        epic.setDescription("Description");
-        epic.setStatus(TaskStatus.IN_PROGRESS);
+        epic.setId(TEST_ID);
+        epic.setTitle(TEST_TITLE);
+        epic.setDescription(TEST_DESCRIPTION);
+        epic.setStatus(TEST_STATUS);
         Epic anotherEpic = new Epic();
-        anotherEpic.setId(id);
+        anotherEpic.setId(TEST_ID);
 
         assertEquals(epic, anotherEpic, "epics with same id must be considered equal");
     }
 
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
-        long id = 1L;
-        long anotherId = 2L;
-        String title = "Title";
-        String description = "Description";
-        TaskStatus status = TaskStatus.IN_PROGRESS;
         Epic epic = new Epic();
-        epic.setId(id);
-        epic.setTitle(title);
-        epic.setDescription(description);
-        epic.setStatus(status);
+        epic.setId(TEST_ID);
+        epic.setTitle(TEST_TITLE);
+        epic.setDescription(TEST_DESCRIPTION);
+        epic.setStatus(TEST_STATUS);
         Epic anotherEpic = new Epic();
-        epic.setId(anotherId);
-        epic.setTitle(title);
-        epic.setDescription(description);
-        epic.setStatus(status);
+        epic.setId(ANOTHER_TEST_ID);
+        epic.setTitle(TEST_TITLE);
+        epic.setDescription(TEST_DESCRIPTION);
+        epic.setStatus(TEST_STATUS);
 
         assertNotEquals(epic, anotherEpic, "epics with different ids may not considered equal");
     }

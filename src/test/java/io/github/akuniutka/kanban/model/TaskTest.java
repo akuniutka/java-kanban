@@ -1,12 +1,16 @@
 package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TaskTest {
+    private static final long TEST_ID = 1L;
+    private static final long ANOTHER_TEST_ID = 2L;
+    private static final String TEST_TITLE = "Title";
+    private static final String TEST_DESCRIPTION = "Description";
+    private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
+
     @Test
     public void shouldCreateTask() {
         Task task = new Task();
@@ -15,79 +19,69 @@ public class TaskTest {
 
     @Test
     public void shouldHaveIdOfIntegerType() {
-        long id = 1L;
         Task task = new Task();
 
-        task.setId(id);
+        task.setId(TEST_ID);
         long actualId = task.getId();
 
-        assertEquals(id, actualId, "task has wrong id");
+        assertEquals(TEST_ID, actualId, "task has wrong id");
     }
 
     @Test
     public void shouldHaveTitle() {
-        String title = "Title";
         Task task = new Task();
 
-        task.setTitle(title);
+        task.setTitle(TEST_TITLE);
         String actualTitle = task.getTitle();
 
-        assertEquals(title, actualTitle, "task has wrong title");
+        assertEquals(TEST_TITLE, actualTitle, "task has wrong title");
     }
 
     @Test
     public void shouldHaveDescription() {
-        String description = "Description";
         Task task = new Task();
 
-        task.setDescription(description);
+        task.setDescription(TEST_DESCRIPTION);
         String actualDescription = task.getDescription();
 
-        assertEquals(description, actualDescription, "task has wrong description");
+        assertEquals(TEST_DESCRIPTION, actualDescription, "task has wrong description");
     }
 
-    @ParameterizedTest
-    @EnumSource(TaskStatus.class)
-    public void shouldSupportAllStatuses(TaskStatus status) {
+    @Test
+    public void shouldHaveStatus() {
         Task task = new Task();
 
-        task.setStatus(status);
+        task.setStatus(TEST_STATUS);
         TaskStatus actualStatus = task.getStatus();
 
-        assertEquals(status, actualStatus, "task has wrong status");
+        assertEquals(TEST_STATUS, actualStatus, "task has wrong status");
     }
 
     @Test
     public void shouldBeEqualWhenEqualIds() {
-        long id = 1L;
         Task task = new Task();
-        task.setId(id);
-        task.setTitle("Title");
-        task.setDescription("Description");
-        task.setStatus(TaskStatus.IN_PROGRESS);
+        task.setId(TEST_ID);
+        task.setTitle(TEST_TITLE);
+        task.setDescription(TEST_DESCRIPTION);
+        task.setStatus(TEST_STATUS);
         Task anotherTask = new Task();
-        anotherTask.setId(id);
+        anotherTask.setId(TEST_ID);
 
         assertEquals(task, anotherTask, "tasks with same id must be considered equal");
     }
 
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
-        long id = 1L;
-        long anotherId = 2L;
-        String title = "Title";
-        String description = "Description";
-        TaskStatus status = TaskStatus.IN_PROGRESS;
         Task task = new Task();
-        task.setId(id);
-        task.setTitle(title);
-        task.setDescription(description);
-        task.setStatus(status);
+        task.setId(TEST_ID);
+        task.setTitle(TEST_TITLE);
+        task.setDescription(TEST_DESCRIPTION);
+        task.setStatus(TEST_STATUS);
         Task anotherTask = new Task();
-        anotherTask.setId(anotherId);
-        anotherTask.setTitle(title);
-        anotherTask.setDescription(description);
-        anotherTask.setStatus(status);
+        anotherTask.setId(ANOTHER_TEST_ID);
+        anotherTask.setTitle(TEST_TITLE);
+        anotherTask.setDescription(TEST_DESCRIPTION);
+        anotherTask.setStatus(TEST_STATUS);
 
         assertNotEquals(task, anotherTask, "tasks with different ids may not considered equal");
     }

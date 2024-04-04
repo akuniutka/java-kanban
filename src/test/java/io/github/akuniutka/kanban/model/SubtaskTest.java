@@ -1,12 +1,17 @@
 package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SubtaskTest {
+    private static final long TEST_ID = 1L;
+    private static final long ANOTHER_TEST_ID = 2L;
+    private static final long TEST_EPIC_ID = 5L;
+    private static final String TEST_TITLE = "Title";
+    private static final String TEST_DESCRIPTION = "Description";
+    private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
+
     @Test
     public void shouldCreateSubtask() {
         Subtask subtask = new Subtask();
@@ -15,94 +20,82 @@ class SubtaskTest {
 
     @Test
     public void shouldHaveIdOfIntegerType() {
-        long id = 1L;
         Subtask subtask = new Subtask();
 
-        subtask.setId(id);
+        subtask.setId(TEST_ID);
         long actualId = subtask.getId();
 
-        assertEquals(id, actualId, "subtask has wrong id");
+        assertEquals(TEST_ID, actualId, "subtask has wrong id");
     }
 
     @Test
-    public void shouldKeepEpicId() {
-        long epicId = 1L;
+    public void shouldHaveEpicId() {
         Subtask subtask = new Subtask();
 
-        subtask.setEpicId(epicId);
+        subtask.setEpicId(TEST_EPIC_ID);
         long actualEpicId = subtask.getEpicId();
 
-        assertEquals(epicId, actualEpicId, "subtask has wrong epic id");
+        assertEquals(TEST_EPIC_ID, actualEpicId, "subtask has wrong epic id");
     }
 
     @Test
     public void shouldHaveTitle() {
-        String title = "Title";
         Subtask subtask = new Subtask();
 
-        subtask.setTitle(title);
+        subtask.setTitle(TEST_TITLE);
         String actualTitle = subtask.getTitle();
 
-        assertEquals(title, actualTitle, "subtask has wrong title");
+        assertEquals(TEST_TITLE, actualTitle, "subtask has wrong title");
     }
 
     @Test
     public void shouldHaveDescription() {
-        String description = "Description";
         Subtask subtask = new Subtask();
 
-        subtask.setDescription(description);
+        subtask.setDescription(TEST_DESCRIPTION);
         String actualDescription = subtask.getDescription();
 
-        assertEquals(description, actualDescription, "subtask has wrong description");
+        assertEquals(TEST_DESCRIPTION, actualDescription, "subtask has wrong description");
     }
 
-    @ParameterizedTest
-    @EnumSource(TaskStatus.class)
-    public void shouldSupportAllStatuses(TaskStatus status) {
+    @Test
+    public void shouldHaveStatus() {
         Subtask subtask = new Subtask();
 
-        subtask.setStatus(status);
+        subtask.setStatus(TEST_STATUS);
         TaskStatus actualStatus = subtask.getStatus();
 
-        assertEquals(status, actualStatus, "subtask has wrong status");
+        assertEquals(TEST_STATUS, actualStatus, "subtask has wrong status");
     }
 
     @Test
     public void shouldBeEqualWhenEqualIds() {
-        long id = 1L;
         Subtask subtask = new Subtask();
-        subtask.setId(id);
-        subtask.setEpicId(5L);
-        subtask.setTitle("Title");
-        subtask.setDescription("Description");
-        subtask.setStatus(TaskStatus.IN_PROGRESS);
+        subtask.setId(TEST_ID);
+        subtask.setEpicId(TEST_EPIC_ID);
+        subtask.setTitle(TEST_TITLE);
+        subtask.setDescription(TEST_DESCRIPTION);
+        subtask.setStatus(TEST_STATUS);
         Subtask anotherSubtask = new Subtask();
-        anotherSubtask.setId(id);
+        anotherSubtask.setId(TEST_ID);
 
         assertEquals(subtask, anotherSubtask, "subtasks with same id must be considered equal");
     }
 
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
-        long id = 1L;
-        long anotherId = 2L;
-        long epicId = 5L;
-        String title = "Title";
-        String description = "Description";
-        TaskStatus status = TaskStatus.IN_PROGRESS;
         Subtask subtask = new Subtask();
-        subtask.setId(id);
-        subtask.setEpicId(epicId);
-        subtask.setTitle(title);
-        subtask.setDescription(description);
-        subtask.setStatus(status);
+        subtask.setId(TEST_ID);
+        subtask.setEpicId(TEST_EPIC_ID);
+        subtask.setTitle(TEST_TITLE);
+        subtask.setDescription(TEST_DESCRIPTION);
+        subtask.setStatus(TEST_STATUS);
         Subtask anotherSubtask = new Subtask();
-        anotherSubtask.setId(anotherId);
-        anotherSubtask.setEpicId(epicId);
-        anotherSubtask.setTitle(title);
-        anotherSubtask.setDescription(description);
-        anotherSubtask.setStatus(status);
+        anotherSubtask.setId(ANOTHER_TEST_ID);
+        anotherSubtask.setEpicId(TEST_EPIC_ID);
+        anotherSubtask.setTitle(TEST_TITLE);
+        anotherSubtask.setDescription(TEST_DESCRIPTION);
+        anotherSubtask.setStatus(TEST_STATUS);
 
         assertNotEquals(subtask, anotherSubtask, "tasks with different ids may not considered equal");
     }
