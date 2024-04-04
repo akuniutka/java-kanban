@@ -48,6 +48,13 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldNotAddNullTask() {
+        long id = manager.addTask(null);
+
+        assertEquals(WRONG_ARGUMENT, id, "null task should not be added");
+    }
+
+    @Test
     public void shouldNotOverwriteExistingTaskWhenAddingNewOne() {
         Task task = createTaskFilledWithTestData();
         Task anotherTask = new Task();
@@ -127,6 +134,13 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedEpic.getId(), "epic id differs from returned by manager");
         assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title changed");
         assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description changed");
+    }
+
+    @Test
+    public void shouldNotAddNullEpic() {
+        long id = manager.addEpic(null);
+
+        assertEquals(WRONG_ARGUMENT, id, "null epic should not be added");
     }
 
     @Test
@@ -354,6 +368,13 @@ class InMemoryTaskManagerTest {
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title changed");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description changed");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status changed");
+    }
+
+    @Test
+    public void shouldNotAddNullSubtask() {
+        long id = manager.addSubtask(null);
+
+        assertEquals(WRONG_ARGUMENT, id, "null subtask should not be added");
     }
 
     @Test

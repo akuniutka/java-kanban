@@ -58,10 +58,7 @@ public class Task {
 
     @Override
     public int hashCode() {
-        if (id == null) {
-            return super.hashCode();
-        }
-        return id.hashCode();
+        return Objects.hash(id);
     }
 
     @Override
