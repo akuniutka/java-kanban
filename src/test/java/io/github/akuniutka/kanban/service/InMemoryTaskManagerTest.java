@@ -726,15 +726,15 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldKeepTaskStateChangesInHistory() {
-        List<String> snapshots = new ArrayList<>();
+        List<Task> snapshots = new ArrayList<>();
         long taskId = manager.addTask(new Task());
-        snapshots.add(manager.getTask(taskId).toString());
+        snapshots.add(copyTask(taskId));
         Task taskUpdate = createTaskFilledWithTestData();
         taskUpdate.setId(taskId);
         manager.updateTask(taskUpdate);
-        snapshots.add(manager.getTask(taskId).toString());
+        snapshots.add(copyTask(taskId));
         long epicId = manager.addEpic(new Epic());
-        snapshots.add(manager.getEpic(epicId).toString());
+        snapshots.add(copyEpic(epicId));
         Epic epicUpdate = createEpicFilledWithTestData();
         epicUpdate.setId(epicId);
         manager.updateEpic(epicUpdate);
@@ -742,18 +742,27 @@ class InMemoryTaskManagerTest {
         subtask.setEpicId(epicId);
         subtask.setStatus(TaskStatus.DONE);
         long subtaskId = manager.addSubtask(subtask);
-        snapshots.add(manager.getEpic(epicId).toString());
-        snapshots.add(manager.getSubtask(subtaskId).toString());
+        snapshots.add(copyEpic(epicId));
+        snapshots.add(copySubtask(subtaskId));
         Subtask subtaskUpdate = createSubtaskFilledWithTestDataAndEpicId(epicId);
         subtaskUpdate.setId(subtaskId);
         manager.updateSubtask(subtaskUpdate);
-        snapshots.add(manager.getSubtask(subtaskId).toString());
+        snapshots.add(copySubtask(subtaskId));
 
         List<Task> history = manager.getHistory();
 
-        assertEquals(snapshots.size(), history.size(), "incorrect list of tasks returned");
+        assertEquals(snapshots, history, "incorrect list of tasks returned");
         for (int i = 0; i < snapshots.size(); i++) {
-            assertEquals(snapshots.get(i), history.get(i).toString(), "incorrect task snapshot in history");
+            assertEquals(snapshots.get(i).getTitle(), history.get(i).getTitle(), "incorrect task title");
+            assertEquals(snapshots.get(i).getDescription(), history.get(i).getDescription(), "incorrect task "
+                    + "description");
+            if (!(snapshots.get(i) instanceof Epic)) {
+                assertEquals(snapshots.get(i).getStatus(), history.get(i).getStatus(), "incorrect task status");
+            }
+            if (snapshots.get(i) instanceof Subtask snapshotSubtask) {
+                Subtask historySubtask = (Subtask) history.get(i);
+                assertEquals(snapshotSubtask.getEpicId(), historySubtask.getEpicId(), "incorrect epic id for subtask");
+            }
         }
     }
 
@@ -809,5 +818,35 @@ class InMemoryTaskManagerTest {
                 return list;
             }
         }
+    }
+
+    private Task copyTask(long id) {
+        Task task = manager.getTask(id);
+        Task copy = new Task();
+        copy.setId(task.getId());
+        copy.setTitle(task.getTitle());
+        copy.setDescription(task.getDescription());
+        copy.setStatus(task.getStatus());
+        return copy;
+    }
+
+    private Epic copyEpic(long id) {
+        Epic epic = manager.getEpic(id);
+        Epic copy = new Epic();
+        copy.setId(epic.getId());
+        copy.setTitle(epic.getTitle());
+        copy.setDescription(epic.getDescription());
+        return copy;
+    }
+
+    private Subtask copySubtask(long id) {
+        Subtask subtask = manager.getSubtask(id);
+        Subtask copy = new Subtask();
+        copy.setId(subtask.getId());
+        copy.setEpicId(subtask.getEpicId());
+        copy.setTitle(subtask.getTitle());
+        copy.setDescription(subtask.getDescription());
+        copy.setStatus(subtask.getStatus());
+        return copy;
     }
 }
