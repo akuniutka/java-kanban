@@ -41,7 +41,7 @@ public class InMemoryTaskManager implements TaskManager {
     public Task getTask(long id) {
         Task task = tasks.get(id);
         if (task != null) {
-            historyManager.add(copyOf(task));
+            historyManager.add(task);
         }
         return task;
     }
@@ -87,7 +87,7 @@ public class InMemoryTaskManager implements TaskManager {
     public Epic getEpic(long id) {
         Epic epic = epics.get(id);
         if (epic != null) {
-            historyManager.add(copyOf(epic));
+            historyManager.add(epic);
         }
         return epic;
     }
@@ -151,7 +151,7 @@ public class InMemoryTaskManager implements TaskManager {
     public Subtask getSubtask(long id) {
         Subtask subtask = subtasks.get(id);
         if (subtask != null) {
-            historyManager.add(copyOf(subtask));
+            historyManager.add(subtask);
         }
         return subtask;
     }
@@ -243,34 +243,5 @@ public class InMemoryTaskManager implements TaskManager {
         } else {
             epic.setStatus(TaskStatus.IN_PROGRESS);
         }
-    }
-
-    private Task copyOf(Task task) {
-        Task copy = new Task();
-        copy.setId(task.getId());
-        copy.setTitle(task.getTitle());
-        copy.setDescription(task.getDescription());
-        copy.setStatus(task.getStatus());
-        return copy;
-    }
-
-    private Epic copyOf(Epic epic) {
-        Epic copy = new Epic();
-        copy.setId(epic.getId());
-        copy.setTitle(epic.getTitle());
-        copy.setDescription(epic.getDescription());
-        copy.setSubtaskIds(new ArrayList<>(epic.getSubtaskIds()));
-        copy.setStatus(epic.getStatus());
-        return copy;
-    }
-
-    private Subtask copyOf(Subtask subtask) {
-        Subtask copy = new Subtask();
-        copy.setId(subtask.getId());
-        copy.setEpicId(subtask.getEpicId());
-        copy.setTitle(subtask.getTitle());
-        copy.setDescription(subtask.getDescription());
-        copy.setStatus(subtask.getStatus());
-        return copy;
     }
 }
