@@ -625,11 +625,9 @@ class InMemoryTaskManagerTest {
         long taskIdB = manager.addTask(new Task());
         long taskIdC = manager.addTask(new Task());
         manager.removeTask(taskIdB);
-        List<Task> expectedTaskList = new ArrayList<>();
         testTask.setId(taskIdA);
         emptyTask.setId(taskIdC);
-        expectedTaskList.add(testTask);
-        expectedTaskList.add(emptyTask);
+        List<Task> expectedTaskList = List.of(testTask, emptyTask);
 
         List<Task> actualTaskList = manager.getTasks();
 
@@ -653,11 +651,9 @@ class InMemoryTaskManagerTest {
         long epicIdB = manager.addEpic(new Epic());
         long epicIdC = manager.addEpic(new Epic());
         manager.removeEpic(epicIdB);
-        List<Epic> expectedEpicList = new ArrayList<>();
         testEpic.setId(epicIdA);
         emptyEpic.setId(epicIdC);
-        expectedEpicList.add(testEpic);
-        expectedEpicList.add(emptyEpic);
+        List<Epic> expectedEpicList = List.of(testEpic, emptyEpic);
 
         List<Epic> actualEpicList = manager.getEpics();
 
@@ -751,7 +747,7 @@ class InMemoryTaskManagerTest {
         emptyTask.setId(taskId);
         emptyEpic.setId(epicId);
         emptySubtask.setId(subtaskId);
-        List<Task> expectedHistory = composeHistoryFromTasks(false, emptyTask, emptyEpic, emptySubtask);
+        List<Task> expectedHistory = List.of(emptyTask, emptyEpic, emptySubtask);
 
         manager.getTask(taskId);
         manager.getEpic(epicId);
@@ -770,7 +766,7 @@ class InMemoryTaskManagerTest {
         emptyTask.setId(taskId);
         emptyEpic.setId(epicId);
         emptySubtask.setId(subtaskId);
-        List<Task> expectedHistory = composeHistoryFromTasks(true, emptySubtask, emptyTask, emptyEpic);
+        List<Task> expectedHistory = composeHistoryFromTasks(emptySubtask, emptyTask, emptyEpic);
 
         for (int i = 0; i < 4; i++) {
             manager.getTask(taskId);
@@ -859,7 +855,7 @@ class InMemoryTaskManagerTest {
         return subtasks;
     }
 
-    private List<Task> composeHistoryFromTasks(boolean repeat, Task... tasks) {
+    private List<Task> composeHistoryFromTasks(Task... tasks) {
         List<Task> list = new ArrayList<>();
         while (true) {
             for (Task task : tasks) {
@@ -867,9 +863,6 @@ class InMemoryTaskManagerTest {
                     return list;
                 }
                 list.add(task);
-            }
-            if (!repeat) {
-                return list;
             }
         }
     }
