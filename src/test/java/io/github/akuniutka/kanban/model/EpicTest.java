@@ -2,7 +2,6 @@ package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,6 +12,7 @@ class EpicTest {
     private static final String TEST_TITLE = "Title";
     private static final String TEST_DESCRIPTION = "Description";
     private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
+    private static final List<Long> TEST_SUBTASK_IDS = List.of(1L, 2L, 3L);
 
     @Test
     public void shouldCreateEpic() {
@@ -52,60 +52,12 @@ class EpicTest {
 
     @Test
     public void shouldKeepSubtaskIds() {
-        List<Long> expectedIds = new ArrayList<>();
-        expectedIds.add(5L);
-        expectedIds.add(3L);
         Epic epic = new Epic();
 
-        epic.addSubtaskId(5L);
-        epic.addSubtaskId(3L);
-        List<Long> actualIds = epic.getSubtaskIds();
+        epic.setSubtaskIds(TEST_SUBTASK_IDS);
+        List<Long> actualSubtaskIds = epic.getSubtaskIds();
 
-        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
-    }
-
-    @Test
-    public void shouldDoNothingWhenAlreadyContainsSubtaskIdBeingAdded() {
-        List<Long> expectedIds = new ArrayList<>();
-        expectedIds.add(5L);
-        expectedIds.add(3L);
-        Epic epic = new Epic();
-
-        epic.addSubtaskId(5L);
-        epic.addSubtaskId(3L);
-        epic.addSubtaskId(3L);
-        List<Long> actualIds = epic.getSubtaskIds();
-
-        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
-    }
-
-    @Test
-    public void shouldDropSubtaskIdWhenContainsIt() {
-        List<Long> expectedIds = new ArrayList<>();
-        expectedIds.add(3L);
-        Epic epic = new Epic();
-
-        epic.addSubtaskId(5L);
-        epic.addSubtaskId(3L);
-        epic.removeSubtaskId(5L);
-        List<Long> actualIds = epic.getSubtaskIds();
-
-        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
-    }
-
-    @Test
-    public void shouldDoNothingWhenDoesNotContainSubtaskIdBeingDropped() {
-        List<Long> expectedIds = new ArrayList<>();
-        expectedIds.add(5L);
-        expectedIds.add(3L);
-        Epic epic = new Epic();
-
-        epic.addSubtaskId(5L);
-        epic.addSubtaskId(3L);
-        epic.removeSubtaskId(4L);
-        List<Long> actualIds = epic.getSubtaskIds();
-
-        assertEquals(expectedIds, actualIds, "epic has wrong list of subtask ids");
+        assertEquals(TEST_SUBTASK_IDS, actualSubtaskIds, "epic has wrong list of subtask ids");
     }
 
     @Test

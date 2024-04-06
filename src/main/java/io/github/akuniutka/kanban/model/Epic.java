@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Epic extends Task {
-    @SuppressWarnings("FieldMayBeFinal")
     private List<Long> subtaskIds;
 
     public Epic() {
@@ -12,17 +11,11 @@ public class Epic extends Task {
     }
 
     public List<Long> getSubtaskIds() {
-        return new ArrayList<>(subtaskIds);
+        return subtaskIds;
     }
 
-    public void addSubtaskId(long subtaskId) {
-        if (!subtaskIds.contains(subtaskId)) {
-            subtaskIds.add(subtaskId);
-        }
-    }
-
-    public void removeSubtaskId(long subtaskId) {
-        subtaskIds.remove(subtaskId);
+    public void setSubtaskIds(List<Long> subtaskIds) {
+        this.subtaskIds = subtaskIds;
     }
 
     @Override

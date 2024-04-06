@@ -99,6 +99,7 @@ public class InMemoryTaskManager implements TaskManager {
         }
         final long id = generateId();
         epic.setId(id);
+        epic.getSubtaskIds().clear();
         updateEpicStatus(epic);
         epics.put(id, epic);
         return id;
@@ -114,10 +115,11 @@ public class InMemoryTaskManager implements TaskManager {
         if (savedEpic == null) {
             return WRONG_ARGUMENT;
         }
-        final String title = epic.getTitle();
-        final String description = epic.getDescription();
-        savedEpic.setTitle(title);
-        savedEpic.setDescription(description);
+        final List<Long> subtaskIds = savedEpic.getSubtaskIds();
+        final TaskStatus status = savedEpic.getStatus();
+        epic.setSubtaskIds(subtaskIds);
+        epic.setStatus(status);
+        epics.put(id, epic);
         return OK;
     }
 
@@ -139,10 +141,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void removeSubtasks() {
         for (Epic epic : epics.values()) {
-            final List<Long> subtaskIds = epic.getSubtaskIds();
-            for (long subtaskId : subtaskIds) {
-                epic.removeSubtaskId(subtaskId);
-            }
+            epic.getSubtaskIds().clear();
             updateEpicStatus(epic);
         }
         subtasks.clear();
@@ -169,8 +168,8 @@ public class InMemoryTaskManager implements TaskManager {
         }
         final long id = generateId();
         subtask.setId(id);
-        epic.addSubtaskId(id);
         subtasks.put(id, subtask);
+        epic.getSubtaskIds().add(id);
         updateEpicStatus(epic);
         return id;
     }
@@ -181,11 +180,11 @@ public class InMemoryTaskManager implements TaskManager {
             return WRONG_ARGUMENT;
         }
         final Long id = subtask.getId();
-        final Subtask storedSubtask = subtasks.get(id);
-        if (storedSubtask == null) {
+        final Subtask savedSubtask = subtasks.get(id);
+        if (savedSubtask == null) {
             return WRONG_ARGUMENT;
         }
-        final Long epicId = storedSubtask.getEpicId();
+        final Long epicId = savedSubtask.getEpicId();
         final Epic epic = epics.get(epicId);
         subtask.setEpicId(epicId);
         subtasks.put(id, subtask);
@@ -199,7 +198,7 @@ public class InMemoryTaskManager implements TaskManager {
         if (subtask != null) {
             final long epicId = subtask.getEpicId();
             final Epic epic = epics.get(epicId);
-            epic.removeSubtaskId(id);
+            epic.getSubtaskIds().remove(id);
             updateEpicStatus(epic);
         }
     }
@@ -209,8 +208,7 @@ public class InMemoryTaskManager implements TaskManager {
         final List<Subtask> subtaskList = new ArrayList<>();
         final Epic epic = epics.get(epicId);
         if (epic != null) {
-            final List<Long> subtaskIds = epic.getSubtaskIds();
-            for (long subtaskId : subtaskIds) {
+            for (long subtaskId : epic.getSubtaskIds()) {
                 subtaskList.add(subtasks.get(subtaskId));
             }
         }
@@ -261,9 +259,7 @@ public class InMemoryTaskManager implements TaskManager {
         copy.setId(epic.getId());
         copy.setTitle(epic.getTitle());
         copy.setDescription(epic.getDescription());
-        for (Long subtaskId : epic.getSubtaskIds()) {
-            copy.addSubtaskId(subtaskId);
-        }
+        copy.setSubtaskIds(new ArrayList<>(epic.getSubtaskIds()));
         copy.setStatus(epic.getStatus());
         return copy;
     }
