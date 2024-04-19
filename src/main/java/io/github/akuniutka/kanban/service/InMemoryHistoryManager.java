@@ -6,19 +6,52 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InMemoryHistoryManager implements HistoryManager {
-    private final List<Task> history;
+    private Node head;
+    private Node tail;
 
     InMemoryHistoryManager() {
-        history = new ArrayList<>();
     }
 
     @Override
     public void add(Task task) {
-        history.add(task);
+        linkLast(task);
     }
 
     @Override
     public List<Task> getHistory() {
-        return new ArrayList<>(history);
+        return getTasks();
+    }
+
+    private void linkLast(Task task) {
+        final Node oldTail = tail;
+        final Node newTail = new Node(tail, task, null);
+        tail = newTail;
+        if (oldTail == null) {
+            head = newTail;
+        } else {
+            oldTail.next = newTail;
+        }
+    }
+
+    private List<Task> getTasks() {
+        final ArrayList<Task> tasks = new ArrayList<>();
+        Node node = head;
+        while (node != null) {
+            tasks.add(node.task);
+            node = node.next;
+        }
+        return tasks;
+    }
+
+    private static class Node {
+        Task task;
+        Node next;
+        Node prev;
+
+        Node(Node prev, Task task, Node next) {
+            this.task = task;
+            this.next = next;
+            this.prev = prev;
+        }
     }
 }
