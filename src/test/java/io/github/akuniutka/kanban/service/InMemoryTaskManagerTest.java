@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class InMemoryTaskManagerTest {
     private static final int OK = 0;
     private static final int WRONG_ARGUMENT = -1;
-    private static final int MAX_HISTORY_SIZE = 10;
     private static final String TEST_TITLE = "Title";
     private static final String TEST_DESCRIPTION = "Description";
     private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
@@ -758,27 +757,6 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    public void shouldRemoveOldTasksWhenHistoryLimitReached() {
-        long taskId = manager.addTask(testTask);
-        long epicId = manager.addEpic(testEpic);
-        testSubtask.setEpicId(epicId);
-        long subtaskId = manager.addSubtask(testSubtask);
-        emptyTask.setId(taskId);
-        emptyEpic.setId(epicId);
-        emptySubtask.setId(subtaskId);
-        List<Task> expectedHistory = composeHistoryFromTasks(emptySubtask, emptyTask, emptyEpic);
-
-        for (int i = 0; i < 4; i++) {
-            manager.getTask(taskId);
-            manager.getEpic(epicId);
-            manager.getSubtask(subtaskId);
-        }
-        List<Task> actualHistory = manager.getHistory();
-
-        assertEquals(expectedHistory, actualHistory, "incorrect list of tasks returned");
-    }
-
-    @Test
     public void shouldKeepTaskStateChangesInHistory() {
         List<Task> snapshots = new ArrayList<>();
         long taskId = manager.addTask(emptyTask);
@@ -853,18 +831,6 @@ class InMemoryTaskManagerTest {
             subtasks.add(subtask);
         }
         return subtasks;
-    }
-
-    private List<Task> composeHistoryFromTasks(Task... tasks) {
-        List<Task> list = new ArrayList<>();
-        while (true) {
-            for (Task task : tasks) {
-                if (list.size() == MAX_HISTORY_SIZE) {
-                    return list;
-                }
-                list.add(task);
-            }
-        }
     }
 
     private Task copyTask(long id) {

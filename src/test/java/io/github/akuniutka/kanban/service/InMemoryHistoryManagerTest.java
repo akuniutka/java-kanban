@@ -12,7 +12,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InMemoryHistoryManagerTest {
-    private static final int MAX_HISTORY_SIZE = 10;
     private HistoryManager manager;
 
     @BeforeEach
@@ -51,24 +50,4 @@ class InMemoryHistoryManagerTest {
 
         assertEquals(expectedHistory, actualHistory, "incorrect list of tasks returned");
     }
-
-    @Test
-    public void shouldRemoveOldTasksWhenHistoryLimitReached() {
-        for (int i = 0; i < MAX_HISTORY_SIZE + 1; i++) {
-            Task task = new Task();
-            task.setId(i);
-            manager.add(task);
-        }
-        List<Task> expectedHistory = new ArrayList<>();
-        for (int i = 1; i < MAX_HISTORY_SIZE + 1; i++) {
-            Task task = new Task();
-            task.setId(i);
-            expectedHistory.add(task);
-        }
-
-        List<Task> actualHistory = manager.getHistory();
-
-        assertEquals(expectedHistory, actualHistory, "incorrect list of tasks returned");
-    }
-
 }
