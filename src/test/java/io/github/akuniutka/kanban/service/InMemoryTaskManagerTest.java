@@ -13,30 +13,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static io.github.akuniutka.kanban.TestModels.*;
 
 class InMemoryTaskManagerTest {
     private static final int OK = 0;
     private static final int WRONG_ARGUMENT = -1;
-    private static final String TEST_TITLE = "Title";
-    private static final String TEST_DESCRIPTION = "Description";
-    private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
     private TaskManager manager;
-    private Task testTask;
     private Task emptyTask;
-    private Epic testEpic;
+    private Task testTask;
+    private Task modifiedTestTask;
     private Epic emptyEpic;
-    private Subtask testSubtask;
+    private Epic testEpic;
+    private Epic modifiedTestEpic;
     private Subtask emptySubtask;
+    private Subtask testSubtask;
+    private Subtask modifiedTestSubtask;
 
     @BeforeEach
     public void setUp() {
         manager = new InMemoryTaskManager(Managers.getDefaultHistory());
-        testTask = createTaskFilledWithTestData();
-        emptyTask = new Task();
-        testEpic = createEpicFilledWithTestData();
-        emptyEpic = new Epic();
-        testSubtask = createSubtaskFilledWithTestData();
-        emptySubtask = new Subtask();
+        emptyTask = createTestTask();
+        testTask = createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        modifiedTestTask = createTestTask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
+        emptyEpic = createTestEpic();
+        testEpic = createTestEpic(TEST_TITLE, TEST_DESCRIPTION);
+        modifiedTestEpic = createTestEpic(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION);
+        emptySubtask = createTestSubtask();
+        testSubtask = createTestSubtask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        modifiedTestSubtask = createTestSubtask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
     }
 
     @Test
@@ -794,33 +798,8 @@ class InMemoryTaskManagerTest {
         }
     }
 
-    private Task createTaskFilledWithTestData() {
-        Task task = new Task();
-        task.setTitle(TEST_TITLE);
-        task.setDescription(TEST_DESCRIPTION);
-        task.setStatus(TEST_STATUS);
-        return task;
-    }
-
-    private Epic createEpicFilledWithTestData() {
-        Epic epic = new Epic();
-        epic.setTitle(TEST_TITLE);
-        epic.setDescription(TEST_DESCRIPTION);
-        return epic;
-    }
-
-    private Subtask createSubtaskFilledWithTestData() {
-        Subtask subtask = new Subtask();
-        subtask.setTitle(TEST_TITLE);
-        subtask.setDescription(TEST_DESCRIPTION);
-        subtask.setStatus(TEST_STATUS);
-        return subtask;
-    }
-
     private Subtask createSubtaskFilledWithTestDataAndEpicId(long epicId) {
-        Subtask subtask = createSubtaskFilledWithTestData();
-        subtask.setEpicId(epicId);
-        return subtask;
+        return createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
     }
 
     private List<Subtask> createListOfSubtasksWithPresetIds(long... ids) {
