@@ -19,7 +19,8 @@ public final class TestModels {
     public static final long TEST_SUBTASK_ID = 3L;
     public static final List<Long> TEST_SUBTASK_IDS = List.of(4L, 5L, 6L);
 
-    private TestModels() {}
+    private TestModels() {
+    }
 
     public static Task createTestTask() {
         return createTestTask(null, null, null);
