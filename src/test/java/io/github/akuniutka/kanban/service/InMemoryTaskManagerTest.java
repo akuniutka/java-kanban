@@ -820,6 +820,125 @@ class InMemoryTaskManagerTest {
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
     }
 
+    @Test
+    public void shouldRemoveTaskFromHistory() {
+        final long id = manager.addTask(testTask);
+        manager.getTask(id);
+
+        manager.removeTask(id);
+        List<Task> tasks = historyManager.getHistory();
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    public void shouldRemoveEpicFromHistory() {
+        final long id = manager.addEpic(testEpic);
+        manager.getEpic(id);
+
+        manager.removeEpic(id);
+        List<Task> tasks = historyManager.getHistory();
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    public void shouldRemoveSubtaskFromHistory() {
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        final long id = manager.addSubtask(testSubtask);
+        manager.getSubtask(id);
+
+        manager.removeSubtask(id);
+        List<Task> tasks = historyManager.getHistory();
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    public void shouldRemoveSubtaskOfEpicFromHistory() {
+        final long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        final long idA = manager.addSubtask(emptySubtask);
+        final long anotherEpicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(anotherEpicId);
+        final long idB = manager.addSubtask(testSubtask);
+        manager.getSubtask(idA);
+        manager.getSubtask(idB);
+
+        manager.removeEpic(epicId);
+        List<Task> tasks = historyManager.getHistory();
+
+        assertEquals(1, tasks.size(), "history should contain exactly 1 element");
+        assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in history should be of Subtask class");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(idB, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(anotherEpicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldRemoveAllTasksFromHistory() {
+        final long idA = manager.addTask(testTask);
+        final long idB = manager.addTask(emptyTask);
+        manager.getTask(idA);
+        manager.getTask(idB);
+
+        manager.removeTasks();
+        List<Task> tasks = historyManager.getHistory();
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    public void shouldRemoveAllEpicsFromHistory() {
+        final long idA = manager.addEpic(testEpic);
+        final long idB = manager.addEpic(emptyEpic);
+        manager.getEpic(idA);
+        manager.getEpic(idB);
+
+        manager.removeEpics();
+        List<Task> tasks = historyManager.getHistory();
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    public void shouldRemoveAllSubtasksFromHistory() {
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        final long idA = manager.addSubtask(testSubtask);
+        final long anotherEpicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(anotherEpicId);
+        final long idB = manager.addSubtask(emptySubtask);
+        manager.getSubtask(idA);
+        manager.getSubtask(idB);
+
+        manager.removeSubtasks();
+        List<Task> tasks = historyManager.getHistory();
+
+        assertTrue(tasks.isEmpty());
+    }
+
+    @Test
+    public void shouldRemoveAllSubtasksFromHistoryWhenRemovedAllEpics() {
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        final long idA = manager.addSubtask(testSubtask);
+        final long anotherEpicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(anotherEpicId);
+        final long idB = manager.addSubtask(emptySubtask);
+        manager.getSubtask(idA);
+        manager.getSubtask(idB);
+
+        manager.removeEpics();
+        List<Task> tasks = historyManager.getHistory();
+
+        assertTrue(tasks.isEmpty());
+    }
+
     private Subtask createSubtaskFilledWithTestDataAndEpicId(long epicId) {
         return createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
     }
