@@ -5,6 +5,8 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
 
+import java.util.List;
+
 public final class TestModels {
     public static final String TEST_TITLE = "Title";
     public static final String TEST_DESCRIPTION = "Description";
@@ -15,12 +17,14 @@ public final class TestModels {
     public static final long TEST_TASK_ID = 1L;
     public static final long TEST_EPIC_ID = 2L;
     public static final long TEST_SUBTASK_ID = 3L;
+    public static final List<Long> TEST_SUBTASK_IDS = List.of(4L, 5L, 6L);
 
     private TestModels() {}
 
     public static Task createTestTask() {
         return createTestTask(null, null, null);
     }
+
     public static Task createTestTask(String title, String description, TaskStatus taskStatus) {
         return createTestTask(null, title, description, taskStatus);
     }
