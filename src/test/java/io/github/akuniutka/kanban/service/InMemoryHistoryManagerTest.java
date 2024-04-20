@@ -235,4 +235,37 @@ class InMemoryHistoryManagerTest {
 
         assertEquals(expected, actual, "should be three tasks inn order they last time visited");
     }
+
+    @Test
+    public void shouldRemoveTaskFromHistory() {
+        manager.add(testTask);
+        manager.add(testEpic);
+
+        manager.remove(TEST_TASK_ID);
+        List<Task> tasks = manager.getHistory();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in list should be of Epic class");
+        Epic savedEpic = (Epic) tasks.getFirst();
+        assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
+        assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title should not change");
+        assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description should not change");
+    }
+
+    @Test
+    public void shouldDoNothingWhenRemovingNotExistingTaskFromHistory() {
+        manager.add(testEpic);
+
+        manager.remove(TEST_TASK_ID);
+        List<Task> tasks = manager.getHistory();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in list should be of Epic class");
+        Epic savedEpic = (Epic) tasks.getFirst();
+        assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
+        assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title should not change");
+        assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description should not change");
+    }
 }

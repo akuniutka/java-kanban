@@ -2,10 +2,10 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.model.Task;
 
-import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class InMemoryHistoryManager implements HistoryManager {
     private final Map<Long, Node> nodes;
@@ -25,6 +25,15 @@ public class InMemoryHistoryManager implements HistoryManager {
         }
         final Node newNode = linkLast(task);
         nodes.put(id, newNode);
+    }
+
+    @Override
+    public void remove(long id) {
+        final Node obsoleteNode = nodes.get(id);
+        if (obsoleteNode != null) {
+            removeNode(obsoleteNode);
+            nodes.remove(id);
+        }
     }
 
     @Override
