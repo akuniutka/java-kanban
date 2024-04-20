@@ -19,28 +19,24 @@ class InMemoryTaskManagerTest {
     private static final int OK = 0;
     private static final int WRONG_ARGUMENT = -1;
     private TaskManager manager;
+    private HistoryManager historyManager;
     private Task emptyTask;
     private Task testTask;
-    private Task modifiedTestTask;
     private Epic emptyEpic;
     private Epic testEpic;
-    private Epic modifiedTestEpic;
     private Subtask emptySubtask;
     private Subtask testSubtask;
-    private Subtask modifiedTestSubtask;
 
     @BeforeEach
     public void setUp() {
-        manager = new InMemoryTaskManager(Managers.getDefaultHistory());
+        historyManager = new InMemoryHistoryManager();
+        manager = new InMemoryTaskManager(historyManager);
         emptyTask = createTestTask();
         testTask = createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
-        modifiedTestTask = createTestTask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
         emptyEpic = createTestEpic();
         testEpic = createTestEpic(TEST_TITLE, TEST_DESCRIPTION);
-        modifiedTestEpic = createTestEpic(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION);
         emptySubtask = createTestSubtask();
         testSubtask = createTestSubtask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
-        modifiedTestSubtask = createTestSubtask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
     }
 
     @Test
@@ -742,60 +738,86 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    public void shouldReturnHistory() {
-        long taskId = manager.addTask(testTask);
-        long epicId = manager.addEpic(testEpic);
-        testSubtask.setEpicId(epicId);
-        long subtaskId = manager.addSubtask(testSubtask);
-        emptyTask.setId(taskId);
-        emptyEpic.setId(epicId);
-        emptySubtask.setId(subtaskId);
-        List<Task> expectedHistory = List.of(emptyTask, emptyEpic, emptySubtask);
+    public void shouldAddVisitedTaskToHistory() {
+        final long taskId = manager.addTask(testTask);
 
         manager.getTask(taskId);
-        manager.getEpic(epicId);
-        manager.getSubtask(subtaskId);
-        List<Task> actualHistory = manager.getHistory();
+        final List<Task> tasks = historyManager.getHistory();
 
-        assertEquals(expectedHistory, actualHistory, "incorrect list of tasks returned");
+        assertEquals(1, tasks.size(), "history should contain exactly 1 element");
+        assertEquals(Task.class, tasks.getFirst().getClass(), "element in history should be of Task class");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
     }
 
     @Test
-    public void shouldKeepTaskStateChangesInHistory() {
-        List<Task> snapshots = new ArrayList<>();
-        long taskId = manager.addTask(emptyTask);
-        snapshots.add(copyTask(taskId));
-        testTask.setId(taskId);
-        manager.updateTask(testTask);
-        snapshots.add(copyTask(taskId));
-        long epicId = manager.addEpic(emptyEpic);
-        snapshots.add(copyEpic(epicId));
-        testEpic.setId(epicId);
-        manager.updateEpic(testEpic);
-        emptySubtask.setEpicId(epicId);
-        emptySubtask.setStatus(TaskStatus.DONE);
-        long subtaskId = manager.addSubtask(emptySubtask);
-        snapshots.add(copyEpic(epicId));
-        snapshots.add(copySubtask(subtaskId));
-        testSubtask.setId(subtaskId);
-        manager.updateSubtask(testSubtask);
-        snapshots.add(copySubtask(subtaskId));
+    public void shouldAddVisitedEpicToHistory() {
+        final long epicId = manager.addEpic(testEpic);
 
-        List<Task> history = manager.getHistory();
+        manager.getEpic(epicId);
+        final List<Task> tasks = historyManager.getHistory();
 
-        assertEquals(snapshots, history, "incorrect list of tasks returned");
-        for (int i = 0; i < snapshots.size(); i++) {
-            assertEquals(snapshots.get(i).getTitle(), history.get(i).getTitle(), "incorrect task title");
-            assertEquals(snapshots.get(i).getDescription(), history.get(i).getDescription(),
-                    "incorrect task description");
-            if (!(snapshots.get(i) instanceof Epic)) {
-                assertEquals(snapshots.get(i).getStatus(), history.get(i).getStatus(), "incorrect task status");
-            }
-            if (snapshots.get(i) instanceof Subtask snapshotSubtask) {
-                Subtask historySubtask = (Subtask) history.get(i);
-                assertEquals(snapshotSubtask.getEpicId(), historySubtask.getEpicId(), "incorrect epic id for subtask");
-            }
-        }
+        assertEquals(1, tasks.size(), "history should contain exactly 1 element");
+        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in history should be of Epic class");
+        Epic savedEpic = (Epic) tasks.getFirst();
+        assertEquals(epicId, savedEpic.getId(), "epic id should not change");
+        assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title should not change");
+        assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description should not change");
+    }
+
+    @Test
+    public void shouldAddVisitedSubtaskToHistory() {
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        final long subtaskId = manager.addSubtask(testSubtask);
+
+        manager.getSubtask(subtaskId);
+        final List<Task> tasks = historyManager.getHistory();
+
+        assertEquals(1, tasks.size(), "history should contain exactly 1 element");
+        assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in history should be of Subtask class");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldReturnHistory() {
+        testTask.setId(TEST_TASK_ID);
+        testEpic.setId(TEST_EPIC_ID);
+        testSubtask.setId(TEST_SUBTASK_ID);
+        testSubtask.setEpicId(TEST_EPIC_ID);
+        historyManager.add(testTask);
+        historyManager.add(testEpic);
+        historyManager.add(testSubtask);
+
+        final List<Task> tasks = manager.getHistory();
+
+        assertEquals(3, tasks.size(), "history should contain exactly 3 elements");
+        assertEquals(Task.class, tasks.getFirst().getClass(), "1st element in history should be of Task class");
+        Task savedTask = tasks.getFirst();
+        assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+        assertEquals(Epic.class, tasks.get(1).getClass(), "2nd element in history should be of Epic class");
+        Epic savedEpic = (Epic) tasks.get(1);
+        assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
+        assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title should not change");
+        assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description should not change");
+        assertEquals(Subtask.class, tasks.getLast().getClass(), "3rd element in history should be of Subtask class");
+        Subtask savedSubtask = (Subtask) tasks.getLast();
+        assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
     }
 
     private Subtask createSubtaskFilledWithTestDataAndEpicId(long epicId) {
@@ -810,35 +832,5 @@ class InMemoryTaskManagerTest {
             subtasks.add(subtask);
         }
         return subtasks;
-    }
-
-    private Task copyTask(long id) {
-        Task task = manager.getTask(id);
-        Task copy = new Task();
-        copy.setId(task.getId());
-        copy.setTitle(task.getTitle());
-        copy.setDescription(task.getDescription());
-        copy.setStatus(task.getStatus());
-        return copy;
-    }
-
-    private Epic copyEpic(long id) {
-        Epic epic = manager.getEpic(id);
-        Epic copy = new Epic();
-        copy.setId(epic.getId());
-        copy.setTitle(epic.getTitle());
-        copy.setDescription(epic.getDescription());
-        return copy;
-    }
-
-    private Subtask copySubtask(long id) {
-        Subtask subtask = manager.getSubtask(id);
-        Subtask copy = new Subtask();
-        copy.setId(subtask.getId());
-        copy.setEpicId(subtask.getEpicId());
-        copy.setTitle(subtask.getTitle());
-        copy.setDescription(subtask.getDescription());
-        copy.setStatus(subtask.getStatus());
-        return copy;
     }
 }
