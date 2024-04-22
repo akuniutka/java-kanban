@@ -8,32 +8,32 @@ import java.util.List;
 import java.util.Map;
 
 public class InMemoryHistoryManager implements HistoryManager {
-    private final Map<Long, Node> nodes;
+    private final Map<Long, Node> history;
     private Node head;
     private Node tail;
 
     InMemoryHistoryManager() {
-        this.nodes = new HashMap<>();
+        this.history = new HashMap<>();
     }
 
     @Override
     public void add(Task task) {
-        final long id = task.getId();
-        final Node oldNode = nodes.get(id);
-        if (oldNode != null) {
-            removeNode(oldNode);
+        if (task == null) {
+            return;
         }
+        final long id = task.getId();
+        remove(id);
         final Node newNode = linkLast(task);
-        nodes.put(id, newNode);
+        history.put(id, newNode);
     }
 
     @Override
     public void remove(long id) {
-        final Node obsoleteNode = nodes.get(id);
-        if (obsoleteNode != null) {
-            removeNode(obsoleteNode);
-            nodes.remove(id);
+        final Node node = history.remove(id);
+        if (node == null) {
+            return;
         }
+        removeNode(node);
     }
 
     @Override

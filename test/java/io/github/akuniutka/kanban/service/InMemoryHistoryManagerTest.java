@@ -39,6 +39,15 @@ class InMemoryHistoryManagerTest {
     }
 
     @Test
+    public void shouldNotAllowNullTasksEpicsSubtasks() {
+        manager.add(null);
+        List<Task> tasks = manager.getHistory();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertTrue(tasks.isEmpty(), "tasks list should be empty");
+    }
+
+    @Test
     public void shouldKeepTasks() {
         manager.add(testTask);
         List<Task> tasks = manager.getHistory();
