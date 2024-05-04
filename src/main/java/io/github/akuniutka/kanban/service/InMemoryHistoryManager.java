@@ -19,7 +19,7 @@ public class InMemoryHistoryManager implements HistoryManager {
     @Override
     public void add(Task task) {
         if (task == null) {
-            return;
+            throw new NullPointerException("cannot add null to visited tasks history");
         }
         final long id = task.getId();
         remove(id);
