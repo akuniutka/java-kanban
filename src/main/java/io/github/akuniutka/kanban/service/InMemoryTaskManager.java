@@ -5,14 +5,9 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
-    private static final int OK = 0;
-    private static final int WRONG_ARGUMENT = -1;
     private final Map<Long, Task> tasks;
     private final Map<Long, Subtask> subtasks;
     private final Map<Long, Epic> epics;
@@ -52,7 +47,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addTask(Task task) {
         if (task == null) {
-            return WRONG_ARGUMENT;
+            throw new NullPointerException("cannot add null to list of tasks");
         }
         final long id = generateId();
         task.setId(id);
@@ -61,13 +56,15 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public int updateTask(Task task) {
-        if (task == null || !tasks.containsKey(task.getId())) {
-            return WRONG_ARGUMENT;
+    public void updateTask(Task task) {
+        if (task == null) {
+            throw new NullPointerException("cannot apply null update to task");
         }
-        final long id = task.getId();
+        final Long id = task.getId();
+        if (!tasks.containsKey(id)) {
+            throw new NoSuchElementException("no task with id=" + id);
+        }
         tasks.put(id, task);
-        return OK;
     }
 
     @Override
@@ -106,7 +103,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addEpic(Epic epic) {
         if (epic == null) {
-            return WRONG_ARGUMENT;
+            throw new NullPointerException("cannot add null to list of epics");
         }
         final long id = generateId();
         epic.setId(id);
@@ -117,21 +114,20 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public int updateEpic(Epic epic) {
+    public void updateEpic(Epic epic) {
         if (epic == null) {
-            return WRONG_ARGUMENT;
+            throw new NullPointerException("cannot apply null update to epic");
         }
         final Long id = epic.getId();
         final Epic savedEpic = epics.get(id);
         if (savedEpic == null) {
-            return WRONG_ARGUMENT;
+            throw new NoSuchElementException("no epic with id=" + id);
         }
         final List<Long> subtaskIds = savedEpic.getSubtaskIds();
         final TaskStatus status = savedEpic.getStatus();
         epic.setSubtaskIds(subtaskIds);
         epic.setStatus(status);
         epics.put(id, epic);
-        return OK;
     }
 
     @Override
@@ -175,12 +171,12 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addSubtask(Subtask subtask) {
         if (subtask == null) {
-            return WRONG_ARGUMENT;
+            throw new NullPointerException("cannot add null to list of subtasks");
         }
         final Long epicId = subtask.getEpicId();
         final Epic epic = epics.get(epicId);
         if (epic == null) {
-            return WRONG_ARGUMENT;
+            throw new NoSuchElementException("no epic with id=" + epicId);
         }
         final long id = generateId();
         subtask.setId(id);
@@ -191,21 +187,20 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public int updateSubtask(Subtask subtask) {
+    public void updateSubtask(Subtask subtask) {
         if (subtask == null) {
-            return WRONG_ARGUMENT;
+            throw new NullPointerException("cannot apply null update to subtask");
         }
         final Long id = subtask.getId();
         final Subtask savedSubtask = subtasks.get(id);
         if (savedSubtask == null) {
-            return WRONG_ARGUMENT;
+            throw new NoSuchElementException("no subtask with id=" + id);
         }
         final Long epicId = savedSubtask.getEpicId();
         final Epic epic = epics.get(epicId);
         subtask.setEpicId(epicId);
         subtasks.put(id, subtask);
         updateEpicStatus(epic);
-        return OK;
     }
 
     @Override

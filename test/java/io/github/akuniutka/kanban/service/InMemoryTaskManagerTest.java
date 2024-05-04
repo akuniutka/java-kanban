@@ -11,13 +11,13 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InMemoryTaskManagerTest {
-    private static final int OK = 0;
-    private static final int WRONG_ARGUMENT = -1;
+    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
     private TaskManager manager;
     private HistoryManager historyManager;
     private Task emptyTask;
@@ -76,9 +76,10 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotAddNullTask() {
-        long id = manager.addTask(null);
+        String expectedMessage = "cannot add null to list of tasks";
 
-        assertEquals(WRONG_ARGUMENT, id, "null task should not be added");
+        Exception exception = assertThrows(NullPointerException.class, () -> manager.addTask(null));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -100,10 +101,9 @@ class InMemoryTaskManagerTest {
         long id = manager.addTask(testTask);
         modifiedTestTask.setId(id);
 
-        int result = manager.updateTask(modifiedTestTask);
+        manager.updateTask(modifiedTestTask);
         Task savedTask = manager.getTask(id);
 
-        assertEquals(OK, result, "should return 0 when processed task update");
         assertEquals(id, savedTask.getId(), "task id changed");
         assertEquals(MODIFIED_TEST_TITLE, savedTask.getTitle(), "task title not updated");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedTask.getDescription(), "task description not updated");
@@ -115,10 +115,9 @@ class InMemoryTaskManagerTest {
         long id = manager.addTask(testTask);
         emptyTask.setId(id);
 
-        int result = manager.updateTask(emptyTask);
+        manager.updateTask(emptyTask);
         Task savedTask = manager.getTask(id);
 
-        assertEquals(OK, result, "should return 0 when processed task update");
         assertEquals(id, savedTask.getId(), "task id changed");
         assertNull(savedTask.getTitle(), "task title not updated");
         assertNull(savedTask.getDescription(), "task description not updated");
@@ -127,25 +126,28 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotUpdateNullTask() {
-        int result = manager.updateTask(null);
+        String expectedMessage = "cannot apply null update to task";
 
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for null task");
+        Exception exception = assertThrows(NullPointerException.class, () -> manager.updateTask(null));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotUpdateTaskWhenIdNotSet() {
-        int result = manager.updateTask(testTask);
+        String expectedMessage = "no task with id=null";
 
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for task with null id");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.updateTask(testTask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotUpdateNonExistingTask() {
-        testTask.setId(-1L);
+        long taskId = -1L;
+        String expectedMessage = "no task with id=" + taskId;
+        testTask.setId(taskId);
 
-        int result = manager.updateTask(testTask);
-
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for unknown task");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.updateTask(testTask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -182,9 +184,10 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotAddNullEpic() {
-        long id = manager.addEpic(null);
+        String expectedMessage = "cannot add null to list of epics";
 
-        assertEquals(WRONG_ARGUMENT, id, "null epic should not be added");
+        Exception exception = assertThrows(NullPointerException.class, () -> manager.addEpic(null));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -205,10 +208,9 @@ class InMemoryTaskManagerTest {
         long id = manager.addEpic(testEpic);
         modifiedTestEpic.setId(id);
 
-        int result = manager.updateEpic(modifiedTestEpic);
+        manager.updateEpic(modifiedTestEpic);
         Epic savedEpic = manager.getEpic(id);
 
-        assertEquals(OK, result, "should return 0 when processed epic update");
         assertEquals(id, savedEpic.getId(), "epic id changed");
         assertEquals(MODIFIED_TEST_TITLE, savedEpic.getTitle(), "epic title not updated");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedEpic.getDescription(), "epic description not updated");
@@ -219,10 +221,9 @@ class InMemoryTaskManagerTest {
         long id = manager.addEpic(testEpic);
         emptyEpic.setId(id);
 
-        int result = manager.updateEpic(emptyEpic);
+        manager.updateEpic(emptyEpic);
         Epic savedEpic = manager.getEpic(id);
 
-        assertEquals(OK, result, "should return 0 when processed epic update");
         assertEquals(id, savedEpic.getId(), "epic id changed");
         assertNull(savedEpic.getTitle(), "epic title not updated");
         assertNull(savedEpic.getDescription(), "epic description not updated");
@@ -230,25 +231,28 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotUpdateNullEpic() {
-        int result = manager.updateEpic(null);
+        String expectedMessage = "cannot apply null update to epic";
 
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for null epic");
+        Exception exception = assertThrows(NullPointerException.class, () -> manager.updateEpic(null));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotUpdateEpicWhenIdNotSet() {
-        int result = manager.updateEpic(testEpic);
+        String expectedMessage = "no epic with id=null";
 
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for epic with null id");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.updateEpic(testEpic));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotUpdateNonExistingEpic() {
-        testEpic.setId(-1L);
+        long id = -1L;
+        String expectedMessage = "no epic with id=" + id;
+        testEpic.setId(id);
 
-        int result = manager.updateEpic(testEpic);
-
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for unknown epic");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.updateEpic(testEpic));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @ParameterizedTest
@@ -523,9 +527,10 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotAddNullSubtask() {
-        long id = manager.addSubtask(null);
+        String expectedMessage = "cannot add null to list of subtasks";
 
-        assertEquals(WRONG_ARGUMENT, id, "null subtask should not be added");
+        Exception exception = assertThrows(NullPointerException.class, () -> manager.addSubtask(null));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -550,29 +555,30 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotAddSubtaskToNull() {
-        long id = manager.addSubtask(testSubtask);
+        String expectedMessage = "no epic with id=null";
 
-        assertEquals(WRONG_ARGUMENT, id, "subtask with null epic id should not be added");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotAddSubtaskToNotExistingEpic() {
         long epicId = -1L;
+        String expectedMessage = "no epic with id=" + epicId;
         testSubtask.setEpicId(epicId);
 
-        long id = manager.addSubtask(testSubtask);
-
-        assertEquals(WRONG_ARGUMENT, id, "subtask should not be added when epic does not exist");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotAddSubtaskToTask() {
         long taskId = manager.addTask(testTask);
+        String expectedMessage = "no epic with id=" + taskId;
         testSubtask.setEpicId(taskId);
 
-        long id = manager.addSubtask(testSubtask);
-
-        assertEquals(WRONG_ARGUMENT, id, "subtask should not be added to regular task");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -580,11 +586,11 @@ class InMemoryTaskManagerTest {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         long subtaskId = manager.addSubtask(testSubtask);
+        String expectedMessage = "no epic with id=" + subtaskId;
         modifiedTestSubtask.setEpicId(subtaskId);
 
-        long id = manager.addSubtask(modifiedTestSubtask);
-
-        assertEquals(WRONG_ARGUMENT, id, "subtask should not be added to subtask");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.addSubtask(modifiedTestSubtask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -594,10 +600,9 @@ class InMemoryTaskManagerTest {
         long id = manager.addSubtask(testSubtask);
         modifiedTestSubtask.setId(id);
 
-        int result = manager.updateSubtask(modifiedTestSubtask);
+        manager.updateSubtask(modifiedTestSubtask);
         Subtask savedSubtask = manager.getSubtask(id);
 
-        assertEquals(OK, result, "should return 0 when processed subtask update");
         assertEquals(id, savedSubtask.getId(), "subtask id changed");
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title not updated");
@@ -612,10 +617,9 @@ class InMemoryTaskManagerTest {
         long id = manager.addSubtask(testSubtask);
         emptySubtask.setId(id);
 
-        int result = manager.updateSubtask(emptySubtask);
+        manager.updateSubtask(emptySubtask);
         Subtask savedSubtask = manager.getSubtask(id);
 
-        assertEquals(OK, result, "should return 0 when processed subtask update");
         assertEquals(id, savedSubtask.getId(), "subtask id changed");
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertNull(savedSubtask.getTitle(), "subtask title not updated");
@@ -625,30 +629,32 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotUpdateNullSubtask() {
-        int result = manager.updateSubtask(null);
+        String expectedMessage = "cannot apply null update to subtask";
 
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for null subtask");
+        Exception exception = assertThrows(NullPointerException.class, () -> manager.updateSubtask(null));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotUpdateSubtaskWhenIdNotSet() {
+        String expectedMessage = "no subtask with id=null";
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
 
-        int result = manager.updateSubtask(testSubtask);
-
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for subtask with null id");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotUpdateNonExistingSubtask() {
+        long id = -1L;
+        String expectedMessage = "no subtask with id=" + id;
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
-        testSubtask.setId(-1L);
+        testSubtask.setId(id);
 
-        int result = manager.updateSubtask(testSubtask);
-
-        assertEquals(WRONG_ARGUMENT, result, "should not process update for unknown subtask");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
