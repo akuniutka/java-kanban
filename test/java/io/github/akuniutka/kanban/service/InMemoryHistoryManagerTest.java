@@ -41,6 +41,7 @@ class InMemoryHistoryManagerTest {
     @Test
     public void shouldNotAllowNullTasksEpicsSubtasks() {
         String expectedMessage = "cannot add null to visited tasks history";
+
         Exception exception = assertThrows(NullPointerException.class, () -> manager.add(null));
         assertEquals(expectedMessage, exception.getMessage(), "message for exception is wrong");
     }
