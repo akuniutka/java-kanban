@@ -12,8 +12,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static io.github.akuniutka.kanban.TestModels.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class InMemoryTaskManagerTest {
     private static final int OK = 0;
@@ -22,21 +22,27 @@ class InMemoryTaskManagerTest {
     private HistoryManager historyManager;
     private Task emptyTask;
     private Task testTask;
+    private Task modifiedTestTask;
     private Epic emptyEpic;
     private Epic testEpic;
+    private Epic modifiedTestEpic;
     private Subtask emptySubtask;
     private Subtask testSubtask;
+    private Subtask modifiedTestSubtask;
 
     @BeforeEach
     public void setUp() {
         historyManager = new InMemoryHistoryManager();
         manager = new InMemoryTaskManager(historyManager);
         emptyTask = createTestTask();
-        testTask = createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        testTask = createTaskFilledWithTestData();
+        modifiedTestTask = createTestTask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
         emptyEpic = createTestEpic();
-        testEpic = createTestEpic(TEST_TITLE, TEST_DESCRIPTION);
+        testEpic = createEpicFilledWithTestData();
+        modifiedTestEpic = createTestEpic(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION);
         emptySubtask = createTestSubtask();
         testSubtask = createTestSubtask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        modifiedTestSubtask = createTestSubtask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
     }
 
     @Test
@@ -57,6 +63,18 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldAllowAddTaskWithNullFields() {
+        long id = manager.addTask(emptyTask);
+        Task savedTask = manager.getTask(id);
+
+        assertNotNull(savedTask, "task not found");
+        assertEquals(id, savedTask.getId(), "task id differs from returned by manager class");
+        assertNull(savedTask.getTitle(), "task title changed");
+        assertNull(savedTask.getDescription(), "task description changed");
+        assertNull(savedTask.getStatus(), "task status changed");
+    }
+
+    @Test
     public void shouldNotAddNullTask() {
         long id = manager.addTask(null);
 
@@ -66,8 +84,8 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldNotOverwriteExistingTaskWhenAddingNewOne() {
         long id = manager.addTask(testTask);
-        emptyTask.setId(id);
-        long anotherId = manager.addTask(emptyTask);
+        modifiedTestTask.setId(id);
+        long anotherId = manager.addTask(modifiedTestTask);
         Task savedTask = manager.getTask(id);
 
         assertNotEquals(id, anotherId, "new task should have new id");
@@ -79,17 +97,32 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldUpdateTask() {
-        long id = manager.addTask(emptyTask);
-        testTask.setId(id);
+        long id = manager.addTask(testTask);
+        modifiedTestTask.setId(id);
 
-        int result = manager.updateTask(testTask);
+        int result = manager.updateTask(modifiedTestTask);
         Task savedTask = manager.getTask(id);
 
         assertEquals(OK, result, "should return 0 when processed task update");
         assertEquals(id, savedTask.getId(), "task id changed");
-        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title not updated");
-        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description not updated");
-        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status not updated");
+        assertEquals(MODIFIED_TEST_TITLE, savedTask.getTitle(), "task title not updated");
+        assertEquals(MODIFIED_TEST_DESCRIPTION, savedTask.getDescription(), "task description not updated");
+        assertEquals(MODIFIED_TEST_STATUS, savedTask.getStatus(), "task status not updated");
+    }
+
+    @Test
+    public void shouldAllowUpdateTaskFieldsToNull() {
+        long id = manager.addTask(testTask);
+        emptyTask.setId(id);
+
+        int result = manager.updateTask(emptyTask);
+        Task savedTask = manager.getTask(id);
+
+        assertEquals(OK, result, "should return 0 when processed task update");
+        assertEquals(id, savedTask.getId(), "task id changed");
+        assertNull(savedTask.getTitle(), "task title not updated");
+        assertNull(savedTask.getDescription(), "task description not updated");
+        assertNull(savedTask.getStatus(), "task status not updated");
     }
 
     @Test
@@ -137,6 +170,17 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldAllowAddEpicWithNullFields() {
+        long id = manager.addEpic(emptyEpic);
+        Epic savedEpic = manager.getEpic(id);
+
+        assertNotNull(savedEpic, "epic not found");
+        assertEquals(id, savedEpic.getId(), "epic id differs from returned by manager");
+        assertNull(savedEpic.getTitle(), "epic title changed");
+        assertNull(savedEpic.getDescription(), "epic description changed");
+    }
+
+    @Test
     public void shouldNotAddNullEpic() {
         long id = manager.addEpic(null);
 
@@ -146,8 +190,8 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldNotOverwriteExistingEpicWhenAddingNewOne() {
         long id = manager.addEpic(testEpic);
-        emptyEpic.setId(id);
-        long anotherId = manager.addEpic(emptyEpic);
+        modifiedTestEpic.setId(id);
+        long anotherId = manager.addEpic(modifiedTestEpic);
         Epic savedEpic = manager.getEpic(id);
 
         assertNotEquals(id, anotherId, "new epic should have new id");
@@ -158,16 +202,30 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldUpdateEpic() {
-        long id = manager.addEpic(emptyEpic);
-        testEpic.setId(id);
+        long id = manager.addEpic(testEpic);
+        modifiedTestEpic.setId(id);
 
-        int result = manager.updateEpic(testEpic);
+        int result = manager.updateEpic(modifiedTestEpic);
         Epic savedEpic = manager.getEpic(id);
 
         assertEquals(OK, result, "should return 0 when processed epic update");
         assertEquals(id, savedEpic.getId(), "epic id changed");
-        assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title not updated");
-        assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description not updated");
+        assertEquals(MODIFIED_TEST_TITLE, savedEpic.getTitle(), "epic title not updated");
+        assertEquals(MODIFIED_TEST_DESCRIPTION, savedEpic.getDescription(), "epic description not updated");
+    }
+
+    @Test
+    public void shouldAllowUpdateEpicFieldsToNull() {
+        long id = manager.addEpic(testEpic);
+        emptyEpic.setId(id);
+
+        int result = manager.updateEpic(emptyEpic);
+        Epic savedEpic = manager.getEpic(id);
+
+        assertEquals(OK, result, "should return 0 when processed epic update");
+        assertEquals(id, savedEpic.getId(), "epic id changed");
+        assertNull(savedEpic.getTitle(), "epic title not updated");
+        assertNull(savedEpic.getDescription(), "epic description not updated");
     }
 
     @Test
@@ -196,13 +254,13 @@ class InMemoryTaskManagerTest {
     @ParameterizedTest
     @EnumSource(TaskStatus.class)
     public void shouldNotChangeEpicStatusByEpicUpdate(TaskStatus status) {
-        long id = manager.addEpic(emptyEpic);
+        long id = manager.addEpic(testEpic);
         testSubtask.setEpicId(id);
         testSubtask.setStatus(status);
         manager.addSubtask(testSubtask);
 
         for (TaskStatus newStatus : TaskStatus.values()) {
-            Epic epicUpdate = new Epic();
+            Epic epicUpdate = createEpicFilledWithTestData();
             epicUpdate.setId(id);
             epicUpdate.setStatus(newStatus);
 
@@ -242,11 +300,11 @@ class InMemoryTaskManagerTest {
         long id = manager.addEpic(testEpic);
         testSubtask.setEpicId(id);
         testSubtask.setStatus(TaskStatus.NEW);
-        emptySubtask.setEpicId(id);
-        emptySubtask.setStatus(TaskStatus.NEW);
+        modifiedTestSubtask.setEpicId(id);
+        modifiedTestSubtask.setStatus(TaskStatus.NEW);
 
         manager.addSubtask(testSubtask);
-        manager.addSubtask(emptySubtask);
+        manager.addSubtask(modifiedTestSubtask);
         Epic savedEpic = manager.getEpic(id);
 
         assertEquals(TaskStatus.NEW, savedEpic.getStatus(),
@@ -256,19 +314,17 @@ class InMemoryTaskManagerTest {
     @ParameterizedTest
     @EnumSource(TaskStatus.class)
     public void shouldSetEpicToStatusNewWhenAllSubtasksSetToStatusNew(TaskStatus status) {
-        long id = manager.addEpic(testEpic);
-        testSubtask.setEpicId(id);
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
         testSubtask.setStatus(TaskStatus.NEW);
         manager.addSubtask(testSubtask);
-        emptySubtask.setEpicId(id);
-        emptySubtask.setStatus(status);
-        long subtaskId = manager.addSubtask(emptySubtask);
-        Subtask subtaskUpdate = new Subtask();
-        subtaskUpdate.setId(subtaskId);
-        subtaskUpdate.setStatus(TaskStatus.NEW);
+        modifiedTestSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setStatus(status);
+        long subtaskId = manager.addSubtask(modifiedTestSubtask);
+        Subtask subtaskUpdate = createTestSubtask(subtaskId, epicId, TEST_TITLE, TEST_DESCRIPTION, TaskStatus.NEW);
 
         manager.updateSubtask(subtaskUpdate);
-        Epic savedEpic = manager.getEpic(id);
+        Epic savedEpic = manager.getEpic(epicId);
 
         assertEquals(TaskStatus.NEW, savedEpic.getStatus(),
                 "epic should have status NEW when all subtasks have status NEW");
@@ -277,20 +333,18 @@ class InMemoryTaskManagerTest {
     @ParameterizedTest
     @EnumSource(TaskStatus.class)
     public void shouldSetEpicToStatusNewWhenAllSubtasksLeftHaveStatusNew(TaskStatus status) {
-        long id = manager.addEpic(testEpic);
-        testSubtask.setEpicId(id);
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
         testSubtask.setStatus(TaskStatus.NEW);
         manager.addSubtask(testSubtask);
-        emptySubtask.setEpicId(id);
-        emptySubtask.setStatus(TaskStatus.NEW);
-        manager.addSubtask(emptySubtask);
-        Subtask subtask = new Subtask();
-        subtask.setEpicId(id);
-        subtask.setStatus(status);
+        modifiedTestSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setStatus(TaskStatus.NEW);
+        manager.addSubtask(modifiedTestSubtask);
+        Subtask subtask = createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, status);
         long subtaskId = manager.addSubtask(subtask);
 
         manager.removeSubtask(subtaskId);
-        Epic savedEpic = manager.getEpic(id);
+        Epic savedEpic = manager.getEpic(epicId);
 
         assertEquals(TaskStatus.NEW, savedEpic.getStatus(),
                 "epic should have status NEW when all subtasks have status NEW");
@@ -298,15 +352,15 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldSetEpicToStatusDoneWhenAllSubtasksHaveStatusDone() {
-        long id = manager.addEpic(testEpic);
-        testSubtask.setEpicId(id);
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
         testSubtask.setStatus(TaskStatus.DONE);
-        emptySubtask.setEpicId(id);
-        emptySubtask.setStatus(TaskStatus.DONE);
+        modifiedTestSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setStatus(TaskStatus.DONE);
 
         manager.addSubtask(testSubtask);
-        manager.addSubtask(emptySubtask);
-        Epic savedEpic = manager.getEpic(id);
+        manager.addSubtask(modifiedTestSubtask);
+        Epic savedEpic = manager.getEpic(epicId);
 
         assertEquals(TaskStatus.DONE, savedEpic.getStatus(),
                 "epic should have status DONE when all subtasks have status DONE");
@@ -315,19 +369,17 @@ class InMemoryTaskManagerTest {
     @ParameterizedTest
     @EnumSource(TaskStatus.class)
     public void shouldSetEpicToStatusDoneWhenAllSubtasksSetToStatusDone(TaskStatus status) {
-        long id = manager.addEpic(testEpic);
-        testSubtask.setEpicId(id);
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
         testSubtask.setStatus(TaskStatus.DONE);
         manager.addSubtask(testSubtask);
-        emptySubtask.setEpicId(id);
-        emptySubtask.setStatus(status);
-        long subtaskId = manager.addSubtask(emptySubtask);
-        Subtask subtaskUpdate = new Subtask();
-        subtaskUpdate.setId(subtaskId);
-        subtaskUpdate.setStatus(TaskStatus.DONE);
+        modifiedTestSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setStatus(status);
+        long subtaskId = manager.addSubtask(modifiedTestSubtask);
+        Subtask subtaskUpdate = createTestSubtask(subtaskId, epicId, TEST_TITLE, TEST_DESCRIPTION, TaskStatus.DONE);
 
         manager.updateSubtask(subtaskUpdate);
-        Epic savedEpic = manager.getEpic(id);
+        Epic savedEpic = manager.getEpic(epicId);
 
         assertEquals(TaskStatus.DONE, savedEpic.getStatus(),
                 "epic should have status DONE when all subtasks have status DONE");
@@ -336,20 +388,18 @@ class InMemoryTaskManagerTest {
     @ParameterizedTest
     @EnumSource(TaskStatus.class)
     public void shouldSetEpicToStatusDoneWhenAllSubtasksLeftHaveStatusDone(TaskStatus status) {
-        long id = manager.addEpic(testEpic);
-        testSubtask.setEpicId(id);
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
         testSubtask.setStatus(TaskStatus.DONE);
         manager.addSubtask(testSubtask);
-        emptySubtask.setEpicId(id);
-        emptySubtask.setStatus(TaskStatus.DONE);
-        manager.addSubtask(emptySubtask);
-        Subtask subtask = new Subtask();
-        subtask.setEpicId(id);
-        subtask.setStatus(status);
+        modifiedTestSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setStatus(TaskStatus.DONE);
+        manager.addSubtask(modifiedTestSubtask);
+        Subtask subtask = createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, status);
         long subtaskId = manager.addSubtask(subtask);
 
         manager.removeSubtask(subtaskId);
-        Epic savedEpic = manager.getEpic(id);
+        Epic savedEpic = manager.getEpic(epicId);
 
         assertEquals(TaskStatus.DONE, savedEpic.getStatus(),
                 "epic should have status DONE when all subtasks have status DONE");
@@ -362,15 +412,15 @@ class InMemoryTaskManagerTest {
             if (statusA == statusB && statusA != TaskStatus.IN_PROGRESS) {
                 continue;
             }
-            long id = manager.addEpic(new Epic());
-            testSubtask.setEpicId(id);
+            long epicId = manager.addEpic(createEpicFilledWithTestData());
+            testSubtask.setEpicId(epicId);
             testSubtask.setStatus(statusA);
-            emptySubtask.setEpicId(id);
-            emptySubtask.setStatus(statusB);
+            modifiedTestSubtask.setEpicId(epicId);
+            modifiedTestSubtask.setStatus(statusB);
 
             manager.addSubtask(testSubtask);
-            manager.addSubtask(emptySubtask);
-            Epic savedEpic = manager.getEpic(id);
+            manager.addSubtask(modifiedTestSubtask);
+            Epic savedEpic = manager.getEpic(epicId);
 
             assertEquals(TaskStatus.IN_PROGRESS, savedEpic.getStatus(), "epic should have status IN_PROGRESS when "
                     + "not empty and neither all subtasks have status NEW nor all subtasks have status DONE");
@@ -380,24 +430,22 @@ class InMemoryTaskManagerTest {
     @ParameterizedTest
     @EnumSource(TaskStatus.class)
     public void shouldSetEpicToStatusInProgressWhenNotAllSubtasksSetToStatusNewNeitherDone(TaskStatus statusB) {
-        long id = manager.addEpic(testEpic);
-        testSubtask.setEpicId(id);
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
         testSubtask.setStatus(statusB);
         long subtaskId = manager.addSubtask(testSubtask);
-        emptySubtask.setEpicId(id);
-        emptySubtask.setStatus(statusB);
-        manager.addSubtask(emptySubtask);
+        modifiedTestSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setStatus(statusB);
+        manager.addSubtask(modifiedTestSubtask);
 
         for (TaskStatus statusA : TaskStatus.values()) {
             if (statusA == statusB && statusA != TaskStatus.IN_PROGRESS) {
                 continue;
             }
-            Subtask subtaskUpdate = new Subtask();
-            subtaskUpdate.setId(subtaskId);
-            subtaskUpdate.setStatus(statusA);
+            Subtask subtaskUpdate = createTestSubtask(subtaskId, epicId, TEST_TITLE, TEST_DESCRIPTION, statusA);
 
             manager.updateSubtask(subtaskUpdate);
-            Epic savedEpic = manager.getEpic(id);
+            Epic savedEpic = manager.getEpic(epicId);
 
             assertEquals(TaskStatus.IN_PROGRESS, savedEpic.getStatus(), "epic should have status IN_PROGRESS when "
                     + "not empty and neither all subtasks have status NEW nor all subtasks have status DONE");
@@ -412,20 +460,18 @@ class InMemoryTaskManagerTest {
                 if (statusA == statusB && statusB != TaskStatus.IN_PROGRESS) {
                     continue;
                 }
-                long id = manager.addEpic(new Epic());
-                testSubtask.setEpicId(id);
+                long epicId = manager.addEpic(createEpicFilledWithTestData());
+                testSubtask.setEpicId(epicId);
                 testSubtask.setStatus(statusA);
                 manager.addSubtask(testSubtask);
-                emptySubtask.setEpicId(id);
-                emptySubtask.setStatus(statusB);
-                manager.addSubtask(emptySubtask);
-                Subtask subtask = new Subtask();
-                subtask.setEpicId(id);
-                subtask.setStatus(statusC);
+                modifiedTestSubtask.setEpicId(epicId);
+                modifiedTestSubtask.setStatus(statusB);
+                manager.addSubtask(modifiedTestSubtask);
+                Subtask subtask = createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, statusC);
                 long subtaskId = manager.addSubtask(subtask);
 
                 manager.removeSubtask(subtaskId);
-                Epic savedEpic = manager.getEpic(id);
+                Epic savedEpic = manager.getEpic(epicId);
 
                 assertEquals(TaskStatus.IN_PROGRESS, savedEpic.getStatus(), "epic should have status IN_PROGRESS when "
                         + "not empty and neither all subtasks have status NEW nor all subtasks have status DONE");
@@ -460,6 +506,22 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldAllowAddSubtaskWithNullFields() {
+        long epicId = manager.addEpic(testEpic);
+        emptySubtask.setEpicId(epicId);
+
+        long id = manager.addSubtask(emptySubtask);
+        Subtask savedSubtask = manager.getSubtask(id);
+
+        assertNotNull(savedSubtask, "subtask not found");
+        assertEquals(id, savedSubtask.getId(), "subtask id differs from returned by manager");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
+        assertNull(savedSubtask.getTitle(), "subtask title changed");
+        assertNull(savedSubtask.getDescription(), "subtask description changed");
+        assertNull(savedSubtask.getStatus(), "subtask status changed");
+    }
+
+    @Test
     public void shouldNotAddNullSubtask() {
         long id = manager.addSubtask(null);
 
@@ -469,13 +531,13 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldNotOverwriteExistingSubtaskWhenAddingNewOne() {
         long epicId = manager.addEpic(testEpic);
-        long anotherEpicId = manager.addEpic(emptyEpic);
+        long anotherEpicId = manager.addEpic(modifiedTestEpic);
         testSubtask.setEpicId(epicId);
-        emptySubtask.setEpicId(anotherEpicId);
+        modifiedTestSubtask.setEpicId(anotherEpicId);
 
         long id = manager.addSubtask(testSubtask);
-        emptySubtask.setId(id);
-        long anotherId = manager.addSubtask(emptySubtask);
+        modifiedTestSubtask.setId(id);
+        long anotherId = manager.addSubtask(modifiedTestSubtask);
         Subtask savedSubtask = manager.getSubtask(id);
 
         assertNotEquals(id, anotherId, "new subtask should have new id");
@@ -488,7 +550,9 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotAddSubtaskToNull() {
-        assertTrue(manager.addSubtask(testSubtask) < 0L, "subtask with null epic id should not be added");
+        long id = manager.addSubtask(testSubtask);
+
+        assertEquals(WRONG_ARGUMENT, id, "subtask with null epic id should not be added");
     }
 
     @Test
@@ -496,7 +560,9 @@ class InMemoryTaskManagerTest {
         long epicId = -1L;
         testSubtask.setEpicId(epicId);
 
-        assertTrue(manager.addSubtask(testSubtask) < 0L, "subtask should not be added when epic does not exist");
+        long id = manager.addSubtask(testSubtask);
+
+        assertEquals(WRONG_ARGUMENT, id, "subtask should not be added when epic does not exist");
     }
 
     @Test
@@ -504,35 +570,57 @@ class InMemoryTaskManagerTest {
         long taskId = manager.addTask(testTask);
         testSubtask.setEpicId(taskId);
 
-        assertTrue(manager.addSubtask(testSubtask) < 0L, "subtask should not be added to regular task");
+        long id = manager.addSubtask(testSubtask);
+
+        assertEquals(WRONG_ARGUMENT, id, "subtask should not be added to regular task");
     }
 
     @Test
     public void shouldNotAddSubtaskToSubtask() {
         long epicId = manager.addEpic(testEpic);
-        emptySubtask.setEpicId(epicId);
-        long subtaskId = manager.addSubtask(emptySubtask);
-        testSubtask.setEpicId(subtaskId);
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        modifiedTestSubtask.setEpicId(subtaskId);
 
-        assertTrue(manager.addSubtask(testSubtask) < 0L, "subtask should not be added to subtask");
+        long id = manager.addSubtask(modifiedTestSubtask);
+
+        assertEquals(WRONG_ARGUMENT, id, "subtask should not be added to subtask");
     }
 
     @Test
     public void shouldUpdateSubtask() {
         long epicId = manager.addEpic(testEpic);
-        emptySubtask.setEpicId(epicId);
-        long id = manager.addSubtask(emptySubtask);
-        testSubtask.setId(id);
+        testSubtask.setEpicId(epicId);
+        long id = manager.addSubtask(testSubtask);
+        modifiedTestSubtask.setId(id);
 
-        int result = manager.updateSubtask(testSubtask);
+        int result = manager.updateSubtask(modifiedTestSubtask);
         Subtask savedSubtask = manager.getSubtask(id);
 
         assertEquals(OK, result, "should return 0 when processed subtask update");
         assertEquals(id, savedSubtask.getId(), "subtask id changed");
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
-        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title not updated");
-        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description not updated");
-        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status not updated");
+        assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title not updated");
+        assertEquals(MODIFIED_TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description not updated");
+        assertEquals(MODIFIED_TEST_STATUS, savedSubtask.getStatus(), "subtask status not updated");
+    }
+
+    @Test
+    public void shouldAllowUpdateSubtaskFieldsToNull() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        long id = manager.addSubtask(testSubtask);
+        emptySubtask.setId(id);
+
+        int result = manager.updateSubtask(emptySubtask);
+        Subtask savedSubtask = manager.getSubtask(id);
+
+        assertEquals(OK, result, "should return 0 when processed subtask update");
+        assertEquals(id, savedSubtask.getId(), "subtask id changed");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
+        assertNull(savedSubtask.getTitle(), "subtask title not updated");
+        assertNull(savedSubtask.getDescription(), "subtask description not updated");
+        assertNull(savedSubtask.getStatus(), "subtask status not updated");
     }
 
     @Test
@@ -544,6 +632,9 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotUpdateSubtaskWhenIdNotSet() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+
         int result = manager.updateSubtask(testSubtask);
 
         assertEquals(WRONG_ARGUMENT, result, "should not process update for subtask with null id");
@@ -551,7 +642,9 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotUpdateNonExistingSubtask() {
-        testTask.setId(-1L);
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        testSubtask.setId(-1L);
 
         int result = manager.updateSubtask(testSubtask);
 
@@ -585,7 +678,7 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldReturnSubtasksOfEpic() {
         long epicId = manager.addEpic(testEpic);
-        long anotherEpicId = manager.addEpic(emptyEpic);
+        long anotherEpicId = manager.addEpic(modifiedTestEpic);
         Subtask subtaskA = createSubtaskFilledWithTestDataAndEpicId(epicId);
         Subtask subtaskB = createSubtaskFilledWithTestDataAndEpicId(epicId);
         Subtask subtaskC = createSubtaskFilledWithTestDataAndEpicId(epicId);
@@ -604,15 +697,15 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldNotChangeEpicSubtasksListByEpicUpdate() {
-        long id = manager.addEpic(emptyEpic);
+        long id = manager.addEpic(testEpic);
         testSubtask.setEpicId(id);
-        emptySubtask.setEpicId(id);
+        modifiedTestSubtask.setEpicId(id);
         long subtaskIdA = manager.addSubtask(testSubtask);
-        long subtaskIdB = manager.addSubtask(emptySubtask);
+        long subtaskIdB = manager.addSubtask(modifiedTestSubtask);
         List<Subtask> expectedSubtaskList = createListOfSubtasksWithPresetIds(subtaskIdA, subtaskIdB);
-        testEpic.setId(id);
+        modifiedTestEpic.setId(id);
 
-        manager.updateEpic(testEpic);
+        manager.updateEpic(modifiedTestEpic);
         List<Subtask> actualSubtaskList = manager.getEpicSubtasks(id);
 
         assertEquals(expectedSubtaskList, actualSubtaskList, "epic update should change list of epic subtasks");
@@ -620,13 +713,16 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldReturnListOfTasks() {
-        long taskIdA = manager.addTask(new Task());
-        long taskIdB = manager.addTask(new Task());
-        long taskIdC = manager.addTask(new Task());
+        Task taskA = createTaskFilledWithTestData();
+        Task taskB = createTaskFilledWithTestData();
+        Task taskC = createTaskFilledWithTestData();
+        long taskIdA = manager.addTask(taskA);
+        long taskIdB = manager.addTask(taskB);
+        long taskIdC = manager.addTask(taskC);
         manager.removeTask(taskIdB);
         testTask.setId(taskIdA);
-        emptyTask.setId(taskIdC);
-        List<Task> expectedTaskList = List.of(testTask, emptyTask);
+        modifiedTestTask.setId(taskIdC);
+        List<Task> expectedTaskList = List.of(testTask, modifiedTestTask);
 
         List<Task> actualTaskList = manager.getTasks();
 
@@ -636,7 +732,7 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldRemoveAllTasks() {
         manager.addTask(testTask);
-        manager.addTask(emptyTask);
+        manager.addTask(modifiedTestTask);
 
         manager.removeTasks();
         List<Task> tasks = manager.getTasks();
@@ -646,13 +742,16 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldReturnListOfEpics() {
-        long epicIdA = manager.addEpic(new Epic());
-        long epicIdB = manager.addEpic(new Epic());
-        long epicIdC = manager.addEpic(new Epic());
+        Epic epicA = createEpicFilledWithTestData();
+        Epic epicB = createEpicFilledWithTestData();
+        Epic epicC = createEpicFilledWithTestData();
+        long epicIdA = manager.addEpic(epicA);
+        long epicIdB = manager.addEpic(epicB);
+        long epicIdC = manager.addEpic(epicC);
         manager.removeEpic(epicIdB);
         testEpic.setId(epicIdA);
-        emptyEpic.setId(epicIdC);
-        List<Epic> expectedEpicList = List.of(testEpic, emptyEpic);
+        modifiedTestEpic.setId(epicIdC);
+        List<Epic> expectedEpicList = List.of(testEpic, modifiedTestEpic);
 
         List<Epic> actualEpicList = manager.getEpics();
 
@@ -662,7 +761,7 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldRemoveAllEpics() {
         manager.addEpic(testEpic);
-        manager.addEpic(emptyEpic);
+        manager.addEpic(modifiedTestEpic);
 
         manager.removeEpics();
         List<Epic> epics = manager.getEpics();
@@ -673,7 +772,7 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldReturnListOfSubtasks() {
         long epicId = manager.addEpic(testEpic);
-        long anotherEpicId = manager.addEpic(emptyEpic);
+        long anotherEpicId = manager.addEpic(modifiedTestEpic);
         Subtask subtaskA = createSubtaskFilledWithTestDataAndEpicId(epicId);
         Subtask subtaskB = createSubtaskFilledWithTestDataAndEpicId(epicId);
         Subtask subtaskC = createSubtaskFilledWithTestDataAndEpicId(epicId);
@@ -695,9 +794,9 @@ class InMemoryTaskManagerTest {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         manager.addSubtask(testSubtask);
-        long anotherEpicId = manager.addEpic(emptyEpic);
-        emptySubtask.setEpicId(anotherEpicId);
-        manager.addSubtask(emptySubtask);
+        long anotherEpicId = manager.addEpic(modifiedTestEpic);
+        modifiedTestSubtask.setEpicId(anotherEpicId);
+        manager.addSubtask(modifiedTestSubtask);
 
         manager.removeSubtasks();
         List<Subtask> subtasks = manager.getSubtasks();
@@ -710,9 +809,9 @@ class InMemoryTaskManagerTest {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         manager.addSubtask(testSubtask);
-        long anotherEpicId = manager.addEpic(emptyEpic);
-        emptySubtask.setEpicId(anotherEpicId);
-        manager.addSubtask(emptySubtask);
+        long anotherEpicId = manager.addEpic(modifiedTestEpic);
+        modifiedTestSubtask.setEpicId(anotherEpicId);
+        manager.addSubtask(modifiedTestSubtask);
 
         manager.removeEpics();
         List<Subtask> subtasks = manager.getSubtasks();
@@ -725,9 +824,9 @@ class InMemoryTaskManagerTest {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         manager.addSubtask(testSubtask);
-        long anotherEpicId = manager.addEpic(emptyEpic);
-        emptySubtask.setEpicId(anotherEpicId);
-        manager.addSubtask(emptySubtask);
+        long anotherEpicId = manager.addEpic(modifiedTestEpic);
+        modifiedTestSubtask.setEpicId(anotherEpicId);
+        manager.addSubtask(modifiedTestSubtask);
 
         manager.removeSubtasks();
         List<Subtask> actualSubtaskListA = manager.getEpicSubtasks(epicId);
@@ -857,12 +956,12 @@ class InMemoryTaskManagerTest {
 
     @Test
     public void shouldRemoveSubtaskOfEpicFromHistory() {
-        final long epicId = manager.addEpic(emptyEpic);
-        emptySubtask.setEpicId(epicId);
-        final long idA = manager.addSubtask(emptySubtask);
-        final long anotherEpicId = manager.addEpic(testEpic);
-        testSubtask.setEpicId(anotherEpicId);
-        final long idB = manager.addSubtask(testSubtask);
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        final long idA = manager.addSubtask(testSubtask);
+        final long anotherEpicId = manager.addEpic(modifiedTestEpic);
+        modifiedTestSubtask.setEpicId(anotherEpicId);
+        final long idB = manager.addSubtask(modifiedTestSubtask);
         manager.getSubtask(idA);
         manager.getSubtask(idB);
 
@@ -874,15 +973,15 @@ class InMemoryTaskManagerTest {
         Subtask savedSubtask = (Subtask) tasks.getFirst();
         assertEquals(idB, savedSubtask.getId(), "subtask id should not change");
         assertEquals(anotherEpicId, savedSubtask.getEpicId(), "epic id of status should not change");
-        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
-        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
-        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(MODIFIED_TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(MODIFIED_TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
     }
 
     @Test
     public void shouldRemoveAllTasksFromHistory() {
         final long idA = manager.addTask(testTask);
-        final long idB = manager.addTask(emptyTask);
+        final long idB = manager.addTask(modifiedTestTask);
         manager.getTask(idA);
         manager.getTask(idB);
 
@@ -895,7 +994,7 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldRemoveAllEpicsFromHistory() {
         final long idA = manager.addEpic(testEpic);
-        final long idB = manager.addEpic(emptyEpic);
+        final long idB = manager.addEpic(modifiedTestEpic);
         manager.getEpic(idA);
         manager.getEpic(idB);
 
@@ -910,9 +1009,9 @@ class InMemoryTaskManagerTest {
         final long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         final long idA = manager.addSubtask(testSubtask);
-        final long anotherEpicId = manager.addEpic(emptyEpic);
-        emptySubtask.setEpicId(anotherEpicId);
-        final long idB = manager.addSubtask(emptySubtask);
+        final long anotherEpicId = manager.addEpic(modifiedTestEpic);
+        modifiedTestSubtask.setEpicId(anotherEpicId);
+        final long idB = manager.addSubtask(modifiedTestSubtask);
         manager.getSubtask(idA);
         manager.getSubtask(idB);
 
@@ -927,9 +1026,9 @@ class InMemoryTaskManagerTest {
         final long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         final long idA = manager.addSubtask(testSubtask);
-        final long anotherEpicId = manager.addEpic(emptyEpic);
-        emptySubtask.setEpicId(anotherEpicId);
-        final long idB = manager.addSubtask(emptySubtask);
+        final long anotherEpicId = manager.addEpic(modifiedTestEpic);
+        modifiedTestSubtask.setEpicId(anotherEpicId);
+        final long idB = manager.addSubtask(modifiedTestSubtask);
         manager.getSubtask(idA);
         manager.getSubtask(idB);
 
@@ -937,6 +1036,14 @@ class InMemoryTaskManagerTest {
         List<Task> tasks = historyManager.getHistory();
 
         assertTrue(tasks.isEmpty());
+    }
+
+    private Task createTaskFilledWithTestData() {
+        return createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+    }
+
+    private Epic createEpicFilledWithTestData() {
+        return createTestEpic(TEST_TITLE, TEST_DESCRIPTION);
     }
 
     private Subtask createSubtaskFilledWithTestDataAndEpicId(long epicId) {
