@@ -46,9 +46,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public long addTask(Task task) {
-        if (task == null) {
-            throw new NullPointerException("cannot add null to list of tasks");
-        }
+        Objects.requireNonNull(task, "cannot add null to list of tasks");
         final long id = generateId();
         task.setId(id);
         tasks.put(id, task);
@@ -57,9 +55,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateTask(Task task) {
-        if (task == null) {
-            throw new NullPointerException("cannot apply null update to task");
-        }
+        Objects.requireNonNull(task, "cannot apply null update to task");
         final Long id = task.getId();
         if (!tasks.containsKey(id)) {
             throw new NoSuchElementException("no task with id=" + id);
@@ -102,9 +98,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public long addEpic(Epic epic) {
-        if (epic == null) {
-            throw new NullPointerException("cannot add null to list of epics");
-        }
+        Objects.requireNonNull(epic, "cannot add null to list of epics");
         final long id = generateId();
         epic.setId(id);
         epic.getSubtaskIds().clear();
@@ -115,9 +109,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateEpic(Epic epic) {
-        if (epic == null) {
-            throw new NullPointerException("cannot apply null update to epic");
-        }
+        Objects.requireNonNull(epic, "cannot apply null update to epic");
         final Long id = epic.getId();
         final Epic savedEpic = epics.get(id);
         if (savedEpic == null) {
@@ -170,9 +162,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public long addSubtask(Subtask subtask) {
-        if (subtask == null) {
-            throw new NullPointerException("cannot add null to list of subtasks");
-        }
+        Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
         final Long epicId = subtask.getEpicId();
         final Epic epic = epics.get(epicId);
         if (epic == null) {
@@ -188,9 +178,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void updateSubtask(Subtask subtask) {
-        if (subtask == null) {
-            throw new NullPointerException("cannot apply null update to subtask");
-        }
+        Objects.requireNonNull(subtask, "cannot apply null update to subtask");
         final Long id = subtask.getId();
         final Subtask savedSubtask = subtasks.get(id);
         if (savedSubtask == null) {

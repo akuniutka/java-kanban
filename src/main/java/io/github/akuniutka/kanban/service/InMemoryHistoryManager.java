@@ -2,10 +2,7 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.model.Task;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class InMemoryHistoryManager implements HistoryManager {
     private final Map<Long, Node> history;
@@ -18,9 +15,7 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void add(Task task) {
-        if (task == null) {
-            throw new NullPointerException("cannot add null to visited tasks history");
-        }
+        Objects.requireNonNull(task, "cannot add null to visited tasks history");
         final long id = task.getId();
         remove(id);
         final Node newNode = linkLast(task);
