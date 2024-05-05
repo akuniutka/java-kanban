@@ -63,6 +63,15 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenRetrievingNonExistingTask() {
+        long id = -1L;
+        String expectedMessage = "no task with id=" + id;
+
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getTask(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldAllowAddTaskWithNullFields() {
         long id = manager.addTask(emptyTask);
         Task savedTask = manager.getTask(id);
@@ -153,11 +162,21 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldRemoveTask() {
         long id = manager.addTask(testTask);
+        String expectedMessage = "no task with id=" + id;
 
         manager.removeTask(id);
-        Task savedTask = manager.getTask(id);
 
-        assertNull(savedTask, "should have no access to removed task");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getTask(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowRemovingNonExistingTask() {
+        long id = -1L;
+        String expectedMessage = "no task with id=" + id;
+
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.removeTask(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -169,6 +188,15 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedEpic.getId(), "epic id differs from returned by manager");
         assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title changed");
         assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description changed");
+    }
+
+    @Test
+    public void shouldThrowWhenRetrievingNonExistingEpic() {
+        long id = -1L;
+        String expectedMessage = "no epic with id=" + id;
+
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getEpic(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -486,11 +514,21 @@ class InMemoryTaskManagerTest {
     @Test
     public void shouldRemoveEpic() {
         long id = manager.addEpic(testEpic);
+        String expectedMessage = "no epic with id=" + id;
 
         manager.removeEpic(id);
-        Epic savedEpic = manager.getEpic(id);
 
-        assertNull(savedEpic, "should have no access to removed epic");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getEpic(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenRemovingNonExistingEpic() {
+        long id = -1L;
+        String expectedMessage = "no epic with id=" + id;
+
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.removeEpic(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -507,6 +545,15 @@ class InMemoryTaskManagerTest {
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title changed");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description changed");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status changed");
+    }
+
+    @Test
+    public void shouldThrowWhenRetrievingNonExistingSubtask() {
+        long id = -1L;
+        String expectedMessage = "no subtask with id=" + id;
+
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getSubtask(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -662,11 +709,12 @@ class InMemoryTaskManagerTest {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         long id = manager.addSubtask(testSubtask);
+        String expectedMessage = "no subtask with id=" + id;
 
         manager.removeSubtask(id);
-        Subtask savedSubtask = manager.getSubtask(id);
 
-        assertNull(savedSubtask, "should have no access to removed subtask");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getSubtask(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -674,11 +722,21 @@ class InMemoryTaskManagerTest {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
         long id = manager.addSubtask(testSubtask);
+        String expectedMessage = "no subtask with id=" + id;
 
         manager.removeEpic(epicId);
-        Subtask savedSubtask = manager.getSubtask(id);
 
-        assertNull(savedSubtask, "should have no access to subtask of removed epic");
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getSubtask(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenRemovingNonExistingSubtask() {
+        long id = -1L;
+        String expectedMessage = "no subtask with id=" + id;
+
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.removeSubtask(id));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -699,6 +757,15 @@ class InMemoryTaskManagerTest {
         List<Subtask> actualSubtaskList = manager.getEpicSubtasks(epicId);
 
         assertEquals(expectedSubtaskList, actualSubtaskList, "incorrect list of subtasks returned");
+    }
+
+    @Test
+    public void shouldThrowWhenRetrievingSubtasksOfNonExistingEpic() {
+        long epicId = -1L;
+        String expectedMessage = "no epic with id=" + epicId;
+
+        Exception exception = assertThrows(NoSuchElementException.class, () -> manager.getEpicSubtasks(epicId));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test

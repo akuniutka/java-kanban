@@ -37,10 +37,8 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Task getTask(long id) {
-        Task task = tasks.get(id);
-        if (task != null) {
-            historyManager.add(task);
-        }
+        final Task task = requireTaskExists(id);
+        historyManager.add(task);
         return task;
     }
 
@@ -57,17 +55,15 @@ public class InMemoryTaskManager implements TaskManager {
     public void updateTask(Task task) {
         Objects.requireNonNull(task, "cannot apply null update to task");
         final Long id = task.getId();
-        if (!tasks.containsKey(id)) {
-            throw new NoSuchElementException("no task with id=" + id);
-        }
+        requireTaskExists(id);
         tasks.put(id, task);
     }
 
     @Override
     public void removeTask(long id) {
-        if (tasks.remove(id) != null) {
-            historyManager.remove(id);
-        }
+        requireTaskExists(id);
+        tasks.remove(id);
+        historyManager.remove(id);
     }
 
     @Override
@@ -89,10 +85,8 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Epic getEpic(long id) {
-        Epic epic = epics.get(id);
-        if (epic != null) {
-            historyManager.add(epic);
-        }
+        final Epic epic = requireEpicExists(id);
+        historyManager.add(epic);
         return epic;
     }
 
@@ -111,10 +105,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void updateEpic(Epic epic) {
         Objects.requireNonNull(epic, "cannot apply null update to epic");
         final Long id = epic.getId();
-        final Epic savedEpic = epics.get(id);
-        if (savedEpic == null) {
-            throw new NoSuchElementException("no epic with id=" + id);
-        }
+        final Epic savedEpic = requireEpicExists(id);
         final List<Long> subtaskIds = savedEpic.getSubtaskIds();
         final TaskStatus status = savedEpic.getStatus();
         epic.setSubtaskIds(subtaskIds);
@@ -124,14 +115,13 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void removeEpic(long id) {
-        final Epic epic = epics.remove(id);
-        if (epic != null) {
-            for (long subtaskId : epic.getSubtaskIds()) {
-                historyManager.remove(subtaskId);
-                subtasks.remove(subtaskId);
-            }
-            historyManager.remove(id);
+        final Epic epic = requireEpicExists(id);
+        epics.remove(id);
+        for (long subtaskId : epic.getSubtaskIds()) {
+            historyManager.remove(subtaskId);
+            subtasks.remove(subtaskId);
         }
+        historyManager.remove(id);
     }
 
     @Override
@@ -153,21 +143,15 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Subtask getSubtask(long id) {
-        Subtask subtask = subtasks.get(id);
-        if (subtask != null) {
-            historyManager.add(subtask);
-        }
+        final Subtask subtask = requireSubtaskExists(id);
+        historyManager.add(subtask);
         return subtask;
     }
 
     @Override
     public long addSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
-        final Long epicId = subtask.getEpicId();
-        final Epic epic = epics.get(epicId);
-        if (epic == null) {
-            throw new NoSuchElementException("no epic with id=" + epicId);
-        }
+        final Epic epic = requireEpicExists(subtask.getEpicId());
         final long id = generateId();
         subtask.setId(id);
         subtasks.put(id, subtask);
@@ -180,10 +164,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void updateSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot apply null update to subtask");
         final Long id = subtask.getId();
-        final Subtask savedSubtask = subtasks.get(id);
-        if (savedSubtask == null) {
-            throw new NoSuchElementException("no subtask with id=" + id);
-        }
+        final Subtask savedSubtask = requireSubtaskExists(id);
         final Long epicId = savedSubtask.getEpicId();
         final Epic epic = epics.get(epicId);
         subtask.setEpicId(epicId);
@@ -193,24 +174,21 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void removeSubtask(long id) {
-        final Subtask subtask = subtasks.remove(id);
-        if (subtask != null) {
-            final long epicId = subtask.getEpicId();
-            final Epic epic = epics.get(epicId);
-            epic.getSubtaskIds().remove(id);
-            updateEpicStatus(epic);
-            historyManager.remove(id);
-        }
+        final Subtask subtask = requireSubtaskExists(id);
+        subtasks.remove(id);
+        final long epicId = subtask.getEpicId();
+        final Epic epic = epics.get(epicId);
+        epic.getSubtaskIds().remove(id);
+        updateEpicStatus(epic);
+        historyManager.remove(id);
     }
 
     @Override
     public List<Subtask> getEpicSubtasks(long epicId) {
+        final Epic epic = requireEpicExists(epicId);
         final List<Subtask> subtaskList = new ArrayList<>();
-        final Epic epic = epics.get(epicId);
-        if (epic != null) {
-            for (long subtaskId : epic.getSubtaskIds()) {
-                subtaskList.add(subtasks.get(subtaskId));
-            }
+        for (long subtaskId : epic.getSubtaskIds()) {
+            subtaskList.add(subtasks.get(subtaskId));
         }
         return subtaskList;
     }
@@ -243,5 +221,29 @@ public class InMemoryTaskManager implements TaskManager {
         } else {
             epic.setStatus(TaskStatus.IN_PROGRESS);
         }
+    }
+
+    private Task requireTaskExists(Long id) {
+        final Task task = tasks.get(id);
+        if (task == null) {
+            throw new NoSuchElementException("no task with id=" + id);
+        }
+        return task;
+    }
+
+    private Epic requireEpicExists(Long id) {
+        final Epic epic = epics.get(id);
+        if (epic == null) {
+            throw new NoSuchElementException("no epic with id=" + id);
+        }
+        return epic;
+    }
+
+    private Subtask requireSubtaskExists(Long id) {
+        final Subtask subtask = subtasks.get(id);
+        if (subtask == null) {
+            throw new NoSuchElementException("no subtask with id=" + id);
+        }
+        return subtask;
     }
 }
