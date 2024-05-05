@@ -12,6 +12,7 @@ import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class InMemoryHistoryManagerTest {
+    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
     private HistoryManager manager;
     private Task testTask;
     private Task modifiedTestTask;
@@ -43,7 +44,16 @@ class InMemoryHistoryManagerTest {
         String expectedMessage = "cannot add null to visited tasks history";
 
         Exception exception = assertThrows(NullPointerException.class, () -> manager.add(null));
-        assertEquals(expectedMessage, exception.getMessage(), "message for exception is wrong");
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAllowTasksEpicsSubtasksWithNullId() {
+        String expectedMessage = "cannot add task with null id to visited tasks history";
+        Task task = createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+
+        Exception exception = assertThrows(NullPointerException.class, () -> manager.add(task));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test

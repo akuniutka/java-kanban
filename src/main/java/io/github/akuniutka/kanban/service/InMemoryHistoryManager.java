@@ -16,7 +16,7 @@ public class InMemoryHistoryManager implements HistoryManager {
     @Override
     public void add(Task task) {
         Objects.requireNonNull(task, "cannot add null to visited tasks history");
-        final long id = task.getId();
+        final long id = Objects.requireNonNull(task.getId(), "cannot add task with null id to visited tasks history");
         remove(id);
         final Node newNode = linkLast(task);
         history.put(id, newNode);
