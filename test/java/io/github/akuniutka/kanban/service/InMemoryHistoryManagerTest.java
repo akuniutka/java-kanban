@@ -185,7 +185,7 @@ class InMemoryHistoryManagerTest {
         assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in list should be of Subtask class");
         Subtask savedSubtask = (Subtask) tasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
-        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of subtask should not change");
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
@@ -202,7 +202,7 @@ class InMemoryHistoryManagerTest {
         assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in list should be of Subtask class");
         Subtask savedSubtask = (Subtask) tasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
-        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of subtask should not change");
         assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title is not actual");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description is not actual");
         assertEquals(MODIFIED_TEST_STATUS, savedSubtask.getStatus(), "subtask status is not actual");
@@ -221,7 +221,7 @@ class InMemoryHistoryManagerTest {
         assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in list should be of Subtask class");
         Subtask savedSubtask = (Subtask) tasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
-        assertNull(savedSubtask.getEpicId(), "epic id of status should not change");
+        assertNull(savedSubtask.getEpicId(), "epic id of subtask should not change");
         assertNull(savedSubtask.getTitle(), "subtask title should not change");
         assertNull(savedSubtask.getDescription(), "subtask description should not change");
         assertNull(savedSubtask.getStatus(), "subtask status should not change");
@@ -232,7 +232,7 @@ class InMemoryHistoryManagerTest {
         manager.add(testSubtask);
 
         assertEquals(TEST_SUBTASK_ID, testSubtask.getId(), "subtask id should not change");
-        assertEquals(TEST_EPIC_ID, testSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_EPIC_ID, testSubtask.getEpicId(), "epic id of subtask should not change");
         assertEquals(TEST_TITLE, testSubtask.getTitle(), "subtask title should not change");
         assertEquals(TEST_DESCRIPTION, testSubtask.getDescription(), "subtask description should not change");
         assertEquals(TEST_STATUS, testSubtask.getStatus(), "subtask status should not change");
