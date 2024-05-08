@@ -1,5 +1,8 @@
 package io.github.akuniutka.kanban.service;
 
+import io.github.akuniutka.kanban.exception.ManagerNoSuchEpicException;
+import io.github.akuniutka.kanban.exception.ManagerNoSuchSubtaskException;
+import io.github.akuniutka.kanban.exception.ManagerNoSuchTaskException;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
@@ -231,7 +234,7 @@ public class InMemoryTaskManager implements TaskManager {
     protected Task requireTaskExists(Long id) {
         final Task task = tasks.get(id);
         if (task == null) {
-            throw new NoSuchElementException("no task with id=" + id);
+            throw new ManagerNoSuchTaskException("no task with id=" + id);
         }
         return task;
     }
@@ -239,7 +242,7 @@ public class InMemoryTaskManager implements TaskManager {
     protected Epic requireEpicExists(Long id) {
         final Epic epic = epics.get(id);
         if (epic == null) {
-            throw new NoSuchElementException("no epic with id=" + id);
+            throw new ManagerNoSuchEpicException("no epic with id=" + id);
         }
         return epic;
     }
@@ -247,7 +250,7 @@ public class InMemoryTaskManager implements TaskManager {
     protected Subtask requireSubtaskExists(Long id) {
         final Subtask subtask = subtasks.get(id);
         if (subtask == null) {
-            throw new NoSuchElementException("no subtask with id=" + id);
+            throw new ManagerNoSuchSubtaskException("no subtask with id=" + id);
         }
         return subtask;
     }
