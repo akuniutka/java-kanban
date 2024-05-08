@@ -8,11 +8,11 @@ import io.github.akuniutka.kanban.model.TaskStatus;
 import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
-    private final Map<Long, Task> tasks;
-    private final Map<Long, Subtask> subtasks;
-    private final Map<Long, Epic> epics;
-    private final HistoryManager historyManager;
-    private long lastUsedId;
+    protected final Map<Long, Task> tasks;
+    protected final Map<Long, Subtask> subtasks;
+    protected final Map<Long, Epic> epics;
+    protected final HistoryManager historyManager;
+    protected long lastUsedId;
 
     public InMemoryTaskManager(HistoryManager historyManager) {
         this.tasks = new HashMap<>();
@@ -151,13 +151,9 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
-        final Epic epic = requireEpicExists(subtask.getEpicId());
-        final long id = generateId();
-        subtask.setId(id);
-        subtasks.put(id, subtask);
-        epic.getSubtaskIds().add(id);
-        updateEpicStatus(epic);
-        return id;
+        subtask.setId(generateId());
+        saveSubtaskAndLinkToEpic(subtask);
+        return subtask.getId();
     }
 
     @Override
@@ -198,11 +194,20 @@ public class InMemoryTaskManager implements TaskManager {
         return historyManager.getHistory();
     }
 
-    private long generateId() {
+    protected long generateId() {
         return ++lastUsedId;
     }
 
-    private void updateEpicStatus(Epic epic) {
+    protected void saveSubtaskAndLinkToEpic(Subtask subtask) {
+        Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
+        final Epic epic = requireEpicExists(subtask.getEpicId());
+        subtasks.put(subtask.getId(), subtask);
+        epic.getSubtaskIds().add(subtask.getId());
+        updateEpicStatus(epic);
+    }
+
+    protected void updateEpicStatus(Epic epic) {
+        Objects.requireNonNull(epic, "cannot update status of null epic");
         boolean areAllSubtasksNew = true;
         boolean areAllSubtasksDone = true;
         for (long subtaskId : epic.getSubtaskIds()) {
@@ -223,7 +228,7 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    private Task requireTaskExists(Long id) {
+    protected Task requireTaskExists(Long id) {
         final Task task = tasks.get(id);
         if (task == null) {
             throw new NoSuchElementException("no task with id=" + id);
@@ -231,7 +236,7 @@ public class InMemoryTaskManager implements TaskManager {
         return task;
     }
 
-    private Epic requireEpicExists(Long id) {
+    protected Epic requireEpicExists(Long id) {
         final Epic epic = epics.get(id);
         if (epic == null) {
             throw new NoSuchElementException("no epic with id=" + id);
@@ -239,7 +244,7 @@ public class InMemoryTaskManager implements TaskManager {
         return epic;
     }
 
-    private Subtask requireSubtaskExists(Long id) {
+    protected Subtask requireSubtaskExists(Long id) {
         final Subtask subtask = subtasks.get(id);
         if (subtask == null) {
             throw new NoSuchElementException("no subtask with id=" + id);
