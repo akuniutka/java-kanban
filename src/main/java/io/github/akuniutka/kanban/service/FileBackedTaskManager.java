@@ -110,7 +110,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private void save() {
         try (BufferedWriter out = new BufferedWriter(new FileWriter(datafile, StandardCharsets.UTF_8))) {
-            out.write("lastUsedId=%d%n%s%n".formatted(lastUsedId, FILE_HEADER));
+            out.write(FILE_HEADER);
+            out.newLine();
             for (Task task : tasks.values()) {
                 out.write(toString(task));
                 out.newLine();
@@ -163,14 +164,13 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private void load() {
         int curLine = 1;
         try (BufferedReader in = new BufferedReader(new FileReader(datafile, StandardCharsets.UTF_8))) {
-            lastUsedId = extractLastUsedId(in.readLine());
-            curLine++;
             checkFileHeader(in.readLine());
             while (in.ready()) {
                 curLine++;
                 String line = in.readLine();
                 final Task task = fromString(line);
                 checkIdForDuplicates(task.getId());
+                lastUsedId = Math.max(lastUsedId, task.getId());
                 try {
                     if (task instanceof Subtask subtask) {
                         saveSubtaskAndLinkToEpic(subtask);
@@ -189,20 +189,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             throw new ManagerLoadException(message);
         } catch (IOException exception) {
             throw new ManagerLoadException("cannot load from file \"%s\"".formatted(datafile), exception);
-        }
-    }
-
-    private long extractLastUsedId(String lastUsedIdString) {
-        if (lastUsedIdString == null || !lastUsedIdString.startsWith("lastUsedId")) {
-            throw new CSVParsingException("\"lastUsedId\" expected", 1);
-        }
-        if (lastUsedIdString.charAt(10) != '=') {
-            throw new CSVParsingException("\"=\" expected", 11);
-        }
-        try {
-            return Long.parseLong(lastUsedIdString.substring(11));
-        } catch (NumberFormatException exception) {
-            throw new CSVParsingException("number expected", 12);
         }
     }
 
