@@ -130,29 +130,16 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private String toString(Task task) {
-        String string = task.getId().toString();
-        string += "," + task.getType();
-        if (task.getTitle() == null) {
-            string += ",null";
-        } else {
-            string += ",\"" + task.getTitle() + "\"";
-        }
-        if (task.getType() == TaskType.EPIC) {
-            string += ",";
-        } else {
-            string += "," + task.getStatus();
-        }
-        if (task.getDescription() == null) {
-            string += ",null";
-        } else {
-            string += ",\"" + task.getDescription() + "\"";
-        }
-        if (task.getType() == TaskType.SUBTASK) {
-            string += "," + ((Subtask) task).getEpicId();
-        } else {
-            string += ",";
-        }
-        return string;
+        return task.getId()
+                + "," + task.getType()
+                + "," + quoteIfNotNull(task.getTitle())
+                + "," + (task.getType() != TaskType.EPIC ? task.getStatus() : "")
+                + "," + quoteIfNotNull(task.getDescription())
+                + "," + (task.getType() == TaskType.SUBTASK ? ((Subtask) task).getEpicId() : "");
+    }
+
+    private String quoteIfNotNull(String text) {
+        return text == null ? "null" : '"' + text + '"';
     }
 
     private void load() {
