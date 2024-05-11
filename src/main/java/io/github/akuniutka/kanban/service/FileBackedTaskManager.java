@@ -173,13 +173,13 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                         default -> throw new AssertionError();
                     }
                 } catch (TaskNotFoundException exception) {
-                    throw new CSVParsingException(exception.getMessage(), line.lastIndexOf(",") + 2);
+                    throw new ManagerLoadException("%s (%s:%d:%d)".formatted(exception.getMessage(), datafile, curLine,
+                            line.lastIndexOf(",") + 2));
                 }
             }
         } catch (CSVParsingException exception) {
-            String message = "%s (%s:%d:%d)".formatted(exception.getShortMessage(), datafile, curLine,
-                    exception.getPositionInLine());
-            throw new ManagerLoadException(message);
+            throw new ManagerLoadException("%s (%s:%d:%d)".formatted(exception.getShortMessage(), datafile, curLine,
+                    exception.getPositionInLine()));
         } catch (IOException exception) {
             throw new ManagerLoadException("cannot load from file \"%s\"".formatted(datafile), exception);
         }
