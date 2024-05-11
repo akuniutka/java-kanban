@@ -16,6 +16,7 @@ public class InMemoryTaskManager implements TaskManager {
     protected long lastUsedId;
 
     public InMemoryTaskManager(HistoryManager historyManager) {
+        Objects.requireNonNull(historyManager, "cannot start: history manager is null");
         this.tasks = new HashMap<>();
         this.subtasks = new HashMap<>();
         this.epics = new HashMap<>();
