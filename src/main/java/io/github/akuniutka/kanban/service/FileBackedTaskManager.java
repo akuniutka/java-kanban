@@ -10,6 +10,7 @@ import io.github.akuniutka.kanban.util.CSVToken;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private static final String FILE_HEADER = "id,type,name,status,description,epic";
@@ -17,6 +18,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     public FileBackedTaskManager(File file, HistoryManager historyManager) {
         this(historyManager);
+        Objects.requireNonNull(file, "cannot start: file is null");
         this.datafile = file;
         save();
     }
@@ -26,6 +28,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     public static FileBackedTaskManager loadFromFile(File file, HistoryManager historyManager) {
+        Objects.requireNonNull(file, "cannot start: file is null");
         FileBackedTaskManager manager = new FileBackedTaskManager(historyManager);
         manager.datafile = file;
         manager.load();

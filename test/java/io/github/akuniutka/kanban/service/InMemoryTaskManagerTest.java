@@ -48,6 +48,12 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenHistoryManagerIsNull() {
+        Exception exception = assertThrows(NullPointerException.class, () -> new InMemoryTaskManager(null));
+        assertEquals("cannot start: history manager is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldKeepTasks() {
         long id = manager.addTask(testTask);
         Task savedTask = manager.getTask(id);

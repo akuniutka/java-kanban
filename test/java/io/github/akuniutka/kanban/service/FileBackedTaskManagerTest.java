@@ -53,6 +53,13 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenFileIsNull() {
+        Exception exception = assertThrows(NullPointerException.class,
+                () -> new FileBackedTaskManager(null, historyManager));
+        assertEquals("cannot start: file is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldImmediatelyThrowWhenCannotInitializeDataFile() {
         String filename = ".";
         String expectedMessage = "cannot write to file \"" + filename + "\"";
@@ -456,6 +463,13 @@ class FileBackedTaskManagerTest {
         long id = manager.addTask(testTask);
 
         assertEquals(1001, id, "last used id loaded incorrectly");
+    }
+
+    @Test
+    public void shouldThrowWhenFileToLoadIsNull() {
+        Exception exception = assertThrows(NullPointerException.class,
+                () -> FileBackedTaskManager.loadFromFile(null, historyManager));
+        assertEquals("cannot start: file is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
