@@ -131,19 +131,13 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private String toString(Task task) {
         String string = task.getId().toString();
-        if (task instanceof Epic) {
-            string += ",EPIC";
-        } else if (task instanceof Subtask) {
-            string += ",SUBTASK";
-        } else {
-            string += ",TASK";
-        }
+        string += "," + task.getType();
         if (task.getTitle() == null) {
             string += ",null";
         } else {
             string += ",\"" + task.getTitle() + "\"";
         }
-        if (task instanceof Epic) {
+        if (task.getType() == TaskType.EPIC) {
             string += ",";
         } else {
             string += "," + task.getStatus();
@@ -153,8 +147,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         } else {
             string += ",\"" + task.getDescription() + "\"";
         }
-        if (task instanceof Subtask subtask) {
-            string += "," + subtask.getEpicId();
+        if (task.getType() == TaskType.SUBTASK) {
+            string += "," + ((Subtask) task).getEpicId();
         } else {
             string += ",";
         }
@@ -172,12 +166,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 checkIdForDuplicates(task.getId());
                 lastUsedId = Math.max(lastUsedId, task.getId());
                 try {
-                    if (task instanceof Subtask subtask) {
-                        saveSubtaskAndLinkToEpic(subtask);
-                    } else if (task instanceof Epic epic) {
-                        epics.put(epic.getId(), epic);
-                    } else {
-                        tasks.put(task.getId(), task);
+                    switch (task.getType()) {
+                        case TASK -> tasks.put(task.getId(), task);
+                        case EPIC -> epics.put(task.getId(), (Epic) task);
+                        case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
+                        default -> throw new AssertionError();
                     }
                 } catch (ManagerNoSuchEpicException exception) {
                     throw new CSVParsingException(exception.getMessage(), line.lastIndexOf(",") + 2);
@@ -230,8 +223,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
         task.setDescription(extractText(parser.next()));
         token = parser.next();
-        if (task instanceof Subtask subtask) {
-            subtask.setEpicId(extractId(token));
+        if (type == TaskType.SUBTASK) {
+            ((Subtask) task).setEpicId(extractId(token));
         } else if (!token.value().isEmpty()) {
             throw new CSVParsingException("unexpected data", token.position() + 1);
         }

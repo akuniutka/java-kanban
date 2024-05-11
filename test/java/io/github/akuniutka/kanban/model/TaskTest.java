@@ -28,6 +28,13 @@ public class TaskTest {
     }
 
     @Test
+    public void shouldHaveCorrectType() {
+        Task task = new Task();
+
+        assertEquals(TaskType.TASK, task.getType(), "task has wrong type");
+    }
+
+    @Test
     public void shouldHaveTitle() {
         Task task = new Task();
 

@@ -31,6 +31,13 @@ class EpicTest {
     }
 
     @Test
+    public void shouldHaveCorrectType() {
+        Epic epic = new Epic();
+
+        assertEquals(TaskType.EPIC, epic.getType(), "task has wrong type");
+    }
+
+    @Test
     public void shouldHaveTitle() {
         Epic epic = new Epic();
 

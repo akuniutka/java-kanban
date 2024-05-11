@@ -3,6 +3,11 @@ package io.github.akuniutka.kanban.model;
 public class Subtask extends Task {
     private Long epicId;
 
+    @Override
+    public TaskType getType() {
+        return TaskType.SUBTASK;
+    }
+
     public Long getEpicId() {
         return epicId;
     }
