@@ -1,8 +1,6 @@
 package io.github.akuniutka.kanban.service;
 
-import io.github.akuniutka.kanban.exception.ManagerNoSuchEpicException;
-import io.github.akuniutka.kanban.exception.ManagerNoSuchSubtaskException;
-import io.github.akuniutka.kanban.exception.ManagerNoSuchTaskException;
+import io.github.akuniutka.kanban.exception.TaskNotFoundException;
 import io.github.akuniutka.kanban.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +64,7 @@ class InMemoryTaskManagerTest {
         long id = -1L;
         String expectedMessage = "no task with id=" + id;
 
-        Exception exception = assertThrows(ManagerNoSuchTaskException.class, () -> manager.getTask(id));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.getTask(id));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -144,7 +142,7 @@ class InMemoryTaskManagerTest {
     public void shouldNotUpdateTaskWhenIdNotSet() {
         String expectedMessage = "no task with id=null";
 
-        Exception exception = assertThrows(ManagerNoSuchTaskException.class, () -> manager.updateTask(testTask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateTask(testTask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -154,7 +152,7 @@ class InMemoryTaskManagerTest {
         String expectedMessage = "no task with id=" + taskId;
         testTask.setId(taskId);
 
-        Exception exception = assertThrows(ManagerNoSuchTaskException.class, () -> manager.updateTask(testTask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateTask(testTask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -164,8 +162,7 @@ class InMemoryTaskManagerTest {
 
         manager.removeTask(id);
 
-        assertThrows(ManagerNoSuchTaskException.class, () -> manager.getTask(id),
-                "should have no access to removed task");
+        assertThrows(TaskNotFoundException.class, () -> manager.getTask(id), "should have no access to removed task");
     }
 
     @Test
@@ -173,7 +170,7 @@ class InMemoryTaskManagerTest {
         long id = -1L;
         String expectedMessage = "no task with id=" + id;
 
-        Exception exception = assertThrows(ManagerNoSuchTaskException.class, () -> manager.removeTask(id));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.removeTask(id));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -193,7 +190,7 @@ class InMemoryTaskManagerTest {
         long id = -1L;
         String expectedMessage = "no epic with id=" + id;
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.getEpic(id));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.getEpic(id));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -267,7 +264,7 @@ class InMemoryTaskManagerTest {
     public void shouldNotUpdateEpicWhenIdNotSet() {
         String expectedMessage = "no epic with id=null";
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.updateEpic(testEpic));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateEpic(testEpic));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -277,7 +274,7 @@ class InMemoryTaskManagerTest {
         String expectedMessage = "no epic with id=" + id;
         testEpic.setId(id);
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.updateEpic(testEpic));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateEpic(testEpic));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -515,8 +512,7 @@ class InMemoryTaskManagerTest {
 
         manager.removeEpic(id);
 
-        assertThrows(ManagerNoSuchEpicException.class, () -> manager.getEpic(id),
-                "should have no access to removed epic");
+        assertThrows(TaskNotFoundException.class, () -> manager.getEpic(id), "should have no access to removed epic");
     }
 
     @Test
@@ -524,7 +520,7 @@ class InMemoryTaskManagerTest {
         long id = -1L;
         String expectedMessage = "no epic with id=" + id;
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.removeEpic(id));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.removeEpic(id));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -549,7 +545,7 @@ class InMemoryTaskManagerTest {
         long id = -1L;
         String expectedMessage = "no subtask with id=" + id;
 
-        Exception exception = assertThrows(ManagerNoSuchSubtaskException.class, () -> manager.getSubtask(id));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.getSubtask(id));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -601,7 +597,7 @@ class InMemoryTaskManagerTest {
     public void shouldNotAddSubtaskToNull() {
         String expectedMessage = "no epic with id=null";
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.addSubtask(testSubtask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.addSubtask(testSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -611,7 +607,7 @@ class InMemoryTaskManagerTest {
         String expectedMessage = "no epic with id=" + epicId;
         testSubtask.setEpicId(epicId);
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.addSubtask(testSubtask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.addSubtask(testSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -621,7 +617,7 @@ class InMemoryTaskManagerTest {
         String expectedMessage = "no epic with id=" + taskId;
         testSubtask.setEpicId(taskId);
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.addSubtask(testSubtask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.addSubtask(testSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -633,8 +629,7 @@ class InMemoryTaskManagerTest {
         String expectedMessage = "no epic with id=" + subtaskId;
         modifiedTestSubtask.setEpicId(subtaskId);
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class,
-                () -> manager.addSubtask(modifiedTestSubtask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.addSubtask(modifiedTestSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -686,8 +681,7 @@ class InMemoryTaskManagerTest {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
 
-        Exception exception = assertThrows(ManagerNoSuchSubtaskException.class,
-                () -> manager.updateSubtask(testSubtask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateSubtask(testSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -699,8 +693,7 @@ class InMemoryTaskManagerTest {
         testSubtask.setEpicId(epicId);
         testSubtask.setId(id);
 
-        Exception exception = assertThrows(ManagerNoSuchSubtaskException.class,
-                () -> manager.updateSubtask(testSubtask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateSubtask(testSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -712,7 +705,7 @@ class InMemoryTaskManagerTest {
 
         manager.removeSubtask(id);
 
-        assertThrows(ManagerNoSuchSubtaskException.class, () -> manager.getSubtask(id),
+        assertThrows(TaskNotFoundException.class, () -> manager.getSubtask(id),
                 "should have no access to removed subtask");
     }
 
@@ -724,7 +717,7 @@ class InMemoryTaskManagerTest {
 
         manager.removeEpic(epicId);
 
-        assertThrows(ManagerNoSuchSubtaskException.class, () -> manager.getSubtask(id),
+        assertThrows(TaskNotFoundException.class, () -> manager.getSubtask(id),
                 "should have no access to removed subtask");
     }
 
@@ -733,7 +726,7 @@ class InMemoryTaskManagerTest {
         long id = -1L;
         String expectedMessage = "no subtask with id=" + id;
 
-        Exception exception = assertThrows(ManagerNoSuchSubtaskException.class, () -> manager.removeSubtask(id));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.removeSubtask(id));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -762,7 +755,7 @@ class InMemoryTaskManagerTest {
         long epicId = -1L;
         String expectedMessage = "no epic with id=" + epicId;
 
-        Exception exception = assertThrows(ManagerNoSuchEpicException.class, () -> manager.getEpicSubtasks(epicId));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.getEpicSubtasks(epicId));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 

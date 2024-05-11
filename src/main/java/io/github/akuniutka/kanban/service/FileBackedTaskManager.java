@@ -2,8 +2,8 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.exception.CSVParsingException;
 import io.github.akuniutka.kanban.exception.ManagerLoadException;
-import io.github.akuniutka.kanban.exception.ManagerNoSuchEpicException;
 import io.github.akuniutka.kanban.exception.ManagerSaveException;
+import io.github.akuniutka.kanban.exception.TaskNotFoundException;
 import io.github.akuniutka.kanban.model.*;
 import io.github.akuniutka.kanban.util.CSVLineParser;
 import io.github.akuniutka.kanban.util.CSVToken;
@@ -172,7 +172,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                         case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
                         default -> throw new AssertionError();
                     }
-                } catch (ManagerNoSuchEpicException exception) {
+                } catch (TaskNotFoundException exception) {
                     throw new CSVParsingException(exception.getMessage(), line.lastIndexOf(",") + 2);
                 }
             }
