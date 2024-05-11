@@ -3,6 +3,7 @@ package io.github.akuniutka.kanban.service;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
+import io.github.akuniutka.kanban.model.TaskType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +64,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Task.class, tasks.getFirst().getClass(), "element in list should be of Task class");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "element in list should be of TASK type");
         Task savedTask = tasks.getFirst();
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
@@ -79,7 +80,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Task.class, tasks.getFirst().getClass(), "element in list should be of Task class");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "element in list should be of TASk type");
         Task savedTask = tasks.getFirst();
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertEquals(MODIFIED_TEST_TITLE, savedTask.getTitle(), "task title is not actual");
@@ -97,7 +98,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Task.class, tasks.getFirst().getClass(), "element in list should be of Task class");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "element in list should be of TASK type");
         Task savedTask = tasks.getFirst();
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertNull(savedTask.getTitle(), "task title should not change");
@@ -122,7 +123,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in list should be of Epic class");
+        assertEquals(TaskType.EPIC, tasks.getFirst().getType(), "element in list should be of EPIC type");
         Epic savedEpic = (Epic) tasks.getFirst();
         assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
         assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title should not change");
@@ -137,7 +138,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in list should be of Epic class");
+        assertEquals(TaskType.EPIC, tasks.getFirst().getType(), "element in list should be of EPIC type");
         Epic savedEpic = (Epic) tasks.getFirst();
         assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
         assertEquals(MODIFIED_TEST_TITLE, savedEpic.getTitle(), "epic title is not actual");
@@ -154,7 +155,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in list should be of Epic class");
+        assertEquals(TaskType.EPIC, tasks.getFirst().getType(), "element in list should be of EPIC type");
         Epic savedEpic = (Epic) tasks.getFirst();
         assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
         assertNull(savedEpic.getTitle(), "epic title should not change");
@@ -182,7 +183,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in list should be of Subtask class");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "element in list should be of SUBTASK type");
         Subtask savedSubtask = (Subtask) tasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
         assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of subtask should not change");
@@ -199,7 +200,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in list should be of Subtask class");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "element in list should be of SUBTASK type");
         Subtask savedSubtask = (Subtask) tasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
         assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of subtask should not change");
@@ -218,7 +219,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Subtask.class, tasks.getFirst().getClass(), "element in list should be of Subtask class");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "element in list should be of SUBTASK type");
         Subtask savedSubtask = (Subtask) tasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
         assertNull(savedSubtask.getEpicId(), "epic id of subtask should not change");
@@ -264,7 +265,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in list should be of Epic class");
+        assertEquals(TaskType.EPIC, tasks.getFirst().getType(), "element in list should be of EPIC type");
         Epic savedEpic = (Epic) tasks.getFirst();
         assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
         assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title should not change");
@@ -280,7 +281,7 @@ class InMemoryHistoryManagerTest {
 
         assertNotNull(tasks, "should return list of tasks");
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Epic.class, tasks.getFirst().getClass(), "element in list should be of Epic class");
+        assertEquals(TaskType.EPIC, tasks.getFirst().getType(), "element in list should be of EPIC type");
         Epic savedEpic = (Epic) tasks.getFirst();
         assertEquals(TEST_EPIC_ID, savedEpic.getId(), "epic id should not change");
         assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title should not change");

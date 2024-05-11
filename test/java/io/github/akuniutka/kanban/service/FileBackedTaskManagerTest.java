@@ -2,10 +2,7 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.exception.ManagerLoadException;
 import io.github.akuniutka.kanban.exception.ManagerSaveException;
-import io.github.akuniutka.kanban.model.Epic;
-import io.github.akuniutka.kanban.model.Subtask;
-import io.github.akuniutka.kanban.model.Task;
-import io.github.akuniutka.kanban.model.TaskStatus;
+import io.github.akuniutka.kanban.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -309,7 +306,7 @@ class FileBackedTaskManagerTest {
 
         List<Task> tasks = manager.getTasks();
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Task.class, tasks.getFirst().getClass(), "element in list should be of Task class");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "element in list should be of TASK type");
         Task task = tasks.getFirst();
         assertEquals(TEST_TASK_ID, task.getId(), "task id loaded incorrectly");
         assertEquals(TEST_TITLE, task.getTitle(), "task title loaded incorrectly");
@@ -328,7 +325,7 @@ class FileBackedTaskManagerTest {
 
         List<Task> tasks = manager.getTasks();
         assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(Task.class, tasks.getFirst().getClass(), "element in list should be of Task class");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "element in list should be of TASK type");
         Task task = tasks.getFirst();
         assertEquals(TEST_TASK_ID, task.getId(), "task id loaded incorrectly");
         assertNull(task.getTitle(), "task title loaded incorrectly");
@@ -347,7 +344,7 @@ class FileBackedTaskManagerTest {
 
         List<Epic> epics = manager.getEpics();
         assertEquals(1, epics.size(), "list should contain exactly 1 element");
-        assertEquals(Epic.class, epics.getFirst().getClass(), "element in list should be of Epic class");
+        assertEquals(TaskType.EPIC, epics.getFirst().getType(), "element in list should be of EPIC type");
         Epic epic = epics.getFirst();
         assertEquals(TEST_EPIC_ID, epic.getId(), "epic id loaded incorrectly");
         assertEquals(TEST_TITLE, epic.getTitle(), "epic title loaded incorrectly");
@@ -366,7 +363,7 @@ class FileBackedTaskManagerTest {
 
         List<Epic> epics = manager.getEpics();
         assertEquals(1, epics.size(), "list should contain exactly 1 element");
-        assertEquals(Epic.class, epics.getFirst().getClass(), "element in list should be of Epic class");
+        assertEquals(TaskType.EPIC, epics.getFirst().getType(), "element in list should be of EPIC type");
         Epic epic = epics.getFirst();
         assertEquals(TEST_EPIC_ID, epic.getId(), "epic id loaded incorrectly");
         assertNull(epic.getTitle(), "epic title loaded incorrectly");
@@ -386,7 +383,7 @@ class FileBackedTaskManagerTest {
 
         List<Subtask> subtasks = manager.getSubtasks();
         assertEquals(1, subtasks.size(), "list should contain exactly 1 element");
-        assertEquals(Subtask.class, subtasks.getFirst().getClass(), "element in list should be of Subtask class");
+        assertEquals(TaskType.SUBTASK, subtasks.getFirst().getType(), "element in list should be of SUBTASK type");
         Subtask subtask = subtasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, subtask.getId(), "subtask id loaded incorrectly");
         assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");
@@ -410,7 +407,7 @@ class FileBackedTaskManagerTest {
 
         List<Subtask> subtasks = manager.getSubtasks();
         assertEquals(1, subtasks.size(), "list should contain exactly 1 element");
-        assertEquals(Subtask.class, subtasks.getFirst().getClass(), "element in list should be of Subtask class");
+        assertEquals(TaskType.SUBTASK, subtasks.getFirst().getType(), "element in list should be of SUBTASK type");
         Subtask subtask = subtasks.getFirst();
         assertEquals(TEST_SUBTASK_ID, subtask.getId(), "subtask id loaded incorrectly");
         assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");

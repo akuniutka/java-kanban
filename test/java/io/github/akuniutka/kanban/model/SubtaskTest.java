@@ -29,6 +29,13 @@ class SubtaskTest {
     }
 
     @Test
+    public void shouldHaveCorrectType() {
+        Subtask subtask = new Subtask();
+
+        assertEquals(TaskType.SUBTASK, subtask.getType(), "task has wrong type");
+    }
+
+    @Test
     public void shouldHaveEpicId() {
         Subtask subtask = new Subtask();
 
