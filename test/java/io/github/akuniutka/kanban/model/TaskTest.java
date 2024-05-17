@@ -2,15 +2,10 @@ package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
 
+import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TaskTest {
-    private static final long TEST_ID = 1L;
-    private static final long ANOTHER_TEST_ID = 2L;
-    private static final String TEST_TITLE = "Title";
-    private static final String TEST_DESCRIPTION = "Description";
-    private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
-
     @Test
     public void shouldCreateTask() {
         Task task = new Task();
@@ -21,10 +16,10 @@ public class TaskTest {
     public void shouldHaveIdOfIntegerType() {
         Task task = new Task();
 
-        task.setId(TEST_ID);
+        task.setId(TEST_TASK_ID);
         long actualId = task.getId();
 
-        assertEquals(TEST_ID, actualId, "task has wrong id");
+        assertEquals(TEST_TASK_ID, actualId, "task has wrong id");
     }
 
     @Test
@@ -67,12 +62,12 @@ public class TaskTest {
     @Test
     public void shouldBeEqualWhenEqualIds() {
         Task task = new Task();
-        task.setId(TEST_ID);
+        task.setId(TEST_TASK_ID);
         task.setTitle(TEST_TITLE);
         task.setDescription(TEST_DESCRIPTION);
         task.setStatus(TEST_STATUS);
         Task anotherTask = new Task();
-        anotherTask.setId(TEST_ID);
+        anotherTask.setId(TEST_TASK_ID);
 
         assertEquals(task, anotherTask, "tasks with same id must be considered equal");
     }
@@ -80,7 +75,7 @@ public class TaskTest {
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
         Task task = new Task();
-        task.setId(TEST_ID);
+        task.setId(TEST_TASK_ID);
         task.setTitle(TEST_TITLE);
         task.setDescription(TEST_DESCRIPTION);
         task.setStatus(TEST_STATUS);

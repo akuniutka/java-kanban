@@ -2,16 +2,10 @@ package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
 
+import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SubtaskTest {
-    private static final long TEST_ID = 1L;
-    private static final long ANOTHER_TEST_ID = 2L;
-    private static final long TEST_EPIC_ID = 5L;
-    private static final String TEST_TITLE = "Title";
-    private static final String TEST_DESCRIPTION = "Description";
-    private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
-
     @Test
     public void shouldCreateSubtask() {
         Subtask subtask = new Subtask();
@@ -22,10 +16,10 @@ class SubtaskTest {
     public void shouldHaveIdOfIntegerType() {
         Subtask subtask = new Subtask();
 
-        subtask.setId(TEST_ID);
+        subtask.setId(TEST_SUBTASK_ID);
         long actualId = subtask.getId();
 
-        assertEquals(TEST_ID, actualId, "subtask has wrong id");
+        assertEquals(TEST_SUBTASK_ID, actualId, "subtask has wrong id");
     }
 
     @Test
@@ -78,13 +72,13 @@ class SubtaskTest {
     @Test
     public void shouldBeEqualWhenEqualIds() {
         Subtask subtask = new Subtask();
-        subtask.setId(TEST_ID);
+        subtask.setId(TEST_SUBTASK_ID);
         subtask.setEpicId(TEST_EPIC_ID);
         subtask.setTitle(TEST_TITLE);
         subtask.setDescription(TEST_DESCRIPTION);
         subtask.setStatus(TEST_STATUS);
         Subtask anotherSubtask = new Subtask();
-        anotherSubtask.setId(TEST_ID);
+        anotherSubtask.setId(TEST_SUBTASK_ID);
 
         assertEquals(subtask, anotherSubtask, "subtasks with same id must be considered equal");
     }
@@ -92,7 +86,7 @@ class SubtaskTest {
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
         Subtask subtask = new Subtask();
-        subtask.setId(TEST_ID);
+        subtask.setId(TEST_SUBTASK_ID);
         subtask.setEpicId(TEST_EPIC_ID);
         subtask.setTitle(TEST_TITLE);
         subtask.setDescription(TEST_DESCRIPTION);

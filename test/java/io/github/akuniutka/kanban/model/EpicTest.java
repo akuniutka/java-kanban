@@ -4,16 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EpicTest {
-    private static final long TEST_ID = 1L;
-    private static final long ANOTHER_TEST_ID = 2L;
-    private static final String TEST_TITLE = "Title";
-    private static final String TEST_DESCRIPTION = "Description";
-    private static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
-    private static final List<Long> TEST_SUBTASK_IDS = List.of(1L, 2L, 3L);
-
     @Test
     public void shouldCreateEpic() {
         Epic epic = new Epic();
@@ -24,10 +18,10 @@ class EpicTest {
     public void shouldHaveIdOfIntegerType() {
         Epic epic = new Epic();
 
-        epic.setId(TEST_ID);
+        epic.setId(TEST_EPIC_ID);
         long actualId = epic.getId();
 
-        assertEquals(TEST_ID, actualId, "epic has wrong id");
+        assertEquals(TEST_EPIC_ID, actualId, "epic has wrong id");
     }
 
     @Test
@@ -80,12 +74,12 @@ class EpicTest {
     @Test
     public void shouldBeEqualWhenEqualIds() {
         Epic epic = new Epic();
-        epic.setId(TEST_ID);
+        epic.setId(TEST_EPIC_ID);
         epic.setTitle(TEST_TITLE);
         epic.setDescription(TEST_DESCRIPTION);
         epic.setStatus(TEST_STATUS);
         Epic anotherEpic = new Epic();
-        anotherEpic.setId(TEST_ID);
+        anotherEpic.setId(TEST_EPIC_ID);
 
         assertEquals(epic, anotherEpic, "epics with same id must be considered equal");
     }
@@ -93,15 +87,15 @@ class EpicTest {
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
         Epic epic = new Epic();
-        epic.setId(TEST_ID);
+        epic.setId(TEST_EPIC_ID);
         epic.setTitle(TEST_TITLE);
         epic.setDescription(TEST_DESCRIPTION);
         epic.setStatus(TEST_STATUS);
         Epic anotherEpic = new Epic();
-        epic.setId(ANOTHER_TEST_ID);
-        epic.setTitle(TEST_TITLE);
-        epic.setDescription(TEST_DESCRIPTION);
-        epic.setStatus(TEST_STATUS);
+        anotherEpic.setId(ANOTHER_TEST_ID);
+        anotherEpic.setTitle(TEST_TITLE);
+        anotherEpic.setDescription(TEST_DESCRIPTION);
+        anotherEpic.setStatus(TEST_STATUS);
 
         assertNotEquals(epic, anotherEpic, "epics with different ids may not considered equal");
     }
