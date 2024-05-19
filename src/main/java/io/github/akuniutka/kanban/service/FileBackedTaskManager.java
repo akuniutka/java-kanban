@@ -10,10 +10,12 @@ import io.github.akuniutka.kanban.util.CSVToken;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
-    private static final String FILE_HEADER = "id,type,name,status,description,epic";
+    private static final String FILE_HEADER = "id,type,name,status,description,duration,start,epic";
     private File datafile;
 
     public FileBackedTaskManager(File file, HistoryManager historyManager) {
@@ -133,12 +135,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private String toString(Task task) {
-        return task.getId()
-                + "," + task.getType()
-                + "," + quoteIfNotNull(task.getTitle())
-                + "," + (task.getType() != TaskType.EPIC ? task.getStatus() : "")
-                + "," + quoteIfNotNull(task.getDescription())
-                + "," + (task.getType() == TaskType.SUBTASK ? ((Subtask) task).getEpicId() : "");
+        return "%s,%s,%s,%s,%s,%s,%s,%s".formatted(task.getId(), task.getType(), quoteIfNotNull(task.getTitle()),
+                task.getType() != TaskType.EPIC ? task.getStatus() : "", quoteIfNotNull(task.getDescription()),
+                task.getType() != TaskType.EPIC ? task.getDuration() : "",
+                task.getType() != TaskType.EPIC ? task.getStartTime() : "",
+                task.getType() == TaskType.SUBTASK ? ((Subtask) task).getEpicId() : "");
     }
 
     private String quoteIfNotNull(String text) {
@@ -179,8 +180,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         if (header == null || !header.startsWith("id")) {
             throw new CSVParsingException("\"id\" expected", 1);
         }
-        String[] columnNames = {"type", "name", "status", "description", "epic"};
-        int[] columnStarts = {3, 8, 13, 20, 32};
+        String[] columnNames = {"type", "name", "status", "description", "duration", "start", "epic"};
+        int[] columnStarts = {3, 8, 13, 20, 32, 41, 47};
         for (int i = 0; i < columnNames.length; i++) {
             if (header.length() < columnStarts[i] || header.charAt(columnStarts[i] - 1) != ',') {
                 throw new CSVParsingException("comma expected", columnStarts[i]);
@@ -196,7 +197,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private Task fromString(String taskString) {
         CSVLineParser parser = new CSVLineParser(taskString);
-        final long id = extractId(parser.next());
+        final long id = extractLong(parser.next());
         final TaskType type = extractType(parser.next());
         final Task task = switch (type) {
             case TASK -> new Task();
@@ -213,8 +214,24 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
         task.setDescription(extractText(parser.next()));
         token = parser.next();
+        if (type != TaskType.EPIC) {
+            try {
+                task.setDuration(extractLong(token));
+            } catch (IllegalArgumentException exception) {
+                throw new CSVParsingException(exception.getMessage(), token.position() + 1);
+            }
+        } else if (!token.value().isEmpty()) {
+            throw new CSVParsingException("explicit epic duration", token.position() + 1);
+        }
+        token = parser.next();
+        if (type != TaskType.EPIC) {
+            task.setStartTime(extractDateTime(token));
+        } else if (!token.value().isEmpty()) {
+            throw new CSVParsingException("explicit epic start time", token.position() + 1);
+        }
+        token = parser.next();
         if (type == TaskType.SUBTASK) {
-            ((Subtask) task).setEpicId(extractId(token));
+            ((Subtask) task).setEpicId(extractLong(token));
         } else if (!token.value().isEmpty()) {
             throw new CSVParsingException("unexpected data", token.position() + 1);
         }
@@ -243,7 +260,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
     }
 
-    private long extractId(CSVToken token) {
+    private long extractLong(CSVToken token) {
         try {
             return Long.parseLong(token.value());
         } catch (NumberFormatException exception) {
@@ -259,6 +276,17 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             throw new CSVParsingException("text value must be inside double quotes", token.position() + 1);
         }
         return token.value();
+    }
+
+    private LocalDateTime extractDateTime(CSVToken token) {
+        if ("null".equals(token.value())) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(token.value());
+        } catch (DateTimeParseException exception) {
+            throw new CSVParsingException("date and time expected", token.position() + 1);
+        }
     }
 
     private void checkIdForDuplicates(long id) {

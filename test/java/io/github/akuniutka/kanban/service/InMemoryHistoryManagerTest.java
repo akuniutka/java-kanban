@@ -25,14 +25,16 @@ class InMemoryHistoryManagerTest {
     @BeforeEach
     public void setUp() {
         manager = new InMemoryHistoryManager();
-        testTask = createTestTask(TEST_TASK_ID, TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        testTask = createTestTask(TEST_TASK_ID, TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME,
+                TEST_STATUS);
         modifiedTestTask = createTestTask(TEST_TASK_ID, MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION,
-                MODIFIED_TEST_STATUS);
+                MODIFIED_TEST_DURATION, MODIFIED_TEST_START_TIME, MODIFIED_TEST_STATUS);
         testEpic = createTestEpic(TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION);
         modifiedTestEpic = createTestEpic(TEST_EPIC_ID, MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION);
-        testSubtask = createTestSubtask(TEST_SUBTASK_ID, TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        testSubtask = createTestSubtask(TEST_SUBTASK_ID, TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION,
+                TEST_START_TIME, TEST_STATUS);
         modifiedTestSubtask = createTestSubtask(TEST_SUBTASK_ID, TEST_EPIC_ID, MODIFIED_TEST_TITLE,
-                MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
+                MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_DURATION, MODIFIED_TEST_START_TIME, MODIFIED_TEST_STATUS);
     }
 
     @Test
@@ -51,7 +53,7 @@ class InMemoryHistoryManagerTest {
     @Test
     public void shouldNotAllowTasksEpicsSubtasksWithNullId() {
         String expectedMessage = "cannot add task with null id to visited tasks history";
-        Task task = createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        Task task = createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME, TEST_STATUS);
 
         Exception exception = assertThrows(NullPointerException.class, () -> manager.add(task));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
@@ -69,6 +71,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
         assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
         assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
     }
 
@@ -85,6 +89,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertEquals(MODIFIED_TEST_TITLE, savedTask.getTitle(), "task title is not actual");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedTask.getDescription(), "task description is not actual");
+        assertEquals(MODIFIED_TEST_DURATION, savedTask.getDuration(), "task duration is not actual");
+        assertEquals(MODIFIED_TEST_START_TIME, savedTask.getStartTime(), "task start time is not actual");
         assertEquals(MODIFIED_TEST_STATUS, savedTask.getStatus(), "task status is not actual");
     }
 
@@ -103,6 +109,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertNull(savedTask.getTitle(), "task title should not change");
         assertNull(savedTask.getDescription(), "task description should not change");
+        assertEquals(0L, savedTask.getDuration(), "task duration should not change");
+        assertNull(savedTask.getStartTime(), "task start time should not change");
         assertNull(savedTask.getStatus(), "task status should not change");
     }
 
@@ -113,6 +121,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_TASK_ID, testTask.getId(), "task id should not change");
         assertEquals(TEST_TITLE, testTask.getTitle(), "task title should not change");
         assertEquals(TEST_DESCRIPTION, testTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, testTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, testTask.getStartTime(), "task start time should not change");
         assertEquals(TEST_STATUS, testTask.getStatus(), "task status should not change");
     }
 
@@ -165,6 +175,8 @@ class InMemoryHistoryManagerTest {
     @Test
     public void shouldNotModifyOriginalEpic() {
         testEpic.setSubtaskIds(TEST_SUBTASK_IDS);
+        testEpic.setDuration(TEST_DURATION);
+        testEpic.setStartTime(TEST_START_TIME);
         testEpic.setStatus(TEST_STATUS);
 
         manager.add(testEpic);
@@ -173,6 +185,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_TITLE, testEpic.getTitle(), "epic title should not change");
         assertEquals(TEST_DESCRIPTION, testEpic.getDescription(), "epic description should not change");
         assertEquals(TEST_SUBTASK_IDS, testEpic.getSubtaskIds(), "list of epic's subtasks should not change");
+        assertEquals(TEST_DURATION, testEpic.getDuration(), "epic duration should not change");
+        assertEquals(TEST_START_TIME, testEpic.getStartTime(), "epic start time should not change");
         assertEquals(TEST_STATUS, testEpic.getStatus(), "epic status should not change");
     }
 
@@ -189,6 +203,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of subtask should not change");
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
     }
 
@@ -206,6 +222,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of subtask should not change");
         assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title is not actual");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description is not actual");
+        assertEquals(MODIFIED_TEST_DURATION, savedSubtask.getDuration(), "subtask duration is not actual");
+        assertEquals(MODIFIED_TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time is not actual");
         assertEquals(MODIFIED_TEST_STATUS, savedSubtask.getStatus(), "subtask status is not actual");
     }
 
@@ -225,6 +243,8 @@ class InMemoryHistoryManagerTest {
         assertNull(savedSubtask.getEpicId(), "epic id of subtask should not change");
         assertNull(savedSubtask.getTitle(), "subtask title should not change");
         assertNull(savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(0L, savedSubtask.getDuration(), "subtask duration should not change");
+        assertNull(savedSubtask.getStartTime(), "subtask start time should not change");
         assertNull(savedSubtask.getStatus(), "subtask status should not change");
     }
 
@@ -236,6 +256,8 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_EPIC_ID, testSubtask.getEpicId(), "epic id of subtask should not change");
         assertEquals(TEST_TITLE, testSubtask.getTitle(), "subtask title should not change");
         assertEquals(TEST_DESCRIPTION, testSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, testSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, testSubtask.getStartTime(), "subtask start time should not change");
         assertEquals(TEST_STATUS, testSubtask.getStatus(), "subtask status should not change");
     }
 
@@ -252,7 +274,7 @@ class InMemoryHistoryManagerTest {
         manager.add(testTask);
         List<Task> actual = manager.getHistory();
 
-        assertEquals(expected, actual, "should be three tasks inn order they last time visited");
+        assertEquals(expected, actual, "should be three tasks in order they last time visited");
     }
 
     @Test

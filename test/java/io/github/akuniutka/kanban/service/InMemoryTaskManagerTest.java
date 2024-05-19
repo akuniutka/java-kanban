@@ -33,13 +33,15 @@ class InMemoryTaskManagerTest {
         manager = new InMemoryTaskManager(historyManager);
         emptyTask = createTestTask();
         testTask = createTaskFilledWithTestData();
-        modifiedTestTask = createTestTask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
+        modifiedTestTask = createTestTask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_DURATION,
+                MODIFIED_TEST_START_TIME, MODIFIED_TEST_STATUS);
         emptyEpic = createTestEpic();
         testEpic = createEpicFilledWithTestData();
         modifiedTestEpic = createTestEpic(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION);
         emptySubtask = createTestSubtask();
-        testSubtask = createTestSubtask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
-        modifiedTestSubtask = createTestSubtask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
+        testSubtask = createTestSubtask(TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME, TEST_STATUS);
+        modifiedTestSubtask = createTestSubtask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_DURATION,
+                MODIFIED_TEST_START_TIME, MODIFIED_TEST_STATUS);
     }
 
     @Test
@@ -62,6 +64,8 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedTask.getId(), "task id differs from returned by manager class");
         assertEquals(TEST_TITLE, savedTask.getTitle(), "task title changed");
         assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description changed");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration changed");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time changed");
         assertEquals(TEST_STATUS, savedTask.getStatus(), "task status changed");
     }
 
@@ -83,6 +87,8 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedTask.getId(), "task id differs from returned by manager class");
         assertNull(savedTask.getTitle(), "task title changed");
         assertNull(savedTask.getDescription(), "task description changed");
+        assertEquals(0L, savedTask.getDuration(), "task duration changed");
+        assertNull(savedTask.getStartTime(), "task start time changed");
         assertNull(savedTask.getStatus(), "task status changed");
     }
 
@@ -105,6 +111,8 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedTask.getId(), "task id changed");
         assertEquals(TEST_TITLE, savedTask.getTitle(), "task title changed");
         assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description changed");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration changed");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time changed");
         assertEquals(TEST_STATUS, savedTask.getStatus(), "task status changed");
     }
 
@@ -119,6 +127,8 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedTask.getId(), "task id changed");
         assertEquals(MODIFIED_TEST_TITLE, savedTask.getTitle(), "task title not updated");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedTask.getDescription(), "task description not updated");
+        assertEquals(MODIFIED_TEST_DURATION, savedTask.getDuration(), "task duration not updated");
+        assertEquals(MODIFIED_TEST_START_TIME, savedTask.getStartTime(), "task start time not updated");
         assertEquals(MODIFIED_TEST_STATUS, savedTask.getStatus(), "task status not updated");
     }
 
@@ -133,6 +143,8 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedTask.getId(), "task id changed");
         assertNull(savedTask.getTitle(), "task title not updated");
         assertNull(savedTask.getDescription(), "task description not updated");
+        assertEquals(0L, savedTask.getDuration(), "task duration not updated");
+        assertNull(savedTask.getStartTime(), "task start time not updated");
         assertNull(savedTask.getStatus(), "task status not updated");
     }
 
@@ -354,9 +366,10 @@ class InMemoryTaskManagerTest {
         modifiedTestSubtask.setEpicId(epicId);
         modifiedTestSubtask.setStatus(status);
         long subtaskId = manager.addSubtask(modifiedTestSubtask);
-        Subtask subtaskUpdate = createTestSubtask(subtaskId, epicId, TEST_TITLE, TEST_DESCRIPTION, TaskStatus.NEW);
+        emptySubtask.setId(subtaskId);
+        emptySubtask.setStatus(TaskStatus.NEW);
 
-        manager.updateSubtask(subtaskUpdate);
+        manager.updateSubtask(emptySubtask);
         Epic savedEpic = manager.getEpic(epicId);
 
         assertEquals(TaskStatus.NEW, savedEpic.getStatus(),
@@ -373,8 +386,9 @@ class InMemoryTaskManagerTest {
         modifiedTestSubtask.setEpicId(epicId);
         modifiedTestSubtask.setStatus(TaskStatus.NEW);
         manager.addSubtask(modifiedTestSubtask);
-        Subtask subtask = createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, status);
-        long subtaskId = manager.addSubtask(subtask);
+        emptySubtask.setEpicId(epicId);
+        emptySubtask.setStatus(status);
+        long subtaskId = manager.addSubtask(emptySubtask);
 
         manager.removeSubtask(subtaskId);
         Epic savedEpic = manager.getEpic(epicId);
@@ -409,9 +423,10 @@ class InMemoryTaskManagerTest {
         modifiedTestSubtask.setEpicId(epicId);
         modifiedTestSubtask.setStatus(status);
         long subtaskId = manager.addSubtask(modifiedTestSubtask);
-        Subtask subtaskUpdate = createTestSubtask(subtaskId, epicId, TEST_TITLE, TEST_DESCRIPTION, TaskStatus.DONE);
+        emptySubtask.setId(subtaskId);
+        emptySubtask.setStatus(TaskStatus.DONE);
 
-        manager.updateSubtask(subtaskUpdate);
+        manager.updateSubtask(emptySubtask);
         Epic savedEpic = manager.getEpic(epicId);
 
         assertEquals(TaskStatus.DONE, savedEpic.getStatus(),
@@ -428,8 +443,9 @@ class InMemoryTaskManagerTest {
         modifiedTestSubtask.setEpicId(epicId);
         modifiedTestSubtask.setStatus(TaskStatus.DONE);
         manager.addSubtask(modifiedTestSubtask);
-        Subtask subtask = createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, status);
-        long subtaskId = manager.addSubtask(subtask);
+        emptySubtask.setEpicId(epicId);
+        emptySubtask.setStatus(status);
+        long subtaskId = manager.addSubtask(emptySubtask);
 
         manager.removeSubtask(subtaskId);
         Epic savedEpic = manager.getEpic(epicId);
@@ -475,7 +491,8 @@ class InMemoryTaskManagerTest {
             if (statusA == statusB && statusA != TaskStatus.IN_PROGRESS) {
                 continue;
             }
-            Subtask subtaskUpdate = createTestSubtask(subtaskId, epicId, TEST_TITLE, TEST_DESCRIPTION, statusA);
+            Subtask subtaskUpdate = createTestSubtask(subtaskId, epicId, TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION,
+                    TEST_START_TIME, statusA);
 
             manager.updateSubtask(subtaskUpdate);
             Epic savedEpic = manager.getEpic(epicId);
@@ -500,8 +517,9 @@ class InMemoryTaskManagerTest {
                 modifiedTestSubtask.setEpicId(epicId);
                 modifiedTestSubtask.setStatus(statusB);
                 manager.addSubtask(modifiedTestSubtask);
-                Subtask subtask = createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, statusC);
-                long subtaskId = manager.addSubtask(subtask);
+                emptySubtask.setEpicId(epicId);
+                emptySubtask.setStatus(statusC);
+                long subtaskId = manager.addSubtask(emptySubtask);
 
                 manager.removeSubtask(subtaskId);
                 Epic savedEpic = manager.getEpic(epicId);
@@ -543,6 +561,8 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title changed");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description changed");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration changed");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time changed");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status changed");
     }
 
@@ -568,6 +588,8 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertNull(savedSubtask.getTitle(), "subtask title changed");
         assertNull(savedSubtask.getDescription(), "subtask description changed");
+        assertEquals(0L, savedSubtask.getDuration(), "subtask duration changed");
+        assertNull(savedSubtask.getStartTime(), "subtask start time changed");
         assertNull(savedSubtask.getStatus(), "subtask status changed");
     }
 
@@ -596,6 +618,8 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title changed");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description changed");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration changed");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time changed");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status changed");
     }
 
@@ -653,6 +677,8 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title not updated");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description not updated");
+        assertEquals(MODIFIED_TEST_DURATION, savedSubtask.getDuration(), "subtask duration not updated");
+        assertEquals(MODIFIED_TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time not updated");
         assertEquals(MODIFIED_TEST_STATUS, savedSubtask.getStatus(), "subtask status not updated");
     }
 
@@ -670,6 +696,8 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertNull(savedSubtask.getTitle(), "subtask title not updated");
         assertNull(savedSubtask.getDescription(), "subtask description not updated");
+        assertEquals(0L, savedSubtask.getDuration(), "subtask duration not updated");
+        assertNull(savedSubtask.getStartTime(), "subtask start time not updated");
         assertNull(savedSubtask.getStatus(), "subtask status not updated");
     }
 
@@ -919,6 +947,8 @@ class InMemoryTaskManagerTest {
         assertEquals(taskId, savedTask.getId(), "task id should not change");
         assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
         assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
         assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
     }
 
@@ -953,6 +983,8 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
     }
 
@@ -974,6 +1006,8 @@ class InMemoryTaskManagerTest {
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
         assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
         assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
         assertEquals(TaskType.EPIC, tasks.get(1).getType(), "2nd element in history should be of EPIC type");
         Epic savedEpic = (Epic) tasks.get(1);
@@ -986,6 +1020,8 @@ class InMemoryTaskManagerTest {
         assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of status should not change");
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
         assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
     }
 
@@ -997,7 +1033,7 @@ class InMemoryTaskManagerTest {
         manager.removeTask(id);
         List<Task> tasks = historyManager.getHistory();
 
-        assertTrue(tasks.isEmpty());
+        assertTrue(tasks.isEmpty(), "task should be removed from history");
     }
 
     @Test
@@ -1008,7 +1044,7 @@ class InMemoryTaskManagerTest {
         manager.removeEpic(id);
         List<Task> tasks = historyManager.getHistory();
 
-        assertTrue(tasks.isEmpty());
+        assertTrue(tasks.isEmpty(), "epic should be removed from history");
     }
 
     @Test
@@ -1021,7 +1057,7 @@ class InMemoryTaskManagerTest {
         manager.removeSubtask(id);
         List<Task> tasks = historyManager.getHistory();
 
-        assertTrue(tasks.isEmpty());
+        assertTrue(tasks.isEmpty(), "subtask should be removed from history");
     }
 
     @Test
@@ -1045,6 +1081,8 @@ class InMemoryTaskManagerTest {
         assertEquals(anotherEpicId, savedSubtask.getEpicId(), "epic id of status should not change");
         assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
         assertEquals(MODIFIED_TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(MODIFIED_TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(MODIFIED_TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
         assertEquals(MODIFIED_TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
     }
 
@@ -1058,7 +1096,7 @@ class InMemoryTaskManagerTest {
         manager.removeTasks();
         List<Task> tasks = historyManager.getHistory();
 
-        assertTrue(tasks.isEmpty());
+        assertTrue(tasks.isEmpty(), "tasks should be removed from history");
     }
 
     @Test
@@ -1071,7 +1109,7 @@ class InMemoryTaskManagerTest {
         manager.removeEpics();
         List<Task> tasks = historyManager.getHistory();
 
-        assertTrue(tasks.isEmpty());
+        assertTrue(tasks.isEmpty(), "epics should be removed from history");
     }
 
     @Test
@@ -1088,7 +1126,7 @@ class InMemoryTaskManagerTest {
         manager.removeSubtasks();
         List<Task> tasks = historyManager.getHistory();
 
-        assertTrue(tasks.isEmpty());
+        assertTrue(tasks.isEmpty(), "subtasks should be removed from history");
     }
 
     @Test
@@ -1105,11 +1143,11 @@ class InMemoryTaskManagerTest {
         manager.removeEpics();
         List<Task> tasks = historyManager.getHistory();
 
-        assertTrue(tasks.isEmpty());
+        assertTrue(tasks.isEmpty(), "subtasks should be removed from history");
     }
 
     private Task createTaskFilledWithTestData() {
-        return createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        return createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME, TEST_STATUS);
     }
 
     private Epic createEpicFilledWithTestData() {
@@ -1117,7 +1155,7 @@ class InMemoryTaskManagerTest {
     }
 
     private Subtask createSubtaskFilledWithTestDataAndEpicId(long epicId) {
-        return createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
+        return createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME, TEST_STATUS);
     }
 
     private List<Subtask> createListOfSubtasksWithPresetIds(long... ids) {
