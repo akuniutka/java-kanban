@@ -6,6 +6,8 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
@@ -98,7 +100,7 @@ public class InMemoryTaskManager implements TaskManager {
         final long id = generateId();
         epic.setId(id);
         epic.getSubtaskIds().clear();
-        updateEpicStatus(epic);
+        updateEpicStatusDurationStartTime(epic);
         epics.put(id, epic);
         return id;
     }
@@ -135,7 +137,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void removeSubtasks() {
         for (Epic epic : epics.values()) {
             epic.getSubtaskIds().clear();
-            updateEpicStatus(epic);
+            updateEpicStatusDurationStartTime(epic);
         }
         for (Subtask subtask : subtasks.values()) {
             historyManager.remove(subtask.getId());
@@ -167,7 +169,7 @@ public class InMemoryTaskManager implements TaskManager {
         final Epic epic = epics.get(epicId);
         subtask.setEpicId(epicId);
         subtasks.put(id, subtask);
-        updateEpicStatus(epic);
+        updateEpicStatusDurationStartTime(epic);
     }
 
     @Override
@@ -177,18 +179,14 @@ public class InMemoryTaskManager implements TaskManager {
         final long epicId = subtask.getEpicId();
         final Epic epic = epics.get(epicId);
         epic.getSubtaskIds().remove(id);
-        updateEpicStatus(epic);
+        updateEpicStatusDurationStartTime(epic);
         historyManager.remove(id);
     }
 
     @Override
     public List<Subtask> getEpicSubtasks(long epicId) {
         final Epic epic = requireEpicExists(epicId);
-        final List<Subtask> subtaskList = new ArrayList<>();
-        for (long subtaskId : epic.getSubtaskIds()) {
-            subtaskList.add(subtasks.get(subtaskId));
-        }
-        return subtaskList;
+        return getEpicSubtasks(epic);
     }
 
     @Override
@@ -205,29 +203,73 @@ public class InMemoryTaskManager implements TaskManager {
         final Epic epic = requireEpicExists(subtask.getEpicId());
         subtasks.put(subtask.getId(), subtask);
         epic.getSubtaskIds().add(subtask.getId());
-        updateEpicStatus(epic);
+        updateEpicStatusDurationStartTime(epic);
     }
 
-    protected void updateEpicStatus(Epic epic) {
-        Objects.requireNonNull(epic, "cannot update status of null epic");
-        boolean areAllSubtasksNew = true;
-        boolean areAllSubtasksDone = true;
+    protected List<Subtask> getEpicSubtasks(Epic epic) {
+        Objects.requireNonNull(epic, "cannot get subtasks of null epic");
+        final List<Subtask> subtaskList = new ArrayList<>();
         for (long subtaskId : epic.getSubtaskIds()) {
-            final Subtask subtask = subtasks.get(subtaskId);
-            if (subtask.getStatus() != TaskStatus.NEW) {
-                areAllSubtasksNew = false;
-            }
-            if (subtask.getStatus() != TaskStatus.DONE) {
-                areAllSubtasksDone = false;
-            }
+            subtaskList.add(subtasks.get(subtaskId));
         }
-        if (areAllSubtasksNew) {
-            epic.setStatus(TaskStatus.NEW);
-        } else if (areAllSubtasksDone) {
-            epic.setStatus(TaskStatus.DONE);
+        return subtaskList;
+    }
+
+    protected void updateEpicStatusDurationStartTime(Epic epic) {
+        Objects.requireNonNull(epic, "cannot update status, duration, start time of null epic");
+        final TaskStatus status = calculateEpicStatus(epic);
+        final LocalDateTime startTime = calculateEpicStartTime(epic);
+        final LocalDateTime endTime = calculateEpicEndTime(epic);
+        epic.setStatus(status);
+        epic.setStartTime(startTime);
+        if (startTime != null && endTime != null) {
+            epic.setDuration(Duration.between(startTime, endTime).toMinutes());
         } else {
-            epic.setStatus(TaskStatus.IN_PROGRESS);
+            epic.setDuration(0L);
         }
+    }
+
+    protected TaskStatus calculateEpicStatus(Epic epic) {
+        Objects.requireNonNull(epic, "cannot calculate status for null epic");
+        final Set<TaskStatus> subtaskStatuses = new HashSet<>();
+        for (Subtask subtask : getEpicSubtasks(epic)) {
+            subtaskStatuses.add(subtask.getStatus());
+        }
+        if (subtaskStatuses.isEmpty()) {
+            return TaskStatus.NEW;
+        } else if (subtaskStatuses.size() > 1) {
+            return TaskStatus.IN_PROGRESS;
+        } else {
+            return subtaskStatuses.iterator().next();
+        }
+    }
+
+    protected LocalDateTime calculateEpicStartTime(Epic epic) {
+        Objects.requireNonNull(epic, "cannot calculate start time for null epic");
+        final List<Subtask> subtasks = getEpicSubtasks(epic);
+        LocalDateTime startTime = subtasks.isEmpty() ? null : subtasks.getFirst().getStartTime();
+        for (Subtask subtask : subtasks) {
+            if (subtask.getStartTime() == null) {
+                return null;
+            } else if (subtask.getStartTime().isBefore(startTime)) {
+                startTime = subtask.getStartTime();
+            }
+        }
+        return startTime;
+    }
+
+    protected LocalDateTime calculateEpicEndTime(Epic epic) {
+        Objects.requireNonNull(epic, "cannot calculate end time for null epic");
+        final List<Subtask> subtasks = getEpicSubtasks(epic);
+        LocalDateTime endTime = subtasks.isEmpty() ? null : subtasks.getFirst().getStartTime();
+        for (Subtask subtask : subtasks) {
+            if (subtask.getEndTime() == null) {
+                return null;
+            } else if (subtask.getEndTime().isAfter(endTime)) {
+                endTime = subtask.getEndTime();
+            }
+        }
+        return endTime;
     }
 
     protected Task requireTaskExists(Long id) {

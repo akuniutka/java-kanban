@@ -531,6 +531,134 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldResetEpicDurationAndStartTimeWhenNewlyAdded() {
+        testEpic.setDuration(TEST_DURATION);
+        testEpic.setStartTime(TEST_START_TIME);
+
+        long epicId = manager.addEpic(testEpic);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(0L, savedEpic.getDuration(), "epic should have zero duration when newly added");
+        assertNull(savedEpic.getStartTime(), "epic should have null start time when newly added");
+    }
+
+    @Test
+    public void shouldResetEpicDurationAndStartTimeWhenNoSubtaskWithStartTimeSet() {
+        long epicId = manager.addEpic(testEpic);
+        emptySubtask.setEpicId(epicId);
+
+        manager.addSubtask(emptySubtask);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(0L, savedEpic.getDuration(), "epic should have zero duration when no subtask with startTime set");
+        assertNull(savedEpic.getStartTime(), "epic should have null start time when no subtask with startTime set");
+    }
+
+    @Test
+    public void shouldSetEpicDurationAndStartTimeWhenSubtaskWithStartTimeSet() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+
+        manager.addSubtask(testSubtask);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(TEST_DURATION, savedEpic.getDuration(), "epic should have duration of its only subtask");
+        assertEquals(TEST_START_TIME, savedEpic.getStartTime(), "epic should have start time of its only subtask");
+    }
+
+    @Test
+    public void shouldSetEpicAggregateDurationAndStartTimeWhenSeveralSubtasks() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setEpicId(epicId);
+
+        manager.addSubtask(testSubtask);
+        manager.addSubtask(modifiedTestSubtask);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(MODIFIED_TEST_EPIC_DURATION, savedEpic.getDuration(), "epic duration should cover subtasks");
+        assertEquals(TEST_START_TIME, savedEpic.getStartTime(), "epic start time should cover subtasks");
+    }
+
+    @Test
+    public void shouldResetEpicDurationAndStartTimeWhenNotAllSubtasksWithStartTimeSet() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setEpicId(epicId);
+        emptySubtask.setEpicId(epicId);
+
+        manager.addSubtask(testSubtask);
+        manager.addSubtask(modifiedTestSubtask);
+        manager.addSubtask(emptySubtask);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(0L, savedEpic.getDuration(), "epic should have zero duration when subtask with startTime not set");
+        assertNull(savedEpic.getStartTime(), "epic should have null start time when subtask with startTime not set");
+    }
+
+    @Test
+    public void shouldResetEpicDurationAndStartDateWhenUpdateSubtaskToStartTimeNotSet() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        long subtaskId = manager.addSubtask(modifiedTestSubtask);
+        emptySubtask.setId(subtaskId);
+
+        manager.updateSubtask(emptySubtask);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(0L, savedEpic.getDuration(), "epic should have zero duration when subtask with startTime not set");
+        assertNull(savedEpic.getStartTime(), "epic should have null start time when subtask with startTime not set");
+    }
+
+    @Test
+    public void shouldSetEpicDurationAndStartDateWhenUpdateSubtaskToStartTimeSet() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        emptySubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        modifiedTestSubtask.setId(subtaskId);
+
+        manager.updateSubtask(modifiedTestSubtask);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(MODIFIED_TEST_EPIC_DURATION, savedEpic.getDuration(), "epic duration should cover subtasks");
+        assertEquals(TEST_START_TIME, savedEpic.getStartTime(), "epic start time should cover subtasks");
+    }
+
+    @Test
+    public void shouldSetEpicDurationAndStartDateWhenDeleteSubtaskWithStartTimeNotSet() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        modifiedTestSubtask.setEpicId(epicId);
+        emptySubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        manager.addSubtask(modifiedTestSubtask);
+        long subtaskId = manager.addSubtask(emptySubtask);
+
+        manager.removeSubtask(subtaskId);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(MODIFIED_TEST_EPIC_DURATION, savedEpic.getDuration(), "epic duration should cover subtasks");
+        assertEquals(TEST_START_TIME, savedEpic.getStartTime(), "epic start time should cover subtasks");
+    }
+
+    @Test
+    public void shouldResetEpicDurationAndStartDateWhenDeleteSubtaskWithStartTimeSet() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+
+        manager.removeSubtask(subtaskId);
+        Epic savedEpic = manager.getEpic(epicId);
+
+        assertEquals(0L, savedEpic.getDuration(), "epic should have zero duration when no subtask with startTime set");
+        assertNull(savedEpic.getStartTime(), "epic should have null start time when no subtask with startTime set");
+    }
+
+    @Test
     public void shouldRemoveEpic() {
         long id = manager.addEpic(testEpic);
 
