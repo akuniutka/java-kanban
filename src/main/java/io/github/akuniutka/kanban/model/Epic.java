@@ -25,21 +25,9 @@ public class Epic extends Task {
 
     @Override
     public String toString() {
-        String string = "Epic{";
-        string += "id=" + getId();
-        if (getTitle() == null) {
-            string += ", title=null";
-        } else {
-            string += ", title='" + getTitle() + "'";
-        }
-        if (getDescription() == null) {
-            string += ", description=null";
-        } else {
-            string += ", description.length=" + getDescription().length();
-        }
-        string += ", subtaskIds=" + subtaskIds;
-        string += ", status=" + getStatus();
-        string += "}";
-        return string;
+        return "Epic{id=%s, title=%s, description%s, subtaskIds=%s, duration=%d, startTime=%s, status=%s}".formatted(
+                getId(), getTitle() == null ? "null" : "\"" + getTitle() + "\"",
+                getDescription() == null ? "=null" : ".length=" + getDescription().length(), subtaskIds, getDuration(),
+                getStartTime(), getStatus());
     }
 }
