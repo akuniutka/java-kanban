@@ -174,17 +174,14 @@ class InMemoryHistoryManagerTest {
 
     @Test
     public void shouldNotModifyOriginalEpic() {
-        testEpic.setSubtaskIds(TEST_SUBTASK_IDS);
-        testEpic.setDuration(TEST_DURATION);
-        testEpic.setStartTime(TEST_START_TIME);
-        testEpic.setStatus(TEST_STATUS);
+        testEpic.setSubtasks(List.of(testSubtask));
 
         manager.add(testEpic);
 
         assertEquals(TEST_EPIC_ID, testEpic.getId(), "epic id should not change");
         assertEquals(TEST_TITLE, testEpic.getTitle(), "epic title should not change");
         assertEquals(TEST_DESCRIPTION, testEpic.getDescription(), "epic description should not change");
-        assertEquals(TEST_SUBTASK_IDS, testEpic.getSubtaskIds(), "list of epic's subtasks should not change");
+        assertEquals(List.of(testSubtask), testEpic.getSubtasks(), "list of epic's subtasks should not change");
         assertEquals(TEST_DURATION, testEpic.getDuration(), "epic duration should not change");
         assertEquals(TEST_START_TIME, testEpic.getStartTime(), "epic start time should not change");
         assertEquals(TEST_STATUS, testEpic.getStatus(), "epic status should not change");
