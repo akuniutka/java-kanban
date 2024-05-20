@@ -2,7 +2,10 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.exception.ManagerLoadException;
 import io.github.akuniutka.kanban.exception.ManagerSaveException;
-import io.github.akuniutka.kanban.model.*;
+import io.github.akuniutka.kanban.model.Epic;
+import io.github.akuniutka.kanban.model.Subtask;
+import io.github.akuniutka.kanban.model.Task;
+import io.github.akuniutka.kanban.model.TaskType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -365,7 +368,7 @@ class FileBackedTaskManagerTest {
         assertEquals(TEST_EPIC_ID, epic.getId(), "epic id loaded incorrectly");
         assertEquals(TEST_TITLE, epic.getTitle(), "epic title loaded incorrectly");
         assertEquals(TEST_DESCRIPTION, epic.getDescription(), "epic description loaded incorrectly");
-        assertTrue(epic.getSubtaskIds().isEmpty(), "list of epic subtasks should be empty");
+        assertTrue(epic.getSubtasks().isEmpty(), "list of epic subtasks should be empty");
     }
 
     @Test
@@ -384,7 +387,7 @@ class FileBackedTaskManagerTest {
         assertEquals(TEST_EPIC_ID, epic.getId(), "epic id loaded incorrectly");
         assertNull(epic.getTitle(), "epic title loaded incorrectly");
         assertNull(epic.getDescription(), "epic description loaded incorrectly");
-        assertTrue(epic.getSubtaskIds().isEmpty(), "list of epic subtasks should be empty");
+        assertTrue(epic.getSubtasks().isEmpty(), "list of epic subtasks should be empty");
     }
 
     @Test
@@ -409,8 +412,15 @@ class FileBackedTaskManagerTest {
         assertEquals(TEST_START_TIME, subtask.getStartTime(), "subtask start time loaded incorrectly");
         assertEquals(TEST_STATUS, subtask.getStatus(), "subtask status loaded incorrectly");
         Epic epic = manager.getEpics().getFirst();
-        assertEquals(1, epic.getSubtaskIds().size(), "list of epic subtasks should contain exactly 1 element");
-        assertEquals(TEST_SUBTASK_ID, epic.getSubtaskIds().getFirst(), "subtask id loaded incorrectly");
+        assertEquals(1, epic.getSubtasks().size(), "list of epic subtasks should contain exactly 1 element");
+        subtask = epic.getSubtasks().getFirst();
+        assertEquals(TEST_SUBTASK_ID, subtask.getId(), "subtask id loaded incorrectly");
+        assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");
+        assertEquals(TEST_TITLE, subtask.getTitle(), "subtask title loaded incorrectly");
+        assertEquals(TEST_DESCRIPTION, subtask.getDescription(), "subtask description loaded incorrectly");
+        assertEquals(TEST_DURATION, subtask.getDuration(), "subtask duration loaded incorrectly");
+        assertEquals(TEST_START_TIME, subtask.getStartTime(), "subtask start time loaded incorrectly");
+        assertEquals(TEST_STATUS, subtask.getStatus(), "subtask status loaded incorrectly");
     }
 
     @Test
@@ -435,34 +445,15 @@ class FileBackedTaskManagerTest {
         assertNull(subtask.getStartTime(), "subtask start time loaded incorrectly");
         assertNull(subtask.getStatus(), "subtask status loaded incorrectly");
         Epic epic = manager.getEpics().getFirst();
-        assertEquals(1, epic.getSubtaskIds().size(), "list of epic subtasks should contain exactly 1 element");
-        assertEquals(TEST_SUBTASK_ID, epic.getSubtaskIds().getFirst(), "subtask id loaded incorrectly");
-    }
-
-    @Test
-    public void shouldRecalculateEpicStatusOnLoad() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                1,EPIC,"Epic 1",,"Epic with no subtasks",,,
-                2,EPIC,"Epic 2",,"Epic with all subtasks in status NEW",,,
-                3,EPIC,"Epic 3",,"Epic with all subtasks in status DONE",,,
-                4,EPIC,"Epic 4",,"Epic with subtasks in different statuses",,,
-                5,SUBTASK,"Subtask 1",NEW,"Subtask 1 description",0,null,2
-                6,SUBTASK,"Subtask 2",NEW,"Subtask 2 description",0,null,2
-                7,SUBTASK,"Subtask 3",DONE,"Subtask 3 description",0,null,3
-                8,SUBTASK,"Subtask 4",DONE,"Subtask 4 description",0,null,3
-                9,SUBTASK,"Subtask 5",NEW,"Subtask 5 description",0,null,4
-                10,SUBTASK,"Subtask 6",DONE,"Subtask 6 description",0,null,4
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Epic> epics = manager.getEpics();
-        assertEquals(4, epics.size(), "list should contain exactly 4 elements");
-        assertEquals(TaskStatus.NEW, epics.getFirst().getStatus(), "epic should have status NEW");
-        assertEquals(TaskStatus.NEW, epics.get(1).getStatus(), "epic should have status NEW");
-        assertEquals(TaskStatus.DONE, epics.get(2).getStatus(), "epic should have status DONE");
-        assertEquals(TaskStatus.IN_PROGRESS, epics.getLast().getStatus(), "epic should have status IN_PROGRESS");
+        assertEquals(1, epic.getSubtasks().size(), "list of epic subtasks should contain exactly 1 element");
+        subtask = epic.getSubtasks().getFirst();
+        assertEquals(TEST_SUBTASK_ID, subtask.getId(), "subtask id loaded incorrectly");
+        assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");
+        assertNull(subtask.getTitle(), "subtask title loaded incorrectly");
+        assertNull(subtask.getDescription(), "subtask description loaded incorrectly");
+        assertEquals(0L, subtask.getDuration(), "subtask duration loaded incorrectly");
+        assertNull(subtask.getStartTime(), "subtask start time loaded incorrectly");
+        assertNull(subtask.getStatus(), "subtask status loaded incorrectly");
     }
 
     @Test

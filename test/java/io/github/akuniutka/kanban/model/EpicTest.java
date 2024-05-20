@@ -1,5 +1,6 @@
 package io.github.akuniutka.kanban.model;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,20 @@ import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EpicTest {
+    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
+    private List<Subtask> testSubtasks;
+    private List<Subtask> twoTestSubtasks;
+
+    @BeforeEach
+    public void setUp() {
+        Subtask testSubtask = createTestSubtask(TEST_SUBTASK_ID, TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION,
+                TEST_DURATION, TEST_START_TIME, TEST_STATUS);
+        Subtask anotherTestSubtask = createTestSubtask(ANOTHER_TEST_ID, TEST_EPIC_ID, MODIFIED_TEST_TITLE,
+                MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_DURATION, MODIFIED_TEST_START_TIME, MODIFIED_TEST_STATUS);
+        testSubtasks = List.of(testSubtask);
+        twoTestSubtasks = List.of(testSubtask, anotherTestSubtask);
+    }
+
     @Test
     public void shouldCreateEpic() {
         Epic epic = new Epic();
@@ -53,99 +68,144 @@ class EpicTest {
     }
 
     @Test
-    public void shouldKeepSubtaskIds() {
+    public void shouldKeepSubtasks() {
         Epic epic = new Epic();
+        List<Subtask> subtasks = testSubtasks;
 
-        epic.setSubtaskIds(TEST_SUBTASK_IDS);
-        List<Long> actualSubtaskIds = epic.getSubtaskIds();
+        epic.setSubtasks(subtasks);
+        List<Subtask> actualSubtasks = epic.getSubtasks();
 
-        assertEquals(TEST_SUBTASK_IDS, actualSubtaskIds, "epic has wrong list of subtask ids");
+        assertEquals(testSubtasks, actualSubtasks, "epic has wrong list of subtasks");
+        Subtask subtask = subtasks.getFirst();
+        assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id changed in subtask");
+        assertEquals(TEST_TITLE, subtask.getTitle(), "subtask title changed");
+        assertEquals(TEST_DESCRIPTION, subtask.getDescription(), "subtask description changed");
+        assertEquals(TEST_DURATION, subtask.getDuration(), "subtask duration changed");
+        assertEquals(TEST_START_TIME, subtask.getStartTime(), "subtask start time changed");
+        assertEquals(TEST_STATUS, subtask.getStatus(), "subtask status changed");
     }
 
     @Test
-    public void shouldHaveDuration() {
+    public void shouldThrowWhenSubtasksNull() {
         Epic epic = new Epic();
 
-        epic.setDuration(TEST_DURATION);
-        long actualDuration = epic.getDuration();
-
-        assertEquals(TEST_DURATION, actualDuration, "epic has wrong duration");
+        Exception exception = assertThrows(NullPointerException.class, () -> epic.setSubtasks(null));
+        assertEquals("list of subtasks cannot be null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldAcceptZeroDuration() {
+    public void shouldHaveZeroDurationWhenNoSubtasks() {
         Epic epic = new Epic();
+        epic.getSubtasks().clear();
 
-        epic.setDuration(0L);
         long actualDuration = epic.getDuration();
 
         assertEquals(0L, actualDuration, "epic has wrong duration");
     }
 
     @Test
-    public void shouldThrowWhenNegativeDuration() {
+    public void shouldHaveDurationWhenSubtaskWithDuration() {
         Epic epic = new Epic();
+        epic.setSubtasks(testSubtasks);
 
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> epic.setDuration(-TEST_DURATION));
-        assertEquals("duration cannot be negative", exception.getMessage(), "message for exception is wrong");
+        long actualDuration = epic.getDuration();
+
+        assertEquals(TEST_DURATION, actualDuration, "epic has wrong duration");
     }
 
     @Test
-    public void shouldHaveStartTime() {
+    public void shouldHaveAggregateDurationWhenSeveralSubtasksWithDuration() {
+        Epic epic = new Epic();
+        epic.setSubtasks(twoTestSubtasks);
+
+        long actualDuration = epic.getDuration();
+
+        assertEquals(TEST_DURATION + MODIFIED_TEST_DURATION, actualDuration, "epic has wrong duration");
+    }
+
+    @Test
+    public void shouldThrowWhenSetDuration() {
         Epic epic = new Epic();
 
-        epic.setStartTime(TEST_START_TIME);
+        Exception exception = assertThrows(UnsupportedOperationException.class, () -> epic.setDuration(TEST_DURATION));
+        assertEquals("cannot explicitly set epic duration", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldHaveNullStartTimeWhenNoSubtasks() {
+        Epic epic = new Epic();
+        epic.getSubtasks().clear();
+
+        LocalDateTime actualStartTime = epic.getStartTime();
+
+        assertNull(actualStartTime, "epic has wrong start time");
+    }
+
+    @Test
+    public void shouldHaveNullStartTimeWhenNoSubtasksWithStartTime() {
+        Epic epic = new Epic();
+        testSubtasks.getFirst().setStartTime(null);
+        epic.setSubtasks(testSubtasks);
+
+        LocalDateTime actualStartTime = epic.getStartTime();
+
+        assertNull(actualStartTime, "epic has wrong start time");
+    }
+
+    @Test
+    public void shouldHaveStartTimeWhenSubtaskWithStartTime() {
+        Epic epic = new Epic();
+        epic.setSubtasks(testSubtasks);
+
         LocalDateTime actualStartTime = epic.getStartTime();
 
         assertEquals(TEST_START_TIME, actualStartTime, "epic has wrong start time");
     }
 
     @Test
-    public void shouldTruncateStartTimeToMinutes() {
+    public void shouldHaveMinStartTimeWhenSeveralSubtasksWithStartTime() {
         Epic epic = new Epic();
+        epic.setSubtasks(twoTestSubtasks);
 
-        epic.setStartTime(TEST_START_TIME.plusSeconds(25));
         LocalDateTime actualStartTime = epic.getStartTime();
 
         assertEquals(TEST_START_TIME, actualStartTime, "epic has wrong start time");
     }
 
     @Test
-    public void shouldAcceptNullStartTime() {
+    public void shouldThrowWhenSetStartTime() {
         Epic epic = new Epic();
 
-        epic.setStartTime(null);
-        LocalDateTime actualStartTime = epic.getStartTime();
-
-        assertNull(actualStartTime, "epic start time should be null");
+        Exception exception = assertThrows(UnsupportedOperationException.class,
+                () -> epic.setStartTime(TEST_START_TIME));
+        assertEquals("cannot explicitly set epic start time", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldReturnNullEndTimeWhenStartTimeNull() {
+    public void shouldHaveNullEndTimeWhenNoSubtasks() {
         Epic epic = new Epic();
-        epic.setStartTime(null);
+        epic.getSubtasks().clear();
 
         LocalDateTime actualEndTime = epic.getEndTime();
 
-        assertNull(actualEndTime, "epic end time should be null");
+        assertNull(actualEndTime, "epic has wrong end time");
     }
 
     @Test
-    public void shouldReturnStartTimeAsWndTimeWhenDurationZero() {
+    public void shouldHaveNullEndTimeWhenNoSubtasksWithEndTime() {
         Epic epic = new Epic();
-        epic.setDuration(0L);
-        epic.setStartTime(TEST_START_TIME);
+        testSubtasks.getFirst().setStartTime(null);
+        epic.setSubtasks(testSubtasks);
 
         LocalDateTime actualEndTime = epic.getEndTime();
 
-        assertEquals(TEST_START_TIME, actualEndTime, "epic has wrong end time");
+        assertNull(actualEndTime, "epic has wrong end time");
     }
 
     @Test
-    public void shouldReturnCorrectEndTime() {
+    public void shouldHaveEndTimeWhenSubtaskWithEndTime() {
         Epic epic = new Epic();
-        epic.setDuration(TEST_DURATION);
-        epic.setStartTime(TEST_START_TIME);
+        epic.setSubtasks(testSubtasks);
 
         LocalDateTime actualEndTime = epic.getEndTime();
 
@@ -153,22 +213,73 @@ class EpicTest {
     }
 
     @Test
-    public void shouldHaveStatus() {
+    public void shouldHaveMaxEndTimeWhenSeveralSubtasksWithEndTime() {
         Epic epic = new Epic();
+        epic.setSubtasks(twoTestSubtasks);
 
-        epic.setStatus(TEST_STATUS);
+        LocalDateTime actualEndTime = epic.getEndTime();
+
+        assertEquals(MODIFIED_TEST_END_TIME, actualEndTime, "epic has wrong start time");
+    }
+
+    @Test
+    public void shouldHaveStatusNewWhenNoSubtasks() {
+        Epic epic = new Epic();
+        epic.getSubtasks().clear();
+
         TaskStatus actualStatus = epic.getStatus();
 
-        assertEquals(TEST_STATUS, actualStatus, "epic has wrong status");
+        assertEquals(TaskStatus.NEW, actualStatus, "epic has wrong status");
+    }
+
+    @Test
+    public void shouldHaveStatusNewWhenAllSubtasksHaveStatusNew() {
+        Epic epic = new Epic();
+        twoTestSubtasks.getFirst().setStatus(TaskStatus.NEW);
+        twoTestSubtasks.getLast().setStatus(TaskStatus.NEW);
+        epic.setSubtasks(twoTestSubtasks);
+
+        TaskStatus actualStatus = epic.getStatus();
+
+        assertEquals(TaskStatus.NEW, actualStatus, "epic has wrong status");
+    }
+
+    @Test
+    public void shouldHaveStatusDoneWhenAllSubtasksHaveStatusDone() {
+        Epic epic = new Epic();
+        twoTestSubtasks.getFirst().setStatus(TaskStatus.DONE);
+        twoTestSubtasks.getLast().setStatus(TaskStatus.DONE);
+        epic.setSubtasks(twoTestSubtasks);
+
+        TaskStatus actualStatus = epic.getStatus();
+
+        assertEquals(TaskStatus.DONE, actualStatus, "epic has wrong status");
+    }
+
+    @Test
+    public void shouldHaveStatusInProgressWhenNotAllSubtasksHaveStatusNewNeitherDone() {
+        Epic epic = new Epic();
+        twoTestSubtasks.getFirst().setStatus(TaskStatus.NEW);
+        twoTestSubtasks.getLast().setStatus(TaskStatus.DONE);
+        epic.setSubtasks(twoTestSubtasks);
+
+        TaskStatus actualStatus = epic.getStatus();
+
+        assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "epic has wrong status");
+    }
+
+    @Test
+    public void shouldThrowWhenSetStatus() {
+        Epic epic = new Epic();
+
+        Exception exception = assertThrows(UnsupportedOperationException.class, () -> epic.setStatus(TEST_STATUS));
+        assertEquals("cannot explicitly set epic status", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldBeEqualWhenEqualIds() {
         Epic epic = createTestEpic(TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION);
-        epic.setSubtaskIds(TEST_SUBTASK_IDS);
-        epic.setDuration(TEST_DURATION);
-        epic.setStartTime(TEST_START_TIME);
-        epic.setStatus(TEST_STATUS);
+        epic.setSubtasks(testSubtasks);
         Epic anotherEpic = new Epic();
         anotherEpic.setId(TEST_EPIC_ID);
 
@@ -178,43 +289,33 @@ class EpicTest {
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
         Epic epic = createTestEpic(TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION);
-        epic.setSubtaskIds(TEST_SUBTASK_IDS);
-        epic.setDuration(TEST_DURATION);
-        epic.setStartTime(TEST_START_TIME);
-        epic.setStatus(TEST_STATUS);
+        epic.setSubtasks(testSubtasks);
         Epic anotherEpic = createTestEpic(ANOTHER_TEST_ID, TEST_TITLE, TEST_DESCRIPTION);
-        anotherEpic.setSubtaskIds(TEST_SUBTASK_IDS);
-        anotherEpic.setDuration(TEST_DURATION);
-        anotherEpic.setStartTime(TEST_START_TIME);
-        anotherEpic.setStatus(TEST_STATUS);
+        anotherEpic.setSubtasks(testSubtasks);
 
         assertNotEquals(epic, anotherEpic, "epics with different ids may not considered equal");
     }
 
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
-        String expectedString = "Epic{id=null, title=null, description=null, subtaskIds=[], duration=0, startTime=null,"
-                + " status=null}";
+        String expectedEpicString =
+                "Epic{id=null, title=null, description=null, subtasks=[], duration=0, " + "startTime=null, status=NEW}";
         Epic epic = new Epic();
-        epic.setStatus(null);
 
         String actualString = epic.toString();
 
-        assertEquals(expectedString, actualString, "string representation of epic is wrong");
+        assertEquals(expectedEpicString, actualString, "string representation of epic is wrong");
     }
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        String expectedString = "Epic{id=2, title=\"Title\", description.length=11, subtaskIds=[4, 5, 6], duration=30, "
-                + "startTime=2000-05-01T13:30, status=IN_PROGRESS}";
+        String expectedEpicString = String.format("Epic{id=2, title=\"Title\", description.length=11, subtasks=[%s], "
+                + "duration=30, startTime=2000-05-01T13:30, status=IN_PROGRESS}", testSubtasks.getFirst());
         Epic epic = createTestEpic(TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION);
-        epic.setSubtaskIds(TEST_SUBTASK_IDS);
-        epic.setDuration(TEST_DURATION);
-        epic.setStartTime(TEST_START_TIME);
-        epic.setStatus(TEST_STATUS);
+        epic.setSubtasks(testSubtasks);
 
         String actualString = epic.toString();
 
-        assertEquals(expectedString, actualString, "string representation of epic is wrong");
+        assertEquals(expectedEpicString, actualString, "string representation of epic is wrong");
     }
 }

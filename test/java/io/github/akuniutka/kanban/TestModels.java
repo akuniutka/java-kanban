@@ -6,7 +6,6 @@ import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public final class TestModels {
     public static final String TEST_TITLE = "Title";
@@ -18,14 +17,13 @@ public final class TestModels {
     public static final String MODIFIED_TEST_TITLE = "Modified Title";
     public static final String MODIFIED_TEST_DESCRIPTION = "Modified description";
     public static final long MODIFIED_TEST_DURATION = 90L;
-    public static final long MODIFIED_TEST_EPIC_DURATION = 180L;
     public static final LocalDateTime MODIFIED_TEST_START_TIME = LocalDateTime.of(2000, 5, 1, 15, 0);
+    public static final LocalDateTime MODIFIED_TEST_END_TIME = LocalDateTime.of(2000, 5, 1, 16, 30);
     public static final TaskStatus MODIFIED_TEST_STATUS = TaskStatus.DONE;
     public static final long TEST_TASK_ID = 1L;
     public static final long TEST_EPIC_ID = 2L;
     public static final long TEST_SUBTASK_ID = 3L;
     public static final long ANOTHER_TEST_ID = 1_000L;
-    public static final List<Long> TEST_SUBTASK_IDS = List.of(4L, 5L, 6L);
 
     private TestModels() {
     }
