@@ -25,16 +25,20 @@ public class Epic extends Task {
     }
 
     @Override
-    public long getDuration() {
-        long duration = 0;
+    public Long getDuration() {
+        Long duration = null;
         for (Subtask subtask : subtasks) {
-            duration += subtask.getDuration();
+            if (duration == null) {
+                duration = subtask.getDuration();
+            } else if (subtask.getDuration() != null) {
+                duration += subtask.getDuration();
+            }
         }
         return duration;
     }
 
     @Override
-    public void setDuration(long duration) {
+    public void setDuration(Long duration) {
         throw new UnsupportedOperationException("cannot explicitly set epic duration");
     }
 
@@ -87,7 +91,7 @@ public class Epic extends Task {
 
     @Override
     public String toString() {
-        return "Epic{id=%s, title=%s, description%s, subtasks=%s, duration=%d, startTime=%s, status=%s}".formatted(
+        return "Epic{id=%s, title=%s, description%s, subtasks=%s, duration=%s, startTime=%s, status=%s}".formatted(
                 getId(), getTitle() == null ? "null" : "\"" + getTitle() + "\"",
                 getDescription() == null ? "=null" : ".length=" + getDescription().length(), subtasks, getDuration(),
                 getStartTime(), getStatus());

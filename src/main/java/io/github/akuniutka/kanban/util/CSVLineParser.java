@@ -44,10 +44,6 @@ public class CSVLineParser {
                 throw new CSVParsingException("unexpected double quote", doubleQuoteIndex + 1);
             }
         }
-        if (isQuoted) {
-            return new CSVToken(startIndex, line.substring(startIndex + 1, prevDelimiterAt - 1), true);
-        } else {
-            return new CSVToken(startIndex, line.substring(startIndex, prevDelimiterAt), false);
-        }
+        return new CSVToken(startIndex, line.substring(startIndex, prevDelimiterAt), isQuoted);
     }
 }

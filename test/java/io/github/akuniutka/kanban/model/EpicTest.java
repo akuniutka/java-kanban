@@ -94,13 +94,24 @@ class EpicTest {
     }
 
     @Test
-    public void shouldHaveZeroDurationWhenNoSubtasks() {
+    public void shouldHaveNullDurationWhenNoSubtasks() {
         Epic epic = new Epic();
         epic.getSubtasks().clear();
 
-        long actualDuration = epic.getDuration();
+        Long actualDuration = epic.getDuration();
 
-        assertEquals(0L, actualDuration, "epic has wrong duration");
+        assertNull(actualDuration, "epic has wrong duration");
+    }
+
+    @Test
+    public void shouldHaveNullDurationWhenNoSubtaskWithDuration() {
+        Epic epic = new Epic();
+        testSubtasks.getFirst().setDuration(null);
+        epic.setSubtasks(testSubtasks);
+
+        Long actualDuration = epic.getDuration();
+
+        assertNull(actualDuration, "epic has wrong duration");
     }
 
     @Test
@@ -108,7 +119,7 @@ class EpicTest {
         Epic epic = new Epic();
         epic.setSubtasks(testSubtasks);
 
-        long actualDuration = epic.getDuration();
+        Long actualDuration = epic.getDuration();
 
         assertEquals(TEST_DURATION, actualDuration, "epic has wrong duration");
     }
@@ -118,7 +129,7 @@ class EpicTest {
         Epic epic = new Epic();
         epic.setSubtasks(twoTestSubtasks);
 
-        long actualDuration = epic.getDuration();
+        Long actualDuration = epic.getDuration();
 
         assertEquals(TEST_DURATION + MODIFIED_TEST_DURATION, actualDuration, "epic has wrong duration");
     }
@@ -298,13 +309,13 @@ class EpicTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
-        String expectedEpicString =
-                "Epic{id=null, title=null, description=null, subtasks=[], duration=0, " + "startTime=null, status=NEW}";
+        String expected = "Epic{id=null, title=null, description=null, subtasks=[], duration=null, startTime=null, "
+                + "status=NEW}";
         Epic epic = new Epic();
 
-        String actualString = epic.toString();
+        String actual = epic.toString();
 
-        assertEquals(expectedEpicString, actualString, "string representation of epic is wrong");
+        assertEquals(expected, actual, "string representation of epic is wrong");
     }
 
     @Test

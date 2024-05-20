@@ -88,7 +88,7 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedTask.getId(), "task id differs from returned by manager class");
         assertNull(savedTask.getTitle(), "task title changed");
         assertNull(savedTask.getDescription(), "task description changed");
-        assertEquals(0L, savedTask.getDuration(), "task duration changed");
+        assertNull(savedTask.getDuration(), "task duration changed");
         assertNull(savedTask.getStartTime(), "task start time changed");
         assertNull(savedTask.getStatus(), "task status changed");
     }
@@ -144,7 +144,7 @@ class InMemoryTaskManagerTest {
         assertEquals(id, savedTask.getId(), "task id changed");
         assertNull(savedTask.getTitle(), "task title not updated");
         assertNull(savedTask.getDescription(), "task description not updated");
-        assertEquals(0L, savedTask.getDuration(), "task duration not updated");
+        assertNull(savedTask.getDuration(), "task duration not updated");
         assertNull(savedTask.getStartTime(), "task start time not updated");
         assertNull(savedTask.getStatus(), "task status not updated");
     }
@@ -405,7 +405,7 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertNull(savedSubtask.getTitle(), "subtask title changed");
         assertNull(savedSubtask.getDescription(), "subtask description changed");
-        assertEquals(0L, savedSubtask.getDuration(), "subtask duration changed");
+        assertNull(savedSubtask.getDuration(), "subtask duration changed");
         assertNull(savedSubtask.getStartTime(), "subtask start time changed");
         assertNull(savedSubtask.getStatus(), "subtask status changed");
     }
@@ -534,7 +534,7 @@ class InMemoryTaskManagerTest {
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertNull(savedSubtask.getTitle(), "subtask title not updated");
         assertNull(savedSubtask.getDescription(), "subtask description not updated");
-        assertEquals(0L, savedSubtask.getDuration(), "subtask duration not updated");
+        assertNull(savedSubtask.getDuration(), "subtask duration not updated");
         assertNull(savedSubtask.getStartTime(), "subtask start time not updated");
         assertNull(savedSubtask.getStatus(), "subtask status not updated");
     }

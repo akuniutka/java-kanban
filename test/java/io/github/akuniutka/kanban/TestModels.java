@@ -10,13 +10,13 @@ import java.time.LocalDateTime;
 public final class TestModels {
     public static final String TEST_TITLE = "Title";
     public static final String TEST_DESCRIPTION = "Description";
-    public static final long TEST_DURATION = 30L;
+    public static final Long TEST_DURATION = 30L;
     public static final LocalDateTime TEST_START_TIME = LocalDateTime.of(2000, 5, 1, 13, 30);
     public static final LocalDateTime TEST_END_TIME = LocalDateTime.of(2000, 5, 1, 14, 0);
     public static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
     public static final String MODIFIED_TEST_TITLE = "Modified Title";
     public static final String MODIFIED_TEST_DESCRIPTION = "Modified description";
-    public static final long MODIFIED_TEST_DURATION = 90L;
+    public static final Long MODIFIED_TEST_DURATION = 90L;
     public static final LocalDateTime MODIFIED_TEST_START_TIME = LocalDateTime.of(2000, 5, 1, 15, 0);
     public static final LocalDateTime MODIFIED_TEST_END_TIME = LocalDateTime.of(2000, 5, 1, 16, 30);
     public static final TaskStatus MODIFIED_TEST_STATUS = TaskStatus.DONE;
@@ -29,15 +29,15 @@ public final class TestModels {
     }
 
     public static Task createTestTask() {
-        return createTestTask(null, null, 0, null, null);
+        return createTestTask(null, null, null, null, null);
     }
 
-    public static Task createTestTask(String title, String description, long duration, LocalDateTime startTime,
+    public static Task createTestTask(String title, String description, Long duration, LocalDateTime startTime,
             TaskStatus taskStatus) {
         return createTestTask(null, title, description, duration, startTime, taskStatus);
     }
 
-    public static Task createTestTask(Long id, String title, String description, long duration, LocalDateTime startTime,
+    public static Task createTestTask(Long id, String title, String description, Long duration, LocalDateTime startTime,
             TaskStatus taskStatus) {
         final Task task = new Task();
         if (id != null) {
@@ -70,20 +70,20 @@ public final class TestModels {
     }
 
     public static Subtask createTestSubtask() {
-        return createTestSubtask(null, null, 0, null, null);
+        return createTestSubtask(null, null, null, null, null);
     }
 
-    public static Subtask createTestSubtask(String title, String description, long duration, LocalDateTime startTime,
+    public static Subtask createTestSubtask(String title, String description, Long duration, LocalDateTime startTime,
             TaskStatus taskStatus) {
         return createTestSubtask(null, title, description, duration, startTime, taskStatus);
     }
 
-    public static Subtask createTestSubtask(Long epicId, String title, String description, long duration,
+    public static Subtask createTestSubtask(Long epicId, String title, String description, Long duration,
             LocalDateTime startTime, TaskStatus taskStatus) {
         return createTestSubtask(null, epicId, title, description, duration, startTime, taskStatus);
     }
 
-    public static Subtask createTestSubtask(Long id, Long epicId, String title, String description, long duration,
+    public static Subtask createTestSubtask(Long id, Long epicId, String title, String description, Long duration,
             LocalDateTime startTime, TaskStatus taskStatus) {
         final Subtask subtask = new Subtask();
         if (id != null) {

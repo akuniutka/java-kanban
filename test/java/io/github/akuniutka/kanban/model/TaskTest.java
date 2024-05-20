@@ -8,6 +8,8 @@ import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TaskTest {
+    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
+
     @Test
     public void shouldCreateTask() {
         Task task = new Task();
@@ -56,27 +58,35 @@ public class TaskTest {
         Task task = new Task();
 
         task.setDuration(TEST_DURATION);
-        long actualDuration = task.getDuration();
+        Long actualDuration = task.getDuration();
 
         assertEquals(TEST_DURATION, actualDuration, "task has wrong duration");
     }
 
     @Test
-    public void shouldAcceptZeroDuration() {
+    public void shouldAcceptNullDuration() {
         Task task = new Task();
 
-        task.setDuration(0L);
-        long actualDuration = task.getDuration();
+        task.setDuration(null);
+        Long actualDuration = task.getDuration();
 
-        assertEquals(0L, actualDuration, "task has wrong duration");
+        assertNull(actualDuration, "task has wrong duration");
     }
 
     @Test
-    public void shouldThrowWhenNegativeDuration() {
+    public void shouldThrowWhenDurationZero() {
+        Task task = new Task();
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> task.setDuration(0L));
+        assertEquals("duration cannot be negative or zero", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenDurationNegative() {
         Task task = new Task();
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> task.setDuration(-TEST_DURATION));
-        assertEquals("duration cannot be negative", exception.getMessage(), "message for exception is wrong");
+        assertEquals("duration cannot be negative or zero", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -110,9 +120,9 @@ public class TaskTest {
     }
 
     @Test
-    public void shouldReturnNullEndTimeWhenStartTimeNull() {
+    public void shouldReturnNullEndTimeWhenDurationNull() {
         Task task = new Task();
-        task.setStartTime(null);
+        task.setDuration(null);
 
         LocalDateTime actualEndTime = task.getEndTime();
 
@@ -120,14 +130,13 @@ public class TaskTest {
     }
 
     @Test
-    public void shouldReturnStartTimeAsEndTimeWhenDurationZero() {
+    public void shouldReturnNullEndTimeWhenStartTimeNull() {
         Task task = new Task();
-        task.setDuration(0L);
-        task.setStartTime(TEST_START_TIME);
+        task.setStartTime(null);
 
         LocalDateTime actualEndTime = task.getEndTime();
 
-        assertEquals(TEST_START_TIME, actualEndTime, "task has wrong end time");
+        assertNull(actualEndTime, "task end time should be null");
     }
 
     @Test
@@ -173,23 +182,23 @@ public class TaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
-        String expectedString = "Task{id=null, title=null, description=null, duration=0, startTime=null, status=null}";
+        String expected = "Task{id=null, title=null, description=null, duration=null, startTime=null, status=null}";
         Task task = createTestTask();
 
-        String actualString = task.toString();
+        String actual = task.toString();
 
-        assertEquals(expectedString, actualString, "string representation of task is wrong");
+        assertEquals(expected, actual, "string representation of task is wrong");
     }
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        String expectedString = "Task{id=1, title=\"Title\", description.length=11, duration=30, "
-                + "startTime=2000-05-01T13:30, status=IN_PROGRESS}";
+        String expected = "Task{id=1, title=\"Title\", description.length=11, duration=30, startTime=2000-05-01T13:30, "
+                + "status=IN_PROGRESS}";
         Task task = createTestTask(TEST_TASK_ID, TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME,
                 TEST_STATUS);
 
-        String actualString = task.toString();
+        String actual = task.toString();
 
-        assertEquals(expectedString, actualString, "string representation of task is wrong");
+        assertEquals(expected, actual, "string representation of task is wrong");
     }
 }

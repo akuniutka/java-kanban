@@ -14,7 +14,6 @@ public class Task {
     private TaskStatus status;
 
     public Task() {
-        this.duration = Duration.ofMinutes(0L);
         this.status = TaskStatus.NEW;
     }
 
@@ -46,15 +45,18 @@ public class Task {
         this.description = description;
     }
 
-    public long getDuration() {
-        return duration.toMinutes();
+    public Long getDuration() {
+        return duration == null ? null : duration.toMinutes();
     }
 
-    public void setDuration(long minutes) {
-        if (minutes < 0) {
-            throw new IllegalArgumentException("duration cannot be negative");
+    public void setDuration(Long minutes) {
+        if (minutes == null) {
+            this.duration = null;
+        } else if (minutes <= 0L) {
+            throw new IllegalArgumentException("duration cannot be negative or zero");
+        } else {
+            this.duration = Duration.ofMinutes(minutes);
         }
-        this.duration = Duration.ofMinutes(minutes);
     }
 
     public LocalDateTime getStartTime() {
@@ -66,7 +68,7 @@ public class Task {
     }
 
     public LocalDateTime getEndTime() {
-        return startTime == null ? null : startTime.plus(duration);
+        return startTime == null || duration == null ? null : startTime.plus(duration);
     }
 
     public TaskStatus getStatus() {
@@ -96,9 +98,8 @@ public class Task {
 
     @Override
     public String toString() {
-        return "Task{id=%s, title=%s, description%s, duration=%d, startTime=%s, status=%s}".formatted(id,
+        return "Task{id=%s, title=%s, description%s, duration=%s, startTime=%s, status=%s}".formatted(id,
                 title == null ? "null" : "\"" + title + "\"",
-                description == null ? "=null" : ".length=" + description.length(), duration.toMinutes(), startTime,
-                status);
+                description == null ? "=null" : ".length=" + description.length(), getDuration(), startTime, status);
     }
 }

@@ -8,6 +8,8 @@ import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SubtaskTest {
+    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
+
     @Test
     public void shouldCreateSubtask() {
         Subtask subtask = new Subtask();
@@ -66,19 +68,27 @@ class SubtaskTest {
         Subtask subtask = new Subtask();
 
         subtask.setDuration(TEST_DURATION);
-        long actualDuration = subtask.getDuration();
+        Long actualDuration = subtask.getDuration();
 
         assertEquals(TEST_DURATION, actualDuration, "subtask has wrong duration");
     }
 
     @Test
-    public void shouldAcceptZeroDuration() {
+    public void shouldAcceptNullDuration() {
         Subtask subtask = new Subtask();
 
-        subtask.setDuration(0L);
-        long actualDuration = subtask.getDuration();
+        subtask.setDuration(null);
+        Long actualDuration = subtask.getDuration();
 
-        assertEquals(0L, actualDuration, "subtask has wrong duration");
+        assertNull(actualDuration, "subtask has wrong duration");
+    }
+
+    @Test
+    public void shouldThrowWhenDurationZero() {
+        Subtask subtask = new Subtask();
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> subtask.setDuration(0L));
+        assertEquals("duration cannot be negative or zero", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -86,7 +96,7 @@ class SubtaskTest {
         Subtask subtask = new Subtask();
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> subtask.setDuration(-TEST_DURATION));
-        assertEquals("duration cannot be negative", exception.getMessage(), "message for exception is wrong");
+        assertEquals("duration cannot be negative or zero", exception.getMessage(), "message for exception is wrong");
     }
 
     @Test
@@ -120,9 +130,9 @@ class SubtaskTest {
     }
 
     @Test
-    public void shouldReturnNullEndTimeWhenStartTimeNull() {
+    public void shouldReturnNullEndTimeWhenDurationNull() {
         Subtask subtask = new Subtask();
-        subtask.setStartTime(null);
+        subtask.setDuration(null);
 
         LocalDateTime actualEndTime = subtask.getEndTime();
 
@@ -130,14 +140,13 @@ class SubtaskTest {
     }
 
     @Test
-    public void shouldReturnStartTimeAsEndTimeWhenDurationZero() {
+    public void shouldReturnNullEndTimeWhenStartTimeNull() {
         Subtask subtask = new Subtask();
-        subtask.setDuration(0L);
-        subtask.setStartTime(TEST_START_TIME);
+        subtask.setStartTime(null);
 
         LocalDateTime actualEndTime = subtask.getEndTime();
 
-        assertEquals(TEST_START_TIME, actualEndTime, "subtask has wrong end time");
+        assertNull(actualEndTime, "subtask end time should be null");
     }
 
     @Test
@@ -183,24 +192,24 @@ class SubtaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
-        String expectedString = "Subtask{id=null, epicId=null, title=null, description=null, duration=0, "
-                + "startTime=null, status=null}";
+        String expected = "Subtask{id=null, epicId=null, title=null, description=null, duration=null, startTime=null, "
+                + "status=null}";
         Subtask subtask = createTestSubtask();
 
-        String actualString = subtask.toString();
+        String actual = subtask.toString();
 
-        assertEquals(expectedString, actualString, "string representation of subtask is wrong");
+        assertEquals(expected, actual, "string representation of subtask is wrong");
     }
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        String expectedString = "Subtask{id=3, epicId=2, title=\"Title\", description.length=11, duration=30, "
+        String expected = "Subtask{id=3, epicId=2, title=\"Title\", description.length=11, duration=30, "
                 + "startTime=2000-05-01T13:30, status=IN_PROGRESS}";
         Subtask subtask = createTestSubtask(TEST_SUBTASK_ID, TEST_EPIC_ID, TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION,
                 TEST_START_TIME, TEST_STATUS);
 
-        String actualString = subtask.toString();
+        String actual = subtask.toString();
 
-        assertEquals(expectedString, actualString, "string representation of subtask is wrong");
+        assertEquals(expected, actual, "string representation of subtask is wrong");
     }
 }

@@ -197,7 +197,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private Task fromString(String taskString) {
         CSVLineParser parser = new CSVLineParser(taskString);
-        final long id = extractLong(parser.next());
+        final long id = extractId(parser.next());
         final TaskType type = extractType(parser.next());
         final Task task = switch (type) {
             case TASK -> new Task();
@@ -216,7 +216,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         token = parser.next();
         if (type != TaskType.EPIC) {
             try {
-                task.setDuration(extractLong(token));
+                task.setDuration(extractDuration(token));
             } catch (IllegalArgumentException exception) {
                 throw new CSVParsingException(exception.getMessage(), token.position() + 1);
             }
@@ -231,7 +231,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
         token = parser.next();
         if (type == TaskType.SUBTASK) {
-            ((Subtask) task).setEpicId(extractLong(token));
+            ((Subtask) task).setEpicId(extractId(token));
         } else if (!token.value().isEmpty()) {
             throw new CSVParsingException("unexpected data", token.position() + 1);
         }
@@ -260,7 +260,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
     }
 
-    private long extractLong(CSVToken token) {
+    private long extractId(CSVToken token) {
         try {
             return Long.parseLong(token.value());
         } catch (NumberFormatException exception) {
@@ -275,7 +275,18 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         if (!token.isQuoted()) {
             throw new CSVParsingException("text value must be inside double quotes", token.position() + 1);
         }
-        return token.value();
+        return token.value().substring(1, token.value().length() - 1);
+    }
+
+    private Long extractDuration(CSVToken token) {
+        if ("null".equals(token.value())) {
+            return null;
+        }
+        try {
+            return Long.parseLong(token.value());
+        } catch (NumberFormatException exception) {
+            throw new CSVParsingException("number expected", token.position() + 1);
+        }
     }
 
     private LocalDateTime extractDateTime(CSVToken token) {
