@@ -18,7 +18,7 @@ public class Subtask extends Task {
 
     @Override
     public String toString() {
-        return "Subtask{id=%s, epicId=%s, title=%s, description%s, duration=%d, startTime=%s, status=%s}".formatted(
+        return "Subtask{id=%s, epicId=%s, title=%s, description%s, duration=%s, startTime=%s, status=%s}".formatted(
                 getId(), epicId, getTitle() == null ? "null" : "\"" + getTitle() + "\"",
                 getDescription() == null ? "=null" : ".length=" + getDescription().length(), getDuration(),
                 getStartTime(), getStatus());

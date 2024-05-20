@@ -109,7 +109,7 @@ class InMemoryHistoryManagerTest {
         assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
         assertNull(savedTask.getTitle(), "task title should not change");
         assertNull(savedTask.getDescription(), "task description should not change");
-        assertEquals(0L, savedTask.getDuration(), "task duration should not change");
+        assertNull(savedTask.getDuration(), "task duration should not change");
         assertNull(savedTask.getStartTime(), "task start time should not change");
         assertNull(savedTask.getStatus(), "task status should not change");
     }
@@ -240,7 +240,7 @@ class InMemoryHistoryManagerTest {
         assertNull(savedSubtask.getEpicId(), "epic id of subtask should not change");
         assertNull(savedSubtask.getTitle(), "subtask title should not change");
         assertNull(savedSubtask.getDescription(), "subtask description should not change");
-        assertEquals(0L, savedSubtask.getDuration(), "subtask duration should not change");
+        assertNull(savedSubtask.getDuration(), "subtask duration should not change");
         assertNull(savedSubtask.getStartTime(), "subtask start time should not change");
         assertNull(savedSubtask.getStatus(), "subtask status should not change");
     }

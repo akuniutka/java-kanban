@@ -78,7 +78,7 @@ class FileBackedTaskManagerTest {
     public void shouldSaveWhenNewTaskAdded() throws IOException {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
-                %%d,TASK,"%s",%s,"%s",%d,%s,
+                %%d,TASK,"%s",%s,"%s",%s,%s,
                 """.formatted(testTask.getTitle(), testTask.getStatus(), testTask.getDescription(),
                 testTask.getDuration(), testTask.getStartTime());
 
@@ -94,7 +94,7 @@ class FileBackedTaskManagerTest {
         long id = manager.addTask(testTask);
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
-                %d,TASK,"%s",%s,"%s",%d,%s,
+                %d,TASK,"%s",%s,"%s",%s,%s,
                 """.formatted(id, modifiedTestTask.getTitle(), modifiedTestTask.getStatus(),
                 modifiedTestTask.getDescription(), modifiedTestTask.getDuration(), modifiedTestTask.getStartTime());
         modifiedTestTask.setId(id);
@@ -109,7 +109,7 @@ class FileBackedTaskManagerTest {
     public void shouldCorrectlySaveTaskWithNullFields() throws IOException {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
-                %d,TASK,null,null,null,0,null,
+                %d,TASK,null,null,null,null,null,
                 """;
 
         long id = manager.addTask(emptyTask);
@@ -193,7 +193,7 @@ class FileBackedTaskManagerTest {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 %%d,EPIC,"%s",,"%s",,,
-                %%d,SUBTASK,"%s",%s,"%s",%d,%s,%%d
+                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription(), testSubtask.getTitle(),
                 testSubtask.getStatus(), testSubtask.getDescription(), testSubtask.getDuration(),
                 testSubtask.getStartTime());
@@ -212,7 +212,7 @@ class FileBackedTaskManagerTest {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 %%d,EPIC,"%s",,"%s",,,
-                %%d,SUBTASK,"%s",%s,"%s",%d,%s,%%d
+                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription(), modifiedTestSubtask.getTitle(),
                 modifiedTestSubtask.getStatus(), modifiedTestSubtask.getDescription(),
                 modifiedTestSubtask.getDuration(), modifiedTestSubtask.getStartTime());
@@ -234,7 +234,7 @@ class FileBackedTaskManagerTest {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 %%d,EPIC,"%s",,"%s",,,
-                %%d,SUBTASK,null,null,null,0,null,%%d
+                %%d,SUBTASK,null,null,null,null,null,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
         long epicId = manager.addEpic(testEpic);
         emptySubtask.setEpicId(epicId);
@@ -335,7 +335,7 @@ class FileBackedTaskManagerTest {
     public void shouldLoadTaskWithNullFieldsFromFile() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
-                1,TASK,null,null,null,0,null,
+                1,TASK,null,null,null,null,null,
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(file, historyManager);
@@ -347,7 +347,7 @@ class FileBackedTaskManagerTest {
         assertEquals(TEST_TASK_ID, task.getId(), "task id loaded incorrectly");
         assertNull(task.getTitle(), "task title loaded incorrectly");
         assertNull(task.getDescription(), "task description loaded incorrectly");
-        assertEquals(0L, task.getDuration(), "task duration loaded incorrectly");
+        assertNull(task.getDuration(), "task duration loaded incorrectly");
         assertNull(task.getStartTime(), "task start time loaded incorrectly");
         assertNull(task.getStatus(), "task status loaded incorrectly");
     }
@@ -428,7 +428,7 @@ class FileBackedTaskManagerTest {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
                 2,EPIC,"Title",,"Description",,,
-                3,SUBTASK,null,null,null,0,null,2
+                3,SUBTASK,null,null,null,null,null,2
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(file, historyManager);
@@ -441,7 +441,7 @@ class FileBackedTaskManagerTest {
         assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");
         assertNull(subtask.getTitle(), "subtask title loaded incorrectly");
         assertNull(subtask.getDescription(), "subtask description loaded incorrectly");
-        assertEquals(0L, subtask.getDuration(), "subtask duration loaded incorrectly");
+        assertNull(subtask.getDuration(), "subtask duration loaded incorrectly");
         assertNull(subtask.getStartTime(), "subtask start time loaded incorrectly");
         assertNull(subtask.getStatus(), "subtask status loaded incorrectly");
         Epic epic = manager.getEpics().getFirst();
@@ -451,7 +451,7 @@ class FileBackedTaskManagerTest {
         assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");
         assertNull(subtask.getTitle(), "subtask title loaded incorrectly");
         assertNull(subtask.getDescription(), "subtask description loaded incorrectly");
-        assertEquals(0L, subtask.getDuration(), "subtask duration loaded incorrectly");
+        assertNull(subtask.getDuration(), "subtask duration loaded incorrectly");
         assertNull(subtask.getStartTime(), "subtask start time loaded incorrectly");
         assertNull(subtask.getStatus(), "subtask status loaded incorrectly");
     }
@@ -923,12 +923,25 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenTaskDurationFromFileZero() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",0,2000-05-01T13:30,
+                """);
+        String expectedMessage = "duration cannot be negative or zero (" + file + ":2:42)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldThrowWhenTaskDurationFromFileNegative() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
                 1,TASK,"Title",IN_PROGRESS,"Description",-30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duration cannot be negative (" + file + ":2:42)";
+        String expectedMessage = "duration cannot be negative or zero (" + file + ":2:42)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1064,7 +1077,7 @@ class FileBackedTaskManagerTest {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
                 1,EPIC,"Epic",,"Epic description",,,
-                2,SUBTASK,"Subtask A",NEW,"Subtask A description",0,null,1
+                2,SUBTASK,"Subtask A",NEW,"Subtask A description",90,2000-05-01T15:00,1
                 3,SUBTASK,"Subtask B",NEW,"Subtask B description",30,2000-05-01T13:30,2
                 """);
         String expectedMessage = "no epic with id=2 (" + file + ":4:71)";

@@ -110,7 +110,7 @@ class CSVLineParserTest {
 
         assertNotNull(token, "should return nonnull token");
         assertEquals(0, token.position(), "wrong starting position of token");
-        assertEquals("tokenA", token.value(), "wrong value of token");
+        assertEquals("\"tokenA\"", token.value(), "wrong value of token");
         assertTrue(token.isQuoted(), "token should be reported as quoted");
     }
 
@@ -122,7 +122,7 @@ class CSVLineParserTest {
 
         assertNotNull(token, "should return nonnull token");
         assertEquals(7, token.position(), "wrong starting position of token");
-        assertEquals("tokenB", token.value(), "wrong value of token");
+        assertEquals("\"tokenB\"", token.value(), "wrong value of token");
         assertTrue(token.isQuoted(), "token should be reported as quoted");
     }
 
@@ -135,7 +135,7 @@ class CSVLineParserTest {
 
         assertNotNull(token, "should return nonnull token");
         assertEquals(14, token.position(), "wrong starting position of token");
-        assertEquals("tokenC", token.value(), "wrong value of token");
+        assertEquals("\"tokenC\"", token.value(), "wrong value of token");
         assertTrue(token.isQuoted(), "token should be reported as quoted");
     }
 
