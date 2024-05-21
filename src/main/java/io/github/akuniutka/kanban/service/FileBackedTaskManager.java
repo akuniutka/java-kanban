@@ -1,9 +1,6 @@
 package io.github.akuniutka.kanban.service;
 
-import io.github.akuniutka.kanban.exception.CSVParsingException;
-import io.github.akuniutka.kanban.exception.ManagerLoadException;
-import io.github.akuniutka.kanban.exception.ManagerSaveException;
-import io.github.akuniutka.kanban.exception.TaskNotFoundException;
+import io.github.akuniutka.kanban.exception.*;
 import io.github.akuniutka.kanban.model.*;
 import io.github.akuniutka.kanban.util.CSVLineParser;
 import io.github.akuniutka.kanban.util.CSVToken;
@@ -226,6 +223,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         token = parser.next();
         if (type != TaskType.EPIC) {
             task.setStartTime(extractDateTime(token));
+            try {
+                checkDurationAndStartTimeConsistency(task);
+            } catch (ManagerException exception) {
+                throw new CSVParsingException(exception.getMessage(), token.position() + 1);
+            }
         } else if (!token.value().isEmpty()) {
             throw new CSVParsingException("explicit epic start time", token.position() + 1);
         }

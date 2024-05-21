@@ -975,6 +975,32 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenTaskStartTimeFromFileNullWhileDurationNotNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,null,
+                """);
+        String expectedMessage = "duration and start time must be either both set or both null (" + file + ":2:45)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenTaskStartTimeFromFileNotNullWhileDurationNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",null,2000-05-01T13:30,
+                """);
+        String expectedMessage = "duration and start time must be either both set or both null (" + file + ":2:47)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldThrowWhenEpicFromFileHasStartTime() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
