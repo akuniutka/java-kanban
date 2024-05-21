@@ -1,5 +1,6 @@
 package io.github.akuniutka.kanban.service;
 
+import io.github.akuniutka.kanban.exception.ManagerException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
@@ -102,6 +103,24 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenTaskAddedHasNullDurationAndNonNullStartTime() {
+        testTask.setDuration(null);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenTaskAddedHasNonNullDurationAndNullStartTime() {
+        testTask.setStartTime(null);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldNotOverwriteExistingTaskWhenAddingNewOne() {
         long id = manager.addTask(testTask);
         modifiedTestTask.setId(id);
@@ -173,6 +192,28 @@ class InMemoryTaskManagerTest {
 
         Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateTask(testTask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenTaskUpdatedHasNullDurationAndNonNullStartTime() {
+        long id = manager.addTask(testTask);
+        modifiedTestTask.setDuration(null);
+        modifiedTestTask.setId(id);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(modifiedTestTask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenTaskUpdatedHasNonNullDurationAndNullStartTime() {
+        long id = manager.addTask(testTask);
+        modifiedTestTask.setStartTime(null);
+        modifiedTestTask.setId(id);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(modifiedTestTask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -419,6 +460,28 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenSubtaskAddedHasNullDurationAndNonNullStartTime() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        testSubtask.setDuration(null);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenSubtaskAddedHasNonNullDurationAndNullStartTime() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        testSubtask.setStartTime(null);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldNotOverwriteExistingSubtaskWhenAddingNewOne() {
         long epicId = manager.addEpic(testEpic);
         long anotherEpicId = manager.addEpic(modifiedTestEpic);
@@ -567,6 +630,32 @@ class InMemoryTaskManagerTest {
 
         Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateSubtask(testSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowsWhenSubtaskUpdatedHasNullDurationAndNonNullStartTime() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        modifiedTestSubtask.setId(subtaskId);
+        modifiedTestSubtask.setDuration(null);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(modifiedTestSubtask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowsWhenSubtaskUpdatedHasNonNullDurationAndNullStartTime() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        modifiedTestSubtask.setStartTime(null);
+        modifiedTestSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(modifiedTestSubtask));
+        assertEquals("duration and start time must be either both set or both null", exception.getMessage(),
+                WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test

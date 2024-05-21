@@ -1,5 +1,6 @@
 package io.github.akuniutka.kanban.service;
 
+import io.github.akuniutka.kanban.exception.ManagerException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
@@ -46,6 +47,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addTask(Task task) {
         Objects.requireNonNull(task, "cannot add null to list of tasks");
+        checkDurationAndStartTimeConsistency(task);
         final long id = generateId();
         task.setId(id);
         tasks.put(id, task);
@@ -57,6 +59,7 @@ public class InMemoryTaskManager implements TaskManager {
         Objects.requireNonNull(task, "cannot apply null update to task");
         final Long id = task.getId();
         requireTaskExists(id);
+        checkDurationAndStartTimeConsistency(task);
         tasks.put(id, task);
     }
 
@@ -148,6 +151,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
+        checkDurationAndStartTimeConsistency(subtask);
         subtask.setId(generateId());
         saveSubtaskAndLinkToEpic(subtask);
         return subtask.getId();
@@ -158,6 +162,7 @@ public class InMemoryTaskManager implements TaskManager {
         Objects.requireNonNull(subtask, "cannot apply null update to subtask");
         final Long id = subtask.getId();
         final Subtask savedSubtask = requireSubtaskExists(id);
+        checkDurationAndStartTimeConsistency(subtask);
         final Long epicId = savedSubtask.getEpicId();
         final Epic epic = epics.get(epicId);
         subtask.setEpicId(epicId);
@@ -220,5 +225,11 @@ public class InMemoryTaskManager implements TaskManager {
             throw new TaskNotFoundException("no subtask with id=" + id);
         }
         return subtask;
+    }
+
+    protected void checkDurationAndStartTimeConsistency(Task task) {
+        if (Objects.isNull(task.getDuration()) != Objects.isNull(task.getStartTime())) {
+            throw new ManagerException("duration and start time must be either both set or both null");
+        }
     }
 }
