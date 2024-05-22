@@ -121,14 +121,166 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    public void shouldNotOverwriteExistingTaskWhenAddingNewOne() {
-        long id = manager.addTask(testTask);
-        modifiedTestTask.setId(id);
-        long anotherId = manager.addTask(modifiedTestTask);
-        Task savedTask = manager.getTask(id);
+    public void shouldNotAddTaskWhenAnotherPrioritizedTaskCoversStartTime() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
 
-        assertNotEquals(id, anotherId, "new task should have new id");
-        assertEquals(id, savedTask.getId(), "task id changed");
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddTaskWhenAnotherPrioritizedTaskCoversEndTime() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(15));
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddTaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        testSubtask.setDuration(60L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddTaskWhenAnotherPrioritizedTaskWithinInterval() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(5));
+        testSubtask.setDuration(20L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddTaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setDuration(20L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddTaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(10));
+        testSubtask.setDuration(20L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddTaskWhenAnotherPrioritizedTaskWithSameInterval() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldAddTaskWhenExactlyAfterAnotherPrioritizedTask() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION));
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+
+        long taskId = manager.addTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME.minusMinutes(TEST_DURATION), savedSubtask.getStartTime(),
+                "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(TaskType.TASK, tasks.getLast().getType(), "2nd element should be of TASK type");
+        Task savedTask = tasks.getLast();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldAddTaskWhenExactlyBeforeAnotherPrioritizedTask() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION));
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+
+        long taskId = manager.addTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+        assertEquals(TaskType.SUBTASK, tasks.getLast().getType(), "2nd element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getLast();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME.plusMinutes(TEST_DURATION), savedSubtask.getStartTime(),
+                "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldNotAddTaskWhenIdAlreadyExists() {
+        long taskId = manager.addTask(testTask);
+        modifiedTestTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addTask(modifiedTestTask));
+        assertEquals("duplicate id=" + taskId, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldAddTaskWhenIdSetButNotExist() {
+        testTask.setId(ANOTHER_TEST_ID);
+
+        long taskId = manager.addTask(testTask);
+        Task savedTask = manager.getTask(taskId);
+
+        assertNotEquals(ANOTHER_TEST_ID, taskId, "new task should have new id");
+        assertEquals(taskId, savedTask.getId(), "task id changed");
         assertEquals(TEST_TITLE, savedTask.getTitle(), "task title changed");
         assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description changed");
         assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration changed");
@@ -217,6 +369,321 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskCoversStartTime() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskCoversEndTime() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(15));
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        testSubtask.setDuration(60L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskWithinInterval() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(5));
+        testSubtask.setDuration(20L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setDuration(20L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(10));
+        testSubtask.setDuration(20L);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskWithSameInterval() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateTask(testTask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenExactlyAfterAnotherPrioritizedTask() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION));
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME.minusMinutes(TEST_DURATION), savedSubtask.getStartTime(),
+                "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(TaskType.TASK, tasks.getLast().getType(), "2nd element should be of TASK type");
+        Task savedTask = tasks.getLast();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenExactlyBeforeAnotherPrioritizedTask() {
+        long taskId = manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION));
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+        assertEquals(TaskType.SUBTASK, tasks.getLast().getType(), "2nd element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getLast();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME.plusMinutes(TEST_DURATION), savedSubtask.getStartTime(),
+                "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenPreviousVersionCoversStartTime() {
+        emptyTask.setDuration(TEST_DURATION);
+        emptyTask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        long taskId = manager.addTask(emptyTask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenPreviousVersionCoversEndTime() {
+        emptyTask.setDuration(TEST_DURATION);
+        emptyTask.setStartTime(TEST_START_TIME.plusMinutes(15));
+        long taskId = manager.addTask(emptyTask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenPreviousVersionCoversWholeInterval() {
+        emptyTask.setDuration(60L);
+        emptyTask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        long taskId = manager.addTask(emptyTask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenPreviousVersionWithinInterval() {
+        emptyTask.setDuration(20L);
+        emptyTask.setStartTime(TEST_START_TIME.plusMinutes(5));
+        long taskId = manager.addTask(emptyTask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenPreviousVersionWithinIntervalLeftAligned() {
+        emptyTask.setDuration(20L);
+        emptyTask.setStartTime(TEST_START_TIME);
+        long taskId = manager.addTask(emptyTask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenPreviousVersionWithinIntervalRightAligned() {
+        emptyTask.setDuration(20L);
+        emptyTask.setStartTime(TEST_START_TIME.plusMinutes(10));
+        long taskId = manager.addTask(emptyTask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenPreviousVersionWithSameInterval() {
+        emptyTask.setDuration(TEST_DURATION);
+        emptyTask.setStartTime(TEST_START_TIME);
+        long taskId = manager.addTask(emptyTask);
+        testTask.setId(taskId);
+
+        manager.updateTask(testTask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
     public void shouldRemoveTask() {
         long id = manager.addTask(testTask);
 
@@ -274,14 +741,23 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    public void shouldNotOverwriteExistingEpicWhenAddingNewOne() {
+    public void shouldNotAddEpicWhenIdAlreadyExists() {
+        long epicId = manager.addEpic(testEpic);
+        modifiedTestEpic.setId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addEpic(modifiedTestEpic));
+        assertEquals("duplicate id=" + epicId, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldAddEpicWhenIdSetButNotExist() {
+        testEpic.setId(ANOTHER_TEST_ID);
+
         long id = manager.addEpic(testEpic);
-        modifiedTestEpic.setId(id);
-        long anotherId = manager.addEpic(modifiedTestEpic);
         Epic savedEpic = manager.getEpic(id);
 
-        assertNotEquals(id, anotherId, "new epic should have new id");
-        assertEquals(id, savedEpic.getId(), "epic id changed");
+        assertNotNull(savedEpic, "epic not found");
+        assertEquals(id, savedEpic.getId(), "epic id differs from returned by manager");
         assertEquals(TEST_TITLE, savedEpic.getTitle(), "epic title changed");
         assertEquals(TEST_DESCRIPTION, savedEpic.getDescription(), "epic description changed");
     }
@@ -482,19 +958,172 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
-    public void shouldNotOverwriteExistingSubtaskWhenAddingNewOne() {
+    public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskCoversStartTime() {
+        testTask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskCoversEndTime() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(15));
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
+        testTask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        testTask.setDuration(60L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskWithinInterval() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(5));
+        testTask.setDuration(20L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
+        testTask.setDuration(20L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(10));
+        testTask.setDuration(20L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskWithSameInterval() {
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldAddSubtaskWhenExactlyAfterAnotherPrioritizedTask() {
+        testTask.setStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION));
+        long taskId = manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        long subtaskId = manager.addSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME.minusMinutes(TEST_DURATION), savedTask.getStartTime(),
+                "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+        assertEquals(TaskType.SUBTASK, tasks.getLast().getType(), "2nd element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getLast();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldAddSubtaskWhenExactlyBeforeAnotherPrioritizedTask() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION));
+        long taskId = manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+
+        long subtaskId = manager.addSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(TaskType.TASK, tasks.getLast().getType(), "2nd element should be of TASK type");
+        Task savedTask = tasks.getLast();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME.plusMinutes(TEST_DURATION), savedTask.getStartTime(),
+                "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldNotAddSubtaskWhenIdAlreadyExists() {
         long epicId = manager.addEpic(testEpic);
         long anotherEpicId = manager.addEpic(modifiedTestEpic);
         testSubtask.setEpicId(epicId);
         modifiedTestSubtask.setEpicId(anotherEpicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        modifiedTestSubtask.setId(subtaskId);
 
-        long id = manager.addSubtask(testSubtask);
-        modifiedTestSubtask.setId(id);
-        long anotherId = manager.addSubtask(modifiedTestSubtask);
-        Subtask savedSubtask = manager.getSubtask(id);
+        Exception exception = assertThrows(ManagerException.class, () -> manager.addSubtask(modifiedTestSubtask));
+        assertEquals("duplicate id=" + subtaskId, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
 
-        assertNotEquals(id, anotherId, "new subtask should have new id");
-        assertEquals(id, savedSubtask.getId(), "subtask id changed");
+    @Test
+    public void shouldAddSubtaskWhenIdSetButNotExist() {
+        long epicId = manager.addEpic(testEpic);
+        testSubtask.setEpicId(epicId);
+        testSubtask.setId(ANOTHER_TEST_ID);
+
+        long subtaskId = manager.addSubtask(testSubtask);
+        Subtask savedSubtask = manager.getSubtask(subtaskId);
+
+        assertNotNull(savedSubtask, "subtask not found");
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id differs from returned by manager");
         assertEquals(epicId, savedSubtask.getEpicId(), "epic id changed in subtask");
         assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title changed");
         assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description changed");
@@ -525,9 +1154,9 @@ class InMemoryTaskManagerTest {
     public void shouldNotAddSubtaskToTask() {
         long taskId = manager.addTask(testTask);
         String expectedMessage = "no epic with id=" + taskId;
-        testSubtask.setEpicId(taskId);
+        modifiedTestSubtask.setEpicId(taskId);
 
-        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.addSubtask(testSubtask));
+        Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.addSubtask(modifiedTestSubtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -659,6 +1288,341 @@ class InMemoryTaskManagerTest {
     }
 
     @Test
+    public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskCoversStartTime() {
+        testTask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskCoversEndTime() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(15));
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
+        testTask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        testTask.setDuration(60L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskWithinInterval() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(5));
+        testTask.setDuration(20L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
+        testTask.setDuration(20L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(10));
+        testTask.setDuration(20L);
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskWithSameInterval() {
+        manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        Exception exception = assertThrows(ManagerException.class, () -> manager.updateSubtask(testSubtask));
+        assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenExactlyAfterAnotherPrioritizedTask() {
+        testTask.setStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION));
+        long taskId = manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME.minusMinutes(TEST_DURATION), savedTask.getStartTime(),
+                "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+        assertEquals(TaskType.SUBTASK, tasks.getLast().getType(), "2nd element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getLast();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenExactlyBeforeAnotherPrioritizedTask() {
+        testTask.setStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION));
+        long taskId = manager.addTask(testTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(TaskType.TASK, tasks.getLast().getType(), "2nd element should be of TASK type");
+        Task savedTask = tasks.getLast();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME.plusMinutes(TEST_DURATION), savedTask.getStartTime(),
+                "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenPreviousVersionCoversStartTime() {
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setDuration(TEST_DURATION);
+        emptySubtask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenPreviousVersionCoversEndTime() {
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setDuration(TEST_DURATION);
+        emptySubtask.setStartTime(TEST_START_TIME.plusMinutes(15));
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenPreviousVersionCoversWholeInterval() {
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setDuration(60L);
+        emptySubtask.setStartTime(TEST_START_TIME.minusMinutes(15));
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenPreviousVersionWithinInterval() {
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setDuration(20L);
+        emptySubtask.setStartTime(TEST_START_TIME.plusMinutes(5));
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenPreviousVersionWithinIntervalLeftAligned() {
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setDuration(20L);
+        emptySubtask.setStartTime(TEST_START_TIME);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenPreviousVersionWithinIntervalRightAligned() {
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setDuration(20L);
+        emptySubtask.setStartTime(TEST_START_TIME.plusMinutes(10));
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenPreviousVersionWithSameInterval() {
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setDuration(TEST_DURATION);
+        emptySubtask.setStartTime(TEST_START_TIME);
+        emptySubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(emptySubtask);
+        testSubtask.setId(subtaskId);
+
+        manager.updateSubtask(testSubtask);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
     public void shouldRemoveSubtask() {
         long epicId = manager.addEpic(testEpic);
         testSubtask.setEpicId(epicId);
@@ -736,7 +1700,9 @@ class InMemoryTaskManagerTest {
     public void shouldReturnListOfTasks() {
         Task taskA = createTaskFilledWithTestData();
         Task taskB = createTaskFilledWithTestData();
+        taskB.setStartTime(TEST_START_TIME.plusHours(1L));
         Task taskC = createTaskFilledWithTestData();
+        taskC.setStartTime(TEST_START_TIME.plusHours(2L));
         long taskIdA = manager.addTask(taskA);
         long taskIdB = manager.addTask(taskB);
         long taskIdC = manager.addTask(taskC);
@@ -1069,6 +2035,152 @@ class InMemoryTaskManagerTest {
         assertTrue(tasks.isEmpty(), "subtasks should be removed from history");
     }
 
+    @Test
+    public void shouldReturnPrioritizedTasksAndSubtasksInCorrectOrder() {
+        long taskId = manager.addTask(modifiedTestTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(TaskType.TASK, tasks.getLast().getType(), "2nd element should be of TASK type");
+        Task savedTask = tasks.getLast();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(MODIFIED_TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(MODIFIED_TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(MODIFIED_TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(MODIFIED_TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(MODIFIED_TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldReturnEmptyListWhenNoPrioritizedTasksAndSubtasks() {
+        manager.addTask(emptyTask);
+        long epicId = manager.addEpic(emptyEpic);
+        emptySubtask.setEpicId(epicId);
+        manager.addSubtask(emptySubtask);
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertTrue(tasks.isEmpty(), "should be no prioritized tasks");
+    }
+
+    @Test
+    public void shouldUpdateListOfPrioritizedTasksAndSubtasks() {
+        long taskId = manager.addTask(modifiedTestTask);
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        emptySubtask.setId(subtaskId);
+        manager.updateSubtask(emptySubtask);
+        testTask.setId(taskId);
+        manager.updateTask(testTask);
+        modifiedTestSubtask.setId(subtaskId);
+        manager.updateSubtask(modifiedTestSubtask);
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(taskId, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+        assertEquals(TaskType.SUBTASK, tasks.getLast().getType(), "2nd element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getLast();
+        assertEquals(subtaskId, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(epicId, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(MODIFIED_TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(MODIFIED_TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(MODIFIED_TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(MODIFIED_TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(MODIFIED_TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldUpdateListOfPrioritizedTasksAndSubtasksWhenTaskRemoved() {
+        long taskId = manager.addTask(modifiedTestTask);
+        manager.removeTask(taskId);
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertTrue(tasks.isEmpty(), "should be no prioritized tasks");
+    }
+
+    @Test
+    public void shouldUpdateListOfPrioritizedTasksAndSubtasksWhenSubtaskRemoved() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        long subtaskId = manager.addSubtask(testSubtask);
+        manager.removeSubtask(subtaskId);
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertTrue(tasks.isEmpty(), "should be no prioritized tasks");
+    }
+
+    @Test
+    public void shouldUpdateListOfPrioritizedTasksAndSubtasksWhenEpicRemoved() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        manager.removeEpic(epicId);
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertTrue(tasks.isEmpty(), "should be no prioritized tasks");
+    }
+
+    @Test
+    public void shouldUpdateListOfPrioritizedTasksAndSubtasksWhenAllTasksRemoved() {
+        manager.addTask(modifiedTestTask);
+        manager.removeTasks();
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertTrue(tasks.isEmpty(), "should be no prioritized tasks");
+    }
+
+    @Test
+    public void shouldUpdateListOfPrioritizedTasksAndSubtasksWhenAllSubtasksRemoved() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        manager.removeSubtasks();
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertTrue(tasks.isEmpty(), "should be no prioritized tasks");
+    }
+
+    @Test
+    public void shouldUpdateListOfPrioritizedTasksAndSubtasksWhenAllEpicsRemoved() {
+        long epicId = manager.addEpic(emptyEpic);
+        testSubtask.setEpicId(epicId);
+        manager.addSubtask(testSubtask);
+        manager.removeEpics();
+
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertTrue(tasks.isEmpty(), "should be no prioritized tasks");
+    }
+
     private Task createTaskFilledWithTestData() {
         return createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME, TEST_STATUS);
     }
@@ -1078,7 +2190,7 @@ class InMemoryTaskManagerTest {
     }
 
     private Subtask createSubtaskFilledWithTestDataAndEpicId(long epicId) {
-        return createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, TEST_DURATION, TEST_START_TIME, TEST_STATUS);
+        return createTestSubtask(epicId, TEST_TITLE, TEST_DESCRIPTION, null, null, TEST_STATUS);
     }
 
     private List<Subtask> createListOfSubtasksWithPresetIds(long... ids) {

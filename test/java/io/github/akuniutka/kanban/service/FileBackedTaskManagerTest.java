@@ -457,6 +457,109 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
+    public void shouldAddTaskAndSubtasksToListOfPrioritizedTaskAndSubtasks() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Modified Title",DONE,"Modified Description",90,2000-05-01T15:00,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                4,TASK,"Title",IN_PROGRESS,"Description",null,null,
+                5,SUBTASK,"Modified Title",DONE,"Modified Description",null,null,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(TaskType.TASK, tasks.getLast().getType(), "2nd element should be of TASK type");
+        Task savedTask = tasks.getLast();
+        assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
+        assertEquals(MODIFIED_TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(MODIFIED_TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(MODIFIED_TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(MODIFIED_TEST_START_TIME, savedTask.getStartTime(), "task start time should not change");
+        assertEquals(MODIFIED_TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
+    public void shouldAddTaskWhenExactlyAfterAnotherPrioritizedTask() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:00,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "1st element should be of TASK type");
+        Task savedTask = tasks.getFirst();
+        assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME.minusMinutes(TEST_DURATION), savedTask.getStartTime(),
+                "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+        assertEquals(TaskType.SUBTASK, tasks.getLast().getType(), "2nd element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getLast();
+        assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+    }
+
+    @Test
+    public void shouldAddTaskWhenExactlyBeforeAnotherPrioritizedTask() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T14:00,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
+        List<Task> tasks = manager.getPrioritizedTasks();
+
+        assertNotNull(tasks, "should return list of tasks");
+        assertEquals(2, tasks.size(), "list should contain exactly 2 elements");
+        assertEquals(TaskType.SUBTASK, tasks.getFirst().getType(), "1st element should be of SUBTASK type");
+        Subtask savedSubtask = (Subtask) tasks.getFirst();
+        assertEquals(TEST_SUBTASK_ID, savedSubtask.getId(), "subtask id should not change");
+        assertEquals(TEST_EPIC_ID, savedSubtask.getEpicId(), "epic id of status should not change");
+        assertEquals(TEST_TITLE, savedSubtask.getTitle(), "subtask title should not change");
+        assertEquals(TEST_DESCRIPTION, savedSubtask.getDescription(), "subtask description should not change");
+        assertEquals(TEST_DURATION, savedSubtask.getDuration(), "subtask duration should not change");
+        assertEquals(TEST_START_TIME, savedSubtask.getStartTime(), "subtask start time should not change");
+        assertEquals(TEST_STATUS, savedSubtask.getStatus(), "subtask status should not change");
+        assertEquals(TaskType.TASK, tasks.getLast().getType(), "2nd element should be of TASK type");
+        Task savedTask = tasks.getLast();
+        assertEquals(TEST_TASK_ID, savedTask.getId(), "task id should not change");
+        assertEquals(TEST_TITLE, savedTask.getTitle(), "task title should not change");
+        assertEquals(TEST_DESCRIPTION, savedTask.getDescription(), "task description should not change");
+        assertEquals(TEST_DURATION, savedTask.getDuration(), "task duration should not change");
+        assertEquals(TEST_START_TIME.plusMinutes(TEST_DURATION), savedTask.getStartTime(),
+                "task start time should not change");
+        assertEquals(TEST_STATUS, savedTask.getStatus(), "task status should not change");
+    }
+
+    @Test
     public void shouldResetLastUsedIdWhenLoadFile() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -464,7 +567,7 @@ class FileBackedTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-        long id = manager.addTask(testTask);
+        long id = manager.addTask(modifiedTestTask);
 
         assertEquals(1001, id, "last used id loaded incorrectly");
     }
@@ -1001,6 +1104,111 @@ class FileBackedTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenAnotherPrioritizedTaskCoversStartTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:15,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "conflict with another task for time slot (" + file + ":4:48)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenAnotherPrioritizedTaskCoversEndTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:45,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "conflict with another task for time slot (" + file + ":4:48)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenAnotherPrioritizedTaskCoversWholeInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",60,2000-05-01T13:15,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "conflict with another task for time slot (" + file + ":4:48)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenAnotherPrioritizedTaskWithinInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:35,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "conflict with another task for time slot (" + file + ":4:48)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:30,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "conflict with another task for time slot (" + file + ":4:48)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenAnotherPrioritizedTaskWithinIntervalRightAligned() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:40,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "conflict with another task for time slot (" + file + ":4:48)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenAnotherPrioritizedTaskWithSameInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "conflict with another task for time slot (" + file + ":4:48)";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldThrowWhenEpicFromFileHasStartTime() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -1087,7 +1295,7 @@ class FileBackedTaskManagerTest {
     public void shouldThrowWhenSubtaskFromFileHasTaskIdAsEpicId() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
-                1,TASK,"Task",NEW,"Task description",30,2000-05-01T13:30,
+                1,TASK,"Task",NEW,"Task description",90,2000-05-01T15:00,
                 2,EPIC,"Epic",,"Epic description",,,
                 3,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,1
                 """);
@@ -1120,7 +1328,7 @@ class FileBackedTaskManagerTest {
                 1,TASK,"Task A",NEW,"Task A description",30,2000-05-01T13:30,
                 1,TASK,"Task B",NEW,"Task B description",90,2000-05-01T15:00,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        String expectedMessage = "duplicate id=1 (" + file + ":3:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1134,7 +1342,7 @@ class FileBackedTaskManagerTest {
                 1,EPIC,"Epic",,"Epic description",,,
                 1,TASK,"Task",NEW,"Task description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        String expectedMessage = "duplicate id=1 (" + file + ":3:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1149,7 +1357,7 @@ class FileBackedTaskManagerTest {
                 2,SUBTASK,"Subtask",NEW,"Subtask description",90,2000-05-01T15:00,1
                 2,TASK,"Task",NEW,"Task description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        String expectedMessage = "duplicate id=2 (" + file + ":4:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1163,7 +1371,7 @@ class FileBackedTaskManagerTest {
                 1,TASK,"Task",NEW,"Task description",30,2000-05-01T13:30,
                 1,EPIC,"Epic",,"Epic description",,,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        String expectedMessage = "duplicate id=1 (" + file + ":3:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1177,7 +1385,7 @@ class FileBackedTaskManagerTest {
                 1,EPIC,"Epic A",,"Epic A description",,,
                 1,EPIC,"Epic B",,"Epic B description",,,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        String expectedMessage = "duplicate id=1 (" + file + ":3:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1192,7 +1400,7 @@ class FileBackedTaskManagerTest {
                 2,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,1
                 2,EPIC,"Epic B",,"Epic B description",,,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        String expectedMessage = "duplicate id=2 (" + file + ":4:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1207,7 +1415,7 @@ class FileBackedTaskManagerTest {
                 2,EPIC,"Epic",,"Subtask description",,,
                 1,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,2
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        String expectedMessage = "duplicate id=1 (" + file + ":4:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1222,7 +1430,7 @@ class FileBackedTaskManagerTest {
                 2,EPIC,"Epic B",,"Epic B description",,,
                 1,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,2
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        String expectedMessage = "duplicate id=1 (" + file + ":4:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));
@@ -1237,7 +1445,7 @@ class FileBackedTaskManagerTest {
                 2,SUBTASK,"Subtask A",NEW,"Subtask A description",90,2000-05-01T15:00,1
                 2,SUBTASK,"Subtask B",NEW,"Subtask B description",30,2000-05-01T13:30,1
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        String expectedMessage = "duplicate id=2 (" + file + ":4:1)";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(file, historyManager));

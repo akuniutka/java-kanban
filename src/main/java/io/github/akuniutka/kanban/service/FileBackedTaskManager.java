@@ -151,7 +151,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 curLine++;
                 String line = in.readLine();
                 final Task task = fromString(line);
-                checkIdForDuplicates(task.getId());
                 lastUsedId = Math.max(lastUsedId, task.getId());
                 try {
                     switch (task.getType()) {
@@ -159,6 +158,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                         case EPIC -> epics.put(task.getId(), (Epic) task);
                         case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
                         default -> throw new AssertionError();
+                    }
+                    if (task.getType() == TaskType.TASK || task.getType() == TaskType.SUBTASK) {
+                        addToPrioritizedIfStartTimeNotNull(task);
                     }
                 } catch (TaskNotFoundException exception) {
                     throw new ManagerLoadException("%s (%s:%d:%d)".formatted(exception.getMessage(), datafile, curLine,
@@ -195,6 +197,11 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private Task fromString(String taskString) {
         CSVLineParser parser = new CSVLineParser(taskString);
         final long id = extractId(parser.next());
+        try {
+            checkIdForDuplicates(id);
+        } catch (ManagerException exception) {
+            throw new CSVParsingException(exception.getMessage(), 1);
+        }
         final TaskType type = extractType(parser.next());
         final Task task = switch (type) {
             case TASK -> new Task();
@@ -224,7 +231,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         if (type != TaskType.EPIC) {
             task.setStartTime(extractDateTime(token));
             try {
-                checkDurationAndStartTimeConsistency(task);
+                requireDoesNotOverlapOtherTasks(task);
             } catch (ManagerException exception) {
                 throw new CSVParsingException(exception.getMessage(), token.position() + 1);
             }
@@ -299,12 +306,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             return LocalDateTime.parse(token.value());
         } catch (DateTimeParseException exception) {
             throw new CSVParsingException("date and time expected", token.position() + 1);
-        }
-    }
-
-    private void checkIdForDuplicates(long id) {
-        if (tasks.containsKey(id) || epics.containsKey(id) || subtasks.containsKey(id)) {
-            throw new CSVParsingException("duplicate task id", 1);
         }
     }
 }

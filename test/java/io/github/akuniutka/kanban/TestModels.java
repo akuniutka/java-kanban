@@ -15,7 +15,7 @@ public final class TestModels {
     public static final LocalDateTime TEST_END_TIME = LocalDateTime.of(2000, 5, 1, 14, 0);
     public static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
     public static final String MODIFIED_TEST_TITLE = "Modified Title";
-    public static final String MODIFIED_TEST_DESCRIPTION = "Modified description";
+    public static final String MODIFIED_TEST_DESCRIPTION = "Modified Description";
     public static final Long MODIFIED_TEST_DURATION = 90L;
     public static final LocalDateTime MODIFIED_TEST_START_TIME = LocalDateTime.of(2000, 5, 1, 15, 0);
     public static final LocalDateTime MODIFIED_TEST_END_TIME = LocalDateTime.of(2000, 5, 1, 16, 30);

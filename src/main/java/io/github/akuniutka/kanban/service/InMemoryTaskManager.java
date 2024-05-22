@@ -13,6 +13,7 @@ public class InMemoryTaskManager implements TaskManager {
     protected final Map<Long, Subtask> subtasks;
     protected final Map<Long, Epic> epics;
     protected final HistoryManager historyManager;
+    protected final TreeSet<Task> prioritizedTasks;
     protected long lastUsedId;
 
     public InMemoryTaskManager(HistoryManager historyManager) {
@@ -21,6 +22,7 @@ public class InMemoryTaskManager implements TaskManager {
         this.subtasks = new HashMap<>();
         this.epics = new HashMap<>();
         this.historyManager = historyManager;
+        this.prioritizedTasks = new TreeSet<>(Comparator.comparing(Task::getStartTime));
         this.lastUsedId = -1L;
     }
 
@@ -33,6 +35,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void removeTasks() {
         for (Task task : tasks.values()) {
             historyManager.remove(task.getId());
+            removeFromPrioritizedIfPresent(task);
         }
         tasks.clear();
     }
@@ -47,10 +50,12 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addTask(Task task) {
         Objects.requireNonNull(task, "cannot add null to list of tasks");
-        checkDurationAndStartTimeConsistency(task);
+        checkIdForDuplicates(task.getId());
+        requireDoesNotOverlapOtherTasks(task);
         final long id = generateId();
         task.setId(id);
         tasks.put(id, task);
+        addToPrioritizedIfStartTimeNotNull(task);
         return id;
     }
 
@@ -58,16 +63,19 @@ public class InMemoryTaskManager implements TaskManager {
     public void updateTask(Task task) {
         Objects.requireNonNull(task, "cannot apply null update to task");
         final Long id = task.getId();
-        requireTaskExists(id);
-        checkDurationAndStartTimeConsistency(task);
+        final Task savedTask = requireTaskExists(id);
+        requireDoesNotOverlapOtherTasks(task);
+        removeFromPrioritizedIfPresent(savedTask);
         tasks.put(id, task);
+        addToPrioritizedIfStartTimeNotNull(task);
     }
 
     @Override
     public void removeTask(long id) {
-        requireTaskExists(id);
+        final Task savedTask = requireTaskExists(id);
         tasks.remove(id);
         historyManager.remove(id);
+        removeFromPrioritizedIfPresent(savedTask);
     }
 
     @Override
@@ -79,6 +87,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void removeEpics() {
         for (Subtask subtask : subtasks.values()) {
             historyManager.remove(subtask.getId());
+            removeFromPrioritizedIfPresent(subtask);
         }
         subtasks.clear();
         for (Epic epic : epics.values()) {
@@ -97,6 +106,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addEpic(Epic epic) {
         Objects.requireNonNull(epic, "cannot add null to list of epics");
+        checkIdForDuplicates(epic.getId());
         final long id = generateId();
         epic.setId(id);
         epic.getSubtasks().clear();
@@ -120,6 +130,7 @@ public class InMemoryTaskManager implements TaskManager {
         epics.remove(id);
         for (Subtask subtask : epic.getSubtasks()) {
             historyManager.remove(subtask.getId());
+            removeFromPrioritizedIfPresent(subtask);
             subtasks.remove(subtask.getId());
         }
         historyManager.remove(id);
@@ -137,6 +148,7 @@ public class InMemoryTaskManager implements TaskManager {
         }
         for (Subtask subtask : subtasks.values()) {
             historyManager.remove(subtask.getId());
+            removeFromPrioritizedIfPresent(subtask);
         }
         subtasks.clear();
     }
@@ -151,9 +163,11 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
-        checkDurationAndStartTimeConsistency(subtask);
+        checkIdForDuplicates(subtask.getId());
+        requireDoesNotOverlapOtherTasks(subtask);
         subtask.setId(generateId());
         saveSubtaskAndLinkToEpic(subtask);
+        addToPrioritizedIfStartTimeNotNull(subtask);
         return subtask.getId();
     }
 
@@ -162,11 +176,13 @@ public class InMemoryTaskManager implements TaskManager {
         Objects.requireNonNull(subtask, "cannot apply null update to subtask");
         final Long id = subtask.getId();
         final Subtask savedSubtask = requireSubtaskExists(id);
-        checkDurationAndStartTimeConsistency(subtask);
+        requireDoesNotOverlapOtherTasks(subtask);
         final Long epicId = savedSubtask.getEpicId();
         final Epic epic = epics.get(epicId);
         subtask.setEpicId(epicId);
         subtasks.put(id, subtask);
+        removeFromPrioritizedIfPresent(savedSubtask);
+        addToPrioritizedIfStartTimeNotNull(subtask);
         final int index = epic.getSubtasks().indexOf(subtask);
         epic.getSubtasks().set(index, subtask);
     }
@@ -179,6 +195,7 @@ public class InMemoryTaskManager implements TaskManager {
         final Epic epic = epics.get(epicId);
         epic.getSubtasks().remove(subtask);
         historyManager.remove(id);
+        removeFromPrioritizedIfPresent(subtask);
     }
 
     @Override
@@ -190,6 +207,17 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public List<Task> getHistory() {
         return historyManager.getHistory();
+    }
+
+    @Override
+    public List<Task> getPrioritizedTasks() {
+        return new ArrayList<>(prioritizedTasks);
+    }
+
+    protected void checkIdForDuplicates(Long id) {
+        if (tasks.containsKey(id) || epics.containsKey(id) || subtasks.containsKey(id)) {
+            throw new ManagerException("duplicate id=" + id);
+        }
     }
 
     protected long generateId() {
@@ -227,9 +255,36 @@ public class InMemoryTaskManager implements TaskManager {
         return subtask;
     }
 
-    protected void checkDurationAndStartTimeConsistency(Task task) {
-        if (Objects.isNull(task.getDuration()) != Objects.isNull(task.getStartTime())) {
+    protected void requireDoesNotOverlapOtherTasks(Task task) {
+        Objects.requireNonNull(task, "cannot check time slot for null task");
+        if (task.getDuration() == null && task.getStartTime() == null) {
+            return;
+        } else if (task.getDuration() == null || task.getStartTime() == null) {
             throw new ManagerException("duration and start time must be either both set or both null");
+        }
+        final Task taskBefore = prioritizedTasks.floor(task);
+        if (taskBefore != null && !task.equals(taskBefore) && task.getStartTime().isBefore(taskBefore.getEndTime())) {
+            throw new ManagerException("conflict with another task for time slot");
+        }
+        Task taskAfter = prioritizedTasks.higher(task);
+        if (task.equals(taskAfter)) {
+            taskAfter = prioritizedTasks.higher(taskAfter);
+        }
+        if (taskAfter != null && task.getEndTime().isAfter(taskAfter.getStartTime())) {
+            throw new ManagerException("conflict with another task for time slot");
+        }
+    }
+
+    protected void addToPrioritizedIfStartTimeNotNull(Task task) {
+        Objects.requireNonNull(task, "cannot add null to list of prioritized tasks");
+        if (task.getStartTime() != null) {
+            prioritizedTasks.add(task);
+        }
+    }
+
+    protected void removeFromPrioritizedIfPresent(Task task) {
+        if (task != null && task.getStartTime() != null) {
+            prioritizedTasks.remove(task);
         }
     }
 }
