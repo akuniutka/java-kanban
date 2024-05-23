@@ -3,22 +3,25 @@ package io.github.akuniutka.kanban.service;
 import io.github.akuniutka.kanban.exception.*;
 import io.github.akuniutka.kanban.model.*;
 import io.github.akuniutka.kanban.util.CSVLineParser;
-import io.github.akuniutka.kanban.util.CSVToken;
 
-import java.io.*;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private static final String FILE_HEADER = "id,type,name,status,description,duration,start,epic";
-    private File datafile;
+    private Path path;
 
-    public FileBackedTaskManager(File file, HistoryManager historyManager) {
+    public FileBackedTaskManager(Path path, HistoryManager historyManager) {
         this(historyManager);
-        Objects.requireNonNull(file, "cannot start: file is null");
-        this.datafile = file;
+        Objects.requireNonNull(path, "cannot start: file is null");
+        this.path = path;
         save();
     }
 
@@ -26,10 +29,10 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         super(historyManager);
     }
 
-    public static FileBackedTaskManager loadFromFile(File file, HistoryManager historyManager) {
-        Objects.requireNonNull(file, "cannot start: file is null");
+    public static FileBackedTaskManager loadFromFile(Path path, HistoryManager historyManager) {
+        Objects.requireNonNull(path, "cannot start: file is null");
         FileBackedTaskManager manager = new FileBackedTaskManager(historyManager);
-        manager.datafile = file;
+        manager.path = path;
         manager.load();
         manager.save();
         return manager;
@@ -111,23 +114,21 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private void save() {
-        try (BufferedWriter out = new BufferedWriter(new FileWriter(datafile, StandardCharsets.UTF_8))) {
-            out.write(FILE_HEADER);
-            out.newLine();
-            for (Task task : tasks.values()) {
-                out.write(toString(task));
-                out.newLine();
-            }
-            for (Epic epic : epics.values()) {
-                out.write(toString(epic));
-                out.newLine();
-            }
-            for (Subtask subtask : subtasks.values()) {
-                out.write(toString(subtask));
-                out.newLine();
-            }
+        List<String> lines = new ArrayList<>();
+        lines.add(FILE_HEADER);
+        for (Task task : tasks.values()) {
+            lines.add(toString(task));
+        }
+        for (Epic epic : epics.values()) {
+            lines.add(toString(epic));
+        }
+        for (Subtask subtask : subtasks.values()) {
+            lines.add(toString(subtask));
+        }
+        try {
+            Files.write(path, lines, StandardCharsets.UTF_8);
         } catch (IOException exception) {
-            throw new ManagerSaveException("cannot write to file \"%s\"".formatted(datafile), exception);
+            throw new ManagerSaveException("cannot write to file \"%s\"".formatted(path), exception);
         }
     }
 
@@ -144,53 +145,32 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     private void load() {
-        int curLine = 1;
-        try (BufferedReader in = new BufferedReader(new FileReader(datafile, StandardCharsets.UTF_8))) {
-            checkFileHeader(in.readLine());
-            while (in.ready()) {
-                curLine++;
-                String line = in.readLine();
-                final Task task = fromString(line);
+        try {
+            List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+            checkFileHeader(lines.isEmpty() ? "" : lines.getFirst());
+            for (int i = 1; i < lines.size(); i++) {
+                final Task task = fromString(lines.get(i));
                 lastUsedId = Math.max(lastUsedId, task.getId());
-                try {
-                    switch (task.getType()) {
-                        case TASK -> tasks.put(task.getId(), task);
-                        case EPIC -> epics.put(task.getId(), (Epic) task);
-                        case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
-                        default -> throw new AssertionError();
-                    }
-                    if (task.getType() == TaskType.TASK || task.getType() == TaskType.SUBTASK) {
-                        addToPrioritizedIfStartTimeNotNull(task);
-                    }
-                } catch (TaskNotFoundException exception) {
-                    throw new ManagerLoadException("%s (%s:%d:%d)".formatted(exception.getMessage(), datafile, curLine,
-                            line.lastIndexOf(",") + 2));
+                switch (task.getType()) {
+                    case TASK -> tasks.put(task.getId(), task);
+                    case EPIC -> epics.put(task.getId(), (Epic) task);
+                    case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
+                    default -> throw new AssertionError();
+                }
+                if (task.getType() == TaskType.TASK || task.getType() == TaskType.SUBTASK) {
+                    addToPrioritizedIfStartTimeNotNull(task);
                 }
             }
-        } catch (CSVParsingException exception) {
-            throw new ManagerLoadException("%s (%s:%d:%d)".formatted(exception.getShortMessage(), datafile, curLine,
-                    exception.getPositionInLine()));
+        } catch (TaskNotFoundException exception) {
+            throw new ManagerLoadException(exception.getMessage());
         } catch (IOException exception) {
-            throw new ManagerLoadException("cannot load from file \"%s\"".formatted(datafile), exception);
+            throw new ManagerLoadException("cannot load from file \"%s\"".formatted(path), exception);
         }
     }
 
     private void checkFileHeader(String header) {
-        if (header == null || !header.startsWith("id")) {
-            throw new CSVParsingException("\"id\" expected", 1);
-        }
-        String[] columnNames = {"type", "name", "status", "description", "duration", "start", "epic"};
-        int[] columnStarts = {3, 8, 13, 20, 32, 41, 47};
-        for (int i = 0; i < columnNames.length; i++) {
-            if (header.length() < columnStarts[i] || header.charAt(columnStarts[i] - 1) != ',') {
-                throw new CSVParsingException("comma expected", columnStarts[i]);
-            }
-            if (header.indexOf(columnNames[i], columnStarts[i]) != columnStarts[i]) {
-                throw new CSVParsingException('"' + columnNames[i] + "\" expected", columnStarts[i] + 1);
-            }
-        }
-        if (header.length() > FILE_HEADER.length()) {
-            throw new CSVParsingException("unexpected data", FILE_HEADER.length() + 1);
+        if (!FILE_HEADER.equals(header)) {
+            throw new ManagerLoadException("wrong file header, expected \"%s\"".formatted(FILE_HEADER));
         }
     }
 
@@ -198,114 +178,138 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         CSVLineParser parser = new CSVLineParser(taskString);
         final long id = extractId(parser.next());
         try {
-            checkIdForDuplicates(id);
-        } catch (ManagerException exception) {
-            throw new CSVParsingException(exception.getMessage(), 1);
-        }
-        final TaskType type = extractType(parser.next());
-        final Task task = switch (type) {
-            case TASK -> new Task();
-            case EPIC -> new Epic();
-            case SUBTASK -> new Subtask();
-        };
-        task.setId(id);
-        task.setTitle(extractText(parser.next()));
-        CSVToken token = parser.next();
-        if (type != TaskType.EPIC) {
-            task.setStatus(extractStatus(token));
-        } else if (!token.value().isEmpty()) {
-            throw new CSVParsingException("explicit epic status", token.position() + 1);
-        }
-        task.setDescription(extractText(parser.next()));
-        token = parser.next();
-        if (type != TaskType.EPIC) {
-            try {
-                task.setDuration(extractDuration(token));
-            } catch (IllegalArgumentException exception) {
-                throw new CSVParsingException(exception.getMessage(), token.position() + 1);
-            }
-        } else if (!token.value().isEmpty()) {
-            throw new CSVParsingException("explicit epic duration", token.position() + 1);
-        }
-        token = parser.next();
-        if (type != TaskType.EPIC) {
-            task.setStartTime(extractDateTime(token));
-            try {
+            final TaskType type = extractType(parser.next());
+            final Task task = switch (type) {
+                case TASK -> new Task();
+                case EPIC -> new Epic();
+                case SUBTASK -> new Subtask();
+            };
+            task.setId(id);
+            task.setTitle(extractText(parser.next()));
+            String token = parser.next();
+            if (type != TaskType.EPIC) {
+                task.setStatus(extractStatus(token));
+                task.setDescription(extractText(parser.next()));
+                task.setDuration(extractDuration(parser.next()));
+                task.setStartTime(extractDateTime(parser.next()));
                 requireDoesNotOverlapOtherTasks(task);
-            } catch (ManagerException exception) {
-                throw new CSVParsingException(exception.getMessage(), token.position() + 1);
+            } else {
+                requireNoStatusForEpic(token);
+                task.setDescription(extractText(parser.next()));
+                requireNoDurationForEpic(parser.next());
+                requireNoStartTimeForEpic(parser.next());
             }
-        } else if (!token.value().isEmpty()) {
-            throw new CSVParsingException("explicit epic start time", token.position() + 1);
-        }
-        token = parser.next();
-        if (type == TaskType.SUBTASK) {
-            ((Subtask) task).setEpicId(extractId(token));
-        } else if (!token.value().isEmpty()) {
-            throw new CSVParsingException("unexpected data", token.position() + 1);
-        }
-        if (parser.hasNext()) {
-            throw new CSVParsingException("unexpected data", token.position() + token.value().length() + 1);
-        }
-        return task;
-    }
-
-    private TaskType extractType(CSVToken token) {
-        try {
-            return TaskType.valueOf(token.value());
-        } catch (IllegalArgumentException exception) {
-            throw new CSVParsingException("unknown task type", token.position() + 1);
+            token = parser.next();
+            if (type == TaskType.SUBTASK) {
+                ((Subtask) task).setEpicId(extractEpicId(token));
+            } else {
+                requireNoEpicIdForNotSubtask(token);
+            }
+            requireNoMoreData(parser);
+            return task;
+        } catch (CSVParsingException | IllegalArgumentException | ManagerException exception) {
+            throw new ManagerLoadException(exception.getMessage() + " for id=" + id);
         }
     }
 
-    private TaskStatus extractStatus(CSVToken token) {
-        if ("null".equals(token.value())) {
-            return null;
-        }
+    private long extractId(String token) {
         try {
-            return TaskStatus.valueOf(token.value());
-        } catch (IllegalArgumentException exception) {
-            throw new CSVParsingException("unknown task status", token.position() + 1);
-        }
-    }
-
-    private long extractId(CSVToken token) {
-        try {
-            return Long.parseLong(token.value());
+            final long id = Long.parseLong(token);
+            checkIdForDuplicates(id);
+            return id;
         } catch (NumberFormatException exception) {
-            throw new CSVParsingException("number expected", token.position() + 1);
+            throw new ManagerLoadException("line does not start with numeric id");
+        } catch (ManagerException exception) {
+            throw new ManagerLoadException(exception.getMessage());
         }
     }
 
-    private String extractText(CSVToken token) {
-        if ("null".equals(token.value())) {
-            return null;
+    private TaskType extractType(String token) {
+        try {
+            return TaskType.valueOf(token);
+        } catch (IllegalArgumentException exception) {
+            throw new CSVParsingException("unknown task type");
         }
-        if (!token.isQuoted()) {
-            throw new CSVParsingException("text value must be inside double quotes", token.position() + 1);
-        }
-        return token.value().substring(1, token.value().length() - 1);
     }
 
-    private Long extractDuration(CSVToken token) {
-        if ("null".equals(token.value())) {
+    private TaskStatus extractStatus(String token) {
+        if ("null".equals(token)) {
             return null;
         }
         try {
-            return Long.parseLong(token.value());
+            return TaskStatus.valueOf(token);
+        } catch (IllegalArgumentException exception) {
+            throw new CSVParsingException("unknown task status");
+        }
+    }
+
+    private void requireNoStatusForEpic(String token) {
+        if (!token.isEmpty()) {
+            throw new CSVParsingException("explicit epic status");
+        }
+    }
+
+    private String extractText(String token) {
+        if ("null".equals(token)) {
+            return null;
+        }
+        if (token.length() < 2 || token.charAt(0) != '"' || token.charAt(token.length() - 1) != '"') {
+            throw new CSVParsingException("text value must be inside double quotes");
+        }
+        return token.substring(1, token.length() - 1);
+    }
+
+    private Long extractDuration(String token) {
+        if ("null".equals(token)) {
+            return null;
+        }
+        try {
+            return Long.parseLong(token);
         } catch (NumberFormatException exception) {
-            throw new CSVParsingException("number expected", token.position() + 1);
+            throw new CSVParsingException("wrong duration format");
         }
     }
 
-    private LocalDateTime extractDateTime(CSVToken token) {
-        if ("null".equals(token.value())) {
+    private void requireNoDurationForEpic(String token) {
+        if (!token.isEmpty()) {
+            throw new CSVParsingException("explicit epic duration");
+        }
+    }
+
+    private LocalDateTime extractDateTime(String token) {
+        if ("null".equals(token)) {
             return null;
         }
         try {
-            return LocalDateTime.parse(token.value());
+            return LocalDateTime.parse(token);
         } catch (DateTimeParseException exception) {
-            throw new CSVParsingException("date and time expected", token.position() + 1);
+            throw new CSVParsingException("wrong start time format");
+        }
+    }
+
+    private void requireNoStartTimeForEpic(String token) {
+        if (!token.isEmpty()) {
+            throw new CSVParsingException("explicit epic start time");
+        }
+    }
+
+    private long extractEpicId(String token) {
+        try {
+            return Long.parseLong(token);
+        } catch (NumberFormatException exception) {
+            throw new CSVParsingException("wrong epic id format");
+        }
+    }
+
+    private void requireNoEpicIdForNotSubtask(String token) {
+        if (!token.isEmpty()) {
+            throw new CSVParsingException("unexpected data");
+        }
+    }
+
+    private void requireNoMoreData(CSVLineParser parser) {
+        if (parser.hasNext()) {
+            throw new CSVParsingException("unexpected data");
         }
     }
 }

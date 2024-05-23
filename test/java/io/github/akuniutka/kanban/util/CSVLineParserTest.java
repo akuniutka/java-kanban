@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CSVLineParserTest {
     private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
-    private static final String WRONG_POSITION = "wrong position in string";
 
     @Test
     public void shouldInstantiateCSVLineParser() {
@@ -23,35 +22,26 @@ class CSVLineParserTest {
     @Test
     public void shouldReturnTokenWhenEmptyLine() {
         CSVLineParser parser = new CSVLineParser("");
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(0, token.position(), "wrong starting position of token");
-        assertEquals("", token.value(), "wrong value of token");
-        assertFalse(token.isQuoted(), "token should be reported as not quoted");
+        assertEquals("", token, "wrong value of token");
     }
 
     @Test
     public void shouldReturnEmptyTokenInStartOfLine() {
         CSVLineParser parser = new CSVLineParser(",,");
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(0, token.position(), "wrong starting position of token");
-        assertEquals("", token.value(), "wrong value of token");
-        assertFalse(token.isQuoted(), "token should be reported as not quoted");
+        assertEquals("", token, "wrong value of token");
     }
 
     @Test
     public void shouldReturnEmptyTokenInMiddleOfLine() {
         CSVLineParser parser = new CSVLineParser(",,");
         parser.next();
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(1, token.position(), "wrong starting position of token");
-        assertEquals("", token.value(), "wrong value of token");
-        assertFalse(token.isQuoted(), "token should be reported as not quoted");
+        assertEquals("", token, "wrong value of token");
     }
 
     @Test
@@ -59,35 +49,26 @@ class CSVLineParserTest {
         CSVLineParser parser = new CSVLineParser(",,");
         parser.next();
         parser.next();
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(2, token.position(), "wrong starting position of token");
-        assertEquals("", token.value(), "wrong value of token");
-        assertFalse(token.isQuoted(), "token should be reported as not quoted");
+        assertEquals("", token, "wrong value of token");
     }
 
     @Test
     public void shouldReturnNonEmptyTokenInStartOfLine() {
         CSVLineParser parser = new CSVLineParser("tokenA,tokenB,tokenC");
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(0, token.position(), "wrong starting position of token");
-        assertEquals("tokenA", token.value(), "wrong value of token");
-        assertFalse(token.isQuoted(), "token should be reported as not quoted");
+        assertEquals("tokenA", token, "wrong value of token");
     }
 
     @Test
     public void shouldReturnNonEmptyTokenInMiddleOfLine() {
         CSVLineParser parser = new CSVLineParser("tokenA,tokenB,tokenC");
         parser.next();
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(7, token.position(), "wrong starting position of token");
-        assertEquals("tokenB", token.value(), "wrong value of token");
-        assertFalse(token.isQuoted(), "token should be reported as not quoted");
+        assertEquals("tokenB", token, "wrong value of token");
     }
 
     @Test
@@ -95,35 +76,26 @@ class CSVLineParserTest {
         CSVLineParser parser = new CSVLineParser("tokenA,tokenB,tokenC");
         parser.next();
         parser.next();
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(14, token.position(), "wrong starting position of token");
-        assertEquals("tokenC", token.value(), "wrong value of token");
-        assertFalse(token.isQuoted(), "token should be reported as not quoted");
+        assertEquals("tokenC", token, "wrong value of token");
     }
 
     @Test
     public void shouldReturnQuotedTokenInStartOfLine() {
         CSVLineParser parser = new CSVLineParser("\"tokenA\",tokenB,tokenC");
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(0, token.position(), "wrong starting position of token");
-        assertEquals("\"tokenA\"", token.value(), "wrong value of token");
-        assertTrue(token.isQuoted(), "token should be reported as quoted");
+        assertEquals("\"tokenA\"", token, "wrong value of token");
     }
 
     @Test
     public void shouldReturnQuotedTokenInMiddleOfLine() {
         CSVLineParser parser = new CSVLineParser("tokenA,\"tokenB\",tokenC");
         parser.next();
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(7, token.position(), "wrong starting position of token");
-        assertEquals("\"tokenB\"", token.value(), "wrong value of token");
-        assertTrue(token.isQuoted(), "token should be reported as quoted");
+        assertEquals("\"tokenB\"", token, "wrong value of token");
     }
 
     @Test
@@ -131,12 +103,9 @@ class CSVLineParserTest {
         CSVLineParser parser = new CSVLineParser("tokenA,tokenB,\"tokenC\"");
         parser.next();
         parser.next();
-        CSVToken token = parser.next();
+        String token = parser.next();
 
-        assertNotNull(token, "should return nonnull token");
-        assertEquals(14, token.position(), "wrong starting position of token");
-        assertEquals("\"tokenC\"", token.value(), "wrong value of token");
-        assertTrue(token.isQuoted(), "token should be reported as quoted");
+        assertEquals("\"tokenC\"", token, "wrong value of token");
     }
 
     @Test
@@ -213,103 +182,71 @@ class CSVLineParserTest {
     @Test
     public void shouldThrowWhenRetrievingAfterTokenRetrievedFromEmptyLine() {
         CSVLineParser parser = new CSVLineParser("");
-        String expectedMessage = "unexpected end of line";
-        int expectedPosition = 1;
         parser.next();
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("unexpected end of line", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenRetrievingAfterTheOnlyTokenRetrieved() {
         CSVLineParser parser = new CSVLineParser("token");
-        String expectedMessage = "unexpected end of line";
-        int expectedPosition = 6;
         parser.next();
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("unexpected end of line", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenRetrievingAfterTheOnlyQuotedTokenRetrieved() {
         CSVLineParser parser = new CSVLineParser("\"token\"");
-        String expectedMessage = "unexpected end of line";
-        int expectedPosition = 8;
         parser.next();
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("unexpected end of line", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenRetrievingAfterLastTokenRetrieved() {
         CSVLineParser parser = new CSVLineParser("tokenA,tokenB");
-        String expectedMessage = "unexpected end of line";
-        int expectedPosition = 14;
         parser.next();
         parser.next();
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("unexpected end of line", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenRetrievingAfterLastQuotedTokenRetrieved() {
         CSVLineParser parser = new CSVLineParser("tokenA,\"tokenB\"");
-        String expectedMessage = "unexpected end of line";
-        int expectedPosition = 16;
         parser.next();
         parser.next();
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("unexpected end of line", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenQuoteAfterNonComma() {
         CSVLineParser parser = new CSVLineParser("tokenA\"tokenB\"tokenC");
-        String expectedMessage = "unexpected double quote";
-        int expectedPosition = 7;
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("no comma before opening double quote", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenNoClosingQuote() {
         CSVLineParser parser = new CSVLineParser("\"tokenA.tokenB,tokenC");
-        String expectedMessage = "double quote expected";
-        int expectedPosition = 22;
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("no closing double quote", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenNonCommaAfterQuote() {
         CSVLineParser parser = new CSVLineParser("\"tokenA\"tokenB,tokenC");
-        String expectedMessage = "comma expected";
-        int expectedPosition = 9;
 
-        CSVParsingException exception = assertThrows(CSVParsingException.class, parser::next);
-        assertEquals(expectedMessage, exception.getShortMessage(), WRONG_EXCEPTION_MESSAGE);
-        assertEquals(expectedPosition, exception.getPositionInLine(), WRONG_POSITION);
-        assertEquals(expectedMessage + " at " + expectedPosition, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        Exception exception = assertThrows(CSVParsingException.class, parser::next);
+        assertEquals("no comma after closing double quote", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 }
