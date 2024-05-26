@@ -33,10 +33,8 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void removeTasks() {
-        for (Task task : tasks.values()) {
-            historyManager.remove(task.getId());
-            removeFromPrioritizedIfPresent(task);
-        }
+        tasks.values().forEach(this::removeFromPrioritizedIfPresent);
+        tasks.values().forEach(task -> historyManager.remove(task.getId()));
         tasks.clear();
     }
 
@@ -85,14 +83,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void removeEpics() {
-        for (Subtask subtask : subtasks.values()) {
-            historyManager.remove(subtask.getId());
-            removeFromPrioritizedIfPresent(subtask);
-        }
+        subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
+        subtasks.values().forEach(subtask -> historyManager.remove(subtask.getId()));
         subtasks.clear();
-        for (Epic epic : epics.values()) {
-            historyManager.remove(epic.getId());
-        }
+        epics.values().forEach(epic -> historyManager.remove(epic.getId()));
         epics.clear();
     }
 
@@ -128,11 +122,11 @@ public class InMemoryTaskManager implements TaskManager {
     public void removeEpic(long id) {
         final Epic epic = requireEpicExists(id);
         epics.remove(id);
-        for (Subtask subtask : epic.getSubtasks()) {
-            historyManager.remove(subtask.getId());
-            removeFromPrioritizedIfPresent(subtask);
-            subtasks.remove(subtask.getId());
-        }
+        epic.getSubtasks().stream()
+                .peek(this::removeFromPrioritizedIfPresent)
+                .map(Subtask::getId)
+                .peek(historyManager::remove)
+                .forEach(subtasks::remove);
         historyManager.remove(id);
     }
 
@@ -143,13 +137,9 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void removeSubtasks() {
-        for (Epic epic : epics.values()) {
-            epic.getSubtasks().clear();
-        }
-        for (Subtask subtask : subtasks.values()) {
-            historyManager.remove(subtask.getId());
-            removeFromPrioritizedIfPresent(subtask);
-        }
+        epics.values().forEach(epic -> epic.setSubtasks(new ArrayList<>()));
+        subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
+        subtasks.values().forEach(subtask -> historyManager.remove(subtask.getId()));
         subtasks.clear();
     }
 
