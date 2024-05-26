@@ -1,11 +1,12 @@
 package io.github.akuniutka.kanban;
 
-import io.github.akuniutka.kanban.model.Epic;
-import io.github.akuniutka.kanban.model.Subtask;
-import io.github.akuniutka.kanban.model.Task;
-import io.github.akuniutka.kanban.model.TaskStatus;
+import io.github.akuniutka.kanban.model.*;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public final class TestModels {
     public static final String TEST_TITLE = "Title";
@@ -14,12 +15,12 @@ public final class TestModels {
     public static final LocalDateTime TEST_START_TIME = LocalDateTime.of(2000, 5, 1, 13, 30);
     public static final LocalDateTime TEST_END_TIME = LocalDateTime.of(2000, 5, 1, 14, 0);
     public static final TaskStatus TEST_STATUS = TaskStatus.IN_PROGRESS;
-    public static final String MODIFIED_TEST_TITLE = "Modified Title";
-    public static final String MODIFIED_TEST_DESCRIPTION = "Modified Description";
-    public static final Long MODIFIED_TEST_DURATION = 90L;
-    public static final LocalDateTime MODIFIED_TEST_START_TIME = LocalDateTime.of(2000, 5, 1, 15, 0);
-    public static final LocalDateTime MODIFIED_TEST_END_TIME = LocalDateTime.of(2000, 5, 1, 16, 30);
-    public static final TaskStatus MODIFIED_TEST_STATUS = TaskStatus.DONE;
+    public static final String MODIFIED_TITLE = "Modified Title";
+    public static final String MODIFIED_DESCRIPTION = "Modified Description";
+    public static final Long MODIFIED_DURATION = 90L;
+    public static final LocalDateTime MODIFIED_START_TIME = LocalDateTime.of(2000, 5, 1, 15, 0);
+    public static final LocalDateTime MODIFIED_END_TIME = LocalDateTime.of(2000, 5, 1, 16, 30);
+    public static final TaskStatus MODIFIED_STATUS = TaskStatus.DONE;
     public static final long TEST_TASK_ID = 1L;
     public static final long TEST_EPIC_ID = 2L;
     public static final long TEST_SUBTASK_ID = 3L;
@@ -28,75 +29,85 @@ public final class TestModels {
     private TestModels() {
     }
 
-    public static Task createTestTask() {
-        return createTestTask(null, null, null, null, null);
+    public static TaskBuilder fromEmptyTask() {
+        return new TaskBuilder();
     }
 
-    public static Task createTestTask(String title, String description, Long duration, LocalDateTime startTime,
-            TaskStatus taskStatus) {
-        return createTestTask(null, title, description, duration, startTime, taskStatus);
+    public static TaskBuilder fromTestTask() {
+        return new TaskBuilder().withId(TEST_TASK_ID).withTitle(TEST_TITLE).withDescription(TEST_DESCRIPTION)
+                .withDuration(TEST_DURATION).withStartTime(TEST_START_TIME).withStatus(TEST_STATUS);
     }
 
-    public static Task createTestTask(Long id, String title, String description, Long duration, LocalDateTime startTime,
-            TaskStatus taskStatus) {
-        final Task task = new Task();
-        if (id != null) {
-            task.setId(id);
+    public static TaskBuilder fromModifiedTask() {
+        return new TaskBuilder().withId(TEST_TASK_ID).withTitle(MODIFIED_TITLE).withDescription(MODIFIED_DESCRIPTION)
+                .withDuration(MODIFIED_DURATION).withStartTime(MODIFIED_START_TIME).withStatus(MODIFIED_STATUS);
+    }
+
+    public static EpicBuilder fromEmptyEpic() {
+        return new EpicBuilder().withSubtasks(Collections.emptyList());
+    }
+
+    public static EpicBuilder fromTestEpic() {
+        return new EpicBuilder().withId(TEST_EPIC_ID).withTitle(TEST_TITLE).withDescription(TEST_DESCRIPTION)
+                .withSubtasks(Collections.emptyList());
+    }
+
+    public static EpicBuilder fromModifiedEpic() {
+        return new EpicBuilder().withId(TEST_EPIC_ID).withTitle(MODIFIED_TITLE).withDescription(MODIFIED_DESCRIPTION)
+                .withSubtasks(Collections.emptyList());
+    }
+
+    public static SubtaskBuilder fromEmptySubtask() {
+        return new SubtaskBuilder();
+    }
+
+    public static SubtaskBuilder fromTestSubtask() {
+        return new SubtaskBuilder().withId(TEST_SUBTASK_ID).withEpicId(TEST_EPIC_ID).withTitle(TEST_TITLE)
+                .withDescription(TEST_DESCRIPTION).withDuration(TEST_DURATION).withStartTime(TEST_START_TIME)
+                .withStatus(TEST_STATUS);
+    }
+
+    public static SubtaskBuilder fromModifiedSubtask() {
+        return new SubtaskBuilder().withId(TEST_SUBTASK_ID).withEpicId(TEST_EPIC_ID).withTitle(MODIFIED_TITLE)
+                .withDescription(MODIFIED_DESCRIPTION).withDuration(MODIFIED_DURATION)
+                .withStartTime(MODIFIED_START_TIME).withStatus(MODIFIED_STATUS);
+    }
+
+    public static void assertTaskEquals(Task expected, Task actual, String message) {
+        if (expected == null) {
+            throw new IllegalArgumentException("value to check against should not be null");
         }
-        task.setTitle(title);
-        task.setDescription(description);
-        task.setDuration(duration);
-        task.setStartTime(startTime);
-        task.setStatus(taskStatus);
-        return task;
+        assertNotNull(actual, "should be not null");
+        assertEquals(expected.getType(), actual.getType(), "wrong type");
+        assertAll(message,
+                () -> assertEquals(expected.getId(), actual.getId(), "wrong id"),
+                () -> assertEquals(expected.getTitle(), actual.getTitle(), "wrong title"),
+                () -> assertEquals(expected.getDescription(), actual.getDescription(), "wrong description"),
+                () -> assertEquals(expected.getDuration(), actual.getDuration(), "wrong duration"),
+                () -> assertEquals(expected.getStartTime(), actual.getStartTime(), "wrong start time"),
+                () -> assertEquals(expected.getStatus(), actual.getStatus(), "wrong status"),
+                () -> {
+                    if (expected.getType() == TaskType.SUBTASK) {
+                        assertEquals(((Subtask) expected).getEpicId(), ((Subtask) actual).getEpicId(), "wrong epic id");
+                    }
+                },
+                () -> {
+                    if (expected.getType() == TaskType.EPIC) {
+                        assert expected instanceof Epic;
+                        assertListEquals(((Epic) expected).getSubtasks(), ((Epic) actual).getSubtasks(),
+                                "wrong subtask list");
+                    }
+                });
     }
 
-    public static Epic createTestEpic() {
-        return createTestEpic(null, null);
-    }
-
-    public static Epic createTestEpic(String title, String description) {
-        return createTestEpic(null, title, description);
-    }
-
-    public static Epic createTestEpic(Long id, String title, String description) {
-        final Epic epic = new Epic();
-        if (id != null) {
-            epic.setId(id);
+    public static void assertListEquals(List<? extends Task> expected, List<? extends Task> actual, String message) {
+        if (expected == null) {
+            throw new IllegalArgumentException("value to check against should not be null");
         }
-        epic.setTitle(title);
-        epic.setDescription(description);
-        return epic;
-    }
-
-    public static Subtask createTestSubtask() {
-        return createTestSubtask(null, null, null, null, null);
-    }
-
-    public static Subtask createTestSubtask(String title, String description, Long duration, LocalDateTime startTime,
-            TaskStatus taskStatus) {
-        return createTestSubtask(null, title, description, duration, startTime, taskStatus);
-    }
-
-    public static Subtask createTestSubtask(Long epicId, String title, String description, Long duration,
-            LocalDateTime startTime, TaskStatus taskStatus) {
-        return createTestSubtask(null, epicId, title, description, duration, startTime, taskStatus);
-    }
-
-    public static Subtask createTestSubtask(Long id, Long epicId, String title, String description, Long duration,
-            LocalDateTime startTime, TaskStatus taskStatus) {
-        final Subtask subtask = new Subtask();
-        if (id != null) {
-            subtask.setId(id);
+        assertNotNull(actual, "should be not null");
+        assertEquals(expected.size(), actual.size(), "wrong list size");
+        for (int i = 0; i < expected.size(); i++) {
+            assertTaskEquals(expected.get(i), actual.get(i), message);
         }
-        if (epicId != null) {
-            subtask.setEpicId(epicId);
-        }
-        subtask.setTitle(title);
-        subtask.setDescription(description);
-        subtask.setDuration(duration);
-        subtask.setStartTime(startTime);
-        subtask.setStatus(taskStatus);
-        return subtask;
     }
 }
