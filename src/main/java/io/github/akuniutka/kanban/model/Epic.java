@@ -1,13 +1,14 @@
 package io.github.akuniutka.kanban.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Epic extends Task {
-    private List<Long> subtaskIds;
+    private List<Subtask> subtasks;
 
     public Epic() {
-        this.subtaskIds = new ArrayList<>();
+        this.subtasks = new ArrayList<>();
     }
 
     @Override
@@ -15,31 +16,77 @@ public class Epic extends Task {
         return TaskType.EPIC;
     }
 
-    public List<Long> getSubtaskIds() {
-        return subtaskIds;
+    public List<Subtask> getSubtasks() {
+        return subtasks;
     }
 
-    public void setSubtaskIds(List<Long> subtaskIds) {
-        this.subtaskIds = subtaskIds;
+    public void setSubtasks(List<Subtask> subtasks) {
+        Objects.requireNonNull(subtasks, "list of subtasks cannot be null");
+        this.subtasks = subtasks;
+    }
+
+    @Override
+    public Long getDuration() {
+        LongSummaryStatistics stats = subtasks.stream()
+                .map(Subtask::getDuration)
+                .filter(Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .summaryStatistics();
+        return stats.getCount() > 0 ? stats.getSum() : null;
+    }
+
+    @Override
+    public void setDuration(Long duration) {
+        throw new UnsupportedOperationException("cannot explicitly set epic duration");
+    }
+
+    @Override
+    public LocalDateTime getStartTime() {
+        return subtasks.stream()
+                .map(Subtask::getStartTime)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
+    }
+
+    @Override
+    public void setStartTime(LocalDateTime startTime) {
+        throw new UnsupportedOperationException("cannot explicitly set epic start time");
+    }
+
+    @Override
+    public LocalDateTime getEndTime() {
+        return subtasks.stream()
+                .map(Subtask::getEndTime)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+    }
+
+    @Override
+    public TaskStatus getStatus() {
+        final Set<TaskStatus> statuses = subtasks.stream()
+                .map(Subtask::getStatus)
+                .collect(Collectors.toSet());
+        if (statuses.isEmpty()) {
+            return TaskStatus.NEW;
+        } else if (statuses.size() > 1) {
+            return TaskStatus.IN_PROGRESS;
+        } else {
+            return statuses.iterator().next();
+        }
+    }
+
+    @Override
+    public void setStatus(TaskStatus status) {
+        throw new UnsupportedOperationException("cannot explicitly set epic status");
     }
 
     @Override
     public String toString() {
-        String string = "Epic{";
-        string += "id=" + getId();
-        if (getTitle() == null) {
-            string += ", title=null";
-        } else {
-            string += ", title='" + getTitle() + "'";
-        }
-        if (getDescription() == null) {
-            string += ", description=null";
-        } else {
-            string += ", description.length=" + getDescription().length();
-        }
-        string += ", subtaskIds=" + subtaskIds;
-        string += ", status=" + getStatus();
-        string += "}";
-        return string;
+        return "Epic{id=%s, title=%s, description%s, subtasks=%s, duration=%s, startTime=%s, status=%s}".formatted(
+                getId(), getTitle() == null ? "null" : "\"" + getTitle() + "\"",
+                getDescription() == null ? "=null" : ".length=" + getDescription().length(), subtasks, getDuration(),
+                getStartTime(), getStatus());
     }
 }

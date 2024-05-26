@@ -2,49 +2,43 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.exception.ManagerLoadException;
 import io.github.akuniutka.kanban.exception.ManagerSaveException;
-import io.github.akuniutka.kanban.model.*;
-import org.junit.jupiter.api.BeforeEach;
+import io.github.akuniutka.kanban.model.Epic;
+import io.github.akuniutka.kanban.model.Subtask;
+import io.github.akuniutka.kanban.model.Task;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class FileBackedTaskManagerTest {
+class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     private static final String WRONG_FILE_FORMAT = "wrong file format";
     private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
-    private TaskManager manager;
-    private File file;
-    private HistoryManager historyManager;
-    private Task emptyTask;
-    private Task testTask;
-    private Task modifiedTestTask;
-    private Epic emptyEpic;
-    private Epic testEpic;
-    private Epic modifiedTestEpic;
+    private final Path path;
+    private final Task testTask;
+    private final Epic testEpic;
+    private Task modifiedTask;
+    private Epic modifiedEpic;
     private Subtask emptySubtask;
     private Subtask testSubtask;
-    private Subtask modifiedTestSubtask;
+    private Subtask modifiedSubtask;
 
-    @BeforeEach
-    public void setUp() throws IOException {
-        historyManager = new InMemoryHistoryManager();
-        file = File.createTempFile("kanban", null);
-        manager = new FileBackedTaskManager(file, historyManager);
-        emptyTask = createTestTask();
-        testTask = createTestTask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
-        modifiedTestTask = createTestTask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
-        emptyEpic = createTestEpic();
-        testEpic = createTestEpic(TEST_TITLE, TEST_DESCRIPTION);
-        modifiedTestEpic = createTestEpic(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION);
-        emptySubtask = createTestSubtask();
-        testSubtask = createTestSubtask(TEST_TITLE, TEST_DESCRIPTION, TEST_STATUS);
-        modifiedTestSubtask = createTestSubtask(MODIFIED_TEST_TITLE, MODIFIED_TEST_DESCRIPTION, MODIFIED_TEST_STATUS);
+    public FileBackedTaskManagerTest() throws IOException {
+        this.path = Files.createTempFile("kanban", null);
+        this.manager = new FileBackedTaskManager(this.path, this.historyManager);
+        this.testTask = fromTestTask().withId(null).build();
+        this.modifiedTask = fromModifiedTask().withId(null).build();
+        this.testEpic = fromTestEpic().withId(null).build();
+        this.modifiedEpic = fromModifiedEpic().withId(null).build();
+        this.emptySubtask = fromEmptySubtask().build();
+        this.testSubtask = fromTestSubtask().withId(null).withEpicId(null).build();
+        this.modifiedSubtask = fromModifiedSubtask().withId(null).withEpicId(null).build();
     }
 
     @Test
@@ -54,1043 +48,1657 @@ class FileBackedTaskManagerTest {
 
     @Test
     public void shouldThrowWhenFileIsNull() {
-        Exception exception = assertThrows(NullPointerException.class,
+        final Exception exception = assertThrows(NullPointerException.class,
                 () -> new FileBackedTaskManager(null, historyManager));
         assertEquals("cannot start: file is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldImmediatelyThrowWhenCannotInitializeDataFile() {
-        String filename = ".";
-        String expectedMessage = "cannot write to file \"" + filename + "\"";
+        final String filename = ".";
+        final String expectedMessage = "cannot write to file \"" + filename + "\"";
 
-        Exception exception = assertThrows(ManagerSaveException.class,
-                () -> new FileBackedTaskManager(new File(filename), historyManager));
+        final Exception exception = assertThrows(ManagerSaveException.class,
+                () -> new FileBackedTaskManager(Paths.get(filename), historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldSaveWhenNewTaskAdded() throws IOException {
+    public void shouldSaveWhenAddTask() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %%d,TASK,"%s",%s,"%s",
-                """.formatted(testTask.getTitle(), testTask.getStatus(), testTask.getDescription());
+                id,type,name,status,description,duration,start,epic
+                %%d,TASK,"%s",%s,"%s",%s,%s,
+                """.formatted(testTask.getTitle(), testTask.getStatus(), testTask.getDescription(),
+                testTask.getDuration(), testTask.getStartTime());
 
-        long id = manager.addTask(testTask);
+        final long taskId = manager.addTask(testTask);
 
-        expectedString = expectedString.formatted(id);
-        String actualString = Files.readString(file.toPath());
+        expectedString = expectedString.formatted(taskId);
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenTaskUpdated() throws IOException {
-        long id = manager.addTask(testTask);
+    public void shouldSaveWhenAddTaskAndFieldsNull() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %d,TASK,"%s",%s,"%s",
-                """.formatted(id, modifiedTestTask.getTitle(), modifiedTestTask.getStatus(),
-                modifiedTestTask.getDescription());
-        modifiedTestTask.setId(id);
-
-        manager.updateTask(modifiedTestTask);
-
-        String actualString = Files.readString(file.toPath());
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldCorrectlySaveTaskWithNullFields() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,epic
-                %d,TASK,null,null,null,
+                id,type,name,status,description,duration,start,epic
+                %d,TASK,null,null,null,null,null,
                 """;
 
-        long id = manager.addTask(emptyTask);
+        final long taskId = manager.addTask(fromEmptyTask().build());
 
-        expectedString = expectedString.formatted(id);
-        String actualString = Files.readString(file.toPath());
+        expectedString = expectedString.formatted(taskId);
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenTaskRemoved() throws IOException {
-        long id = manager.addTask(testTask);
-        String expectedString = """
-                id,type,name,status,description,epic
+    public void shouldSaveWhenUpdateTask() throws IOException {
+        final long taskId = manager.addTask(testTask);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %d,TASK,"%s",%s,"%s",%s,%s,
+                """.formatted(taskId, modifiedTask.getTitle(), modifiedTask.getStatus(),
+                modifiedTask.getDescription(), modifiedTask.getDuration(), modifiedTask.getStartTime());
+        modifiedTask = fromModifiedTask().withId(taskId).build();
+
+        manager.updateTask(modifiedTask);
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveTask() throws IOException {
+        final long taskId = manager.addTask(testTask);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
                 """;
 
-        manager.removeTask(id);
+        manager.removeTask(taskId);
 
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenNewEpicAdded() throws IOException {
+    public void shouldSaveWhenAddEpic() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %%d,EPIC,"%s",,"%s",
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
 
-        long id = manager.addEpic(testEpic);
+        final long epicId = manager.addEpic(testEpic);
 
-        expectedString = expectedString.formatted(id);
-        String actualString = Files.readString(file.toPath());
+        expectedString = expectedString.formatted(epicId);
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenEpicUpdated() throws IOException {
-        long id = manager.addEpic(testEpic);
+    public void shouldSaveWhenAddEpicAndFieldsNull() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %d,EPIC,"%s",,"%s",
-                """.formatted(id, modifiedTestEpic.getTitle(), modifiedTestEpic.getDescription());
-        modifiedTestEpic.setId(id);
-
-        manager.updateEpic(modifiedTestEpic);
-
-        String actualString = Files.readString(file.toPath());
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldCorrectlySaveEpicWithNullFields() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,epic
-                %d,EPIC,null,,null,
+                id,type,name,status,description,duration,start,epic
+                %d,EPIC,null,,null,,,
                 """;
 
-        long id = manager.addEpic(emptyEpic);
+        final long epicId = manager.addEpic(fromEmptyEpic().build());
 
-        expectedString = expectedString.formatted(id);
-        String actualString = Files.readString(file.toPath());
+        expectedString = expectedString.formatted(epicId);
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenEpicRemoved() throws IOException {
-        long id = manager.addEpic(testEpic);
-        String expectedString = """
-                id,type,name,status,description,epic
+    public void shouldSaveWhenUpdateEpic() throws IOException {
+        final long epicId = manager.addEpic(testEpic);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %d,EPIC,"%s",,"%s",,,
+                """.formatted(epicId, modifiedEpic.getTitle(), modifiedEpic.getDescription());
+        modifiedEpic = fromModifiedEpic().withId(epicId).build();
+
+        manager.updateEpic(modifiedEpic);
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveEpic() throws IOException {
+        final long epicId = manager.addEpic(testEpic);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
                 """;
 
-        manager.removeEpic(id);
+        manager.removeEpic(epicId);
 
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenNewSubtaskAdded() throws IOException {
+    public void shouldSaveWhenAddSubtask() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %%d,EPIC,"%s",,"%s",
-                %%d,SUBTASK,"%s",%s,"%s",%%d
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription(), testSubtask.getTitle(),
-                testSubtask.getStatus(), testSubtask.getDescription());
-        long epicId = manager.addEpic(testEpic);
-        testSubtask.setEpicId(epicId);
+                testSubtask.getStatus(), testSubtask.getDescription(), testSubtask.getDuration(),
+                testSubtask.getStartTime());
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
 
-        long subtaskId = manager.addSubtask(testSubtask);
+        final long subtaskId = manager.addSubtask(testSubtask);
 
         expectedString = expectedString.formatted(epicId, subtaskId, epicId);
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenSubtaskUpdated() throws IOException {
+    public void shouldSaveWhenAddSubtaskAndFieldsNUll() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %%d,EPIC,"%s",,"%s",
-                %%d,SUBTASK,"%s",%s,"%s",%%d
-                """.formatted(testEpic.getTitle(), testEpic.getDescription(), modifiedTestSubtask.getTitle(),
-                modifiedTestSubtask.getStatus(), modifiedTestSubtask.getDescription());
-        long epicId = manager.addEpic(testEpic);
-        testSubtask.setEpicId(epicId);
-        long subtaskId = manager.addSubtask(testSubtask);
-        modifiedTestSubtask.setEpicId(epicId);
-        modifiedTestSubtask.setId(subtaskId);
-
-        manager.updateSubtask(modifiedTestSubtask);
-
-        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
-        String actualString = Files.readString(file.toPath());
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldCorrectlySaveSubtaskWithNullFields() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,epic
-                %%d,EPIC,"%s",,"%s",
-                %%d,SUBTASK,null,null,null,%%d
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                %%d,SUBTASK,null,null,null,null,null,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        long epicId = manager.addEpic(testEpic);
-        emptySubtask.setEpicId(epicId);
+        final long epicId = manager.addEpic(testEpic);
+        emptySubtask = fromEmptySubtask().withEpicId(epicId).build();
 
-        long subtaskId = manager.addSubtask(emptySubtask);
+        final long subtaskId = manager.addSubtask(emptySubtask);
 
         expectedString = expectedString.formatted(epicId, subtaskId, epicId);
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenSubtaskRemoved() throws IOException {
+    public void shouldSaveWhenUpdateSubtask() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %%d,EPIC,"%s",,"%s",
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
+                """.formatted(testEpic.getTitle(), testEpic.getDescription(), modifiedSubtask.getTitle(),
+                modifiedSubtask.getStatus(), modifiedSubtask.getDescription(),
+                modifiedSubtask.getDuration(), modifiedSubtask.getStartTime());
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(testSubtask);
+        modifiedSubtask = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
+
+        manager.updateSubtask(modifiedSubtask);
+
+        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveSubtask() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        long epicId = manager.addEpic(testEpic);
-        testSubtask.setEpicId(epicId);
-        long subtaskId = manager.addSubtask(testSubtask);
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(testSubtask);
 
         manager.removeSubtask(subtaskId);
 
         expectedString = expectedString.formatted(epicId);
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenAllTasksRemoved() throws IOException {
+    public void shouldSaveWhenRemoveTasks() throws IOException {
         manager.addTask(testTask);
-        manager.addTask(modifiedTestTask);
-        String expectedString = """
-                id,type,name,status,description,epic
+        manager.addTask(modifiedTask);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
                 """;
 
         manager.removeTasks();
 
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenAllEpicsRemoved() throws IOException {
+    public void shouldSaveWhenRemoveEpics() throws IOException {
         manager.addEpic(testEpic);
-        manager.addEpic(modifiedTestEpic);
-        String expectedString = """
-                id,type,name,status,description,epic
+        manager.addEpic(modifiedEpic);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
                 """;
 
         manager.removeEpics();
 
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldSaveWhenAllSubtasksRemoved() throws IOException {
+    public void shouldSaveWhenRemoveSubtasks() throws IOException {
         String expectedString = """
-                id,type,name,status,description,epic
-                %%d,EPIC,"%s",,"%s",
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        long epicId = manager.addEpic(testEpic);
-        testSubtask.setEpicId(epicId);
+        final long epicId = manager.addEpic(testEpic);
+        testSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
         manager.addSubtask(testSubtask);
-        modifiedTestSubtask.setEpicId(epicId);
-        manager.addSubtask(modifiedTestSubtask);
+        modifiedSubtask = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(modifiedSubtask);
 
         manager.removeSubtasks();
 
         expectedString = expectedString.formatted(epicId);
-        String actualString = Files.readString(file.toPath());
+        final String actualString = Files.readString(path);
         assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     @Test
-    public void shouldLoadTaskFromFile() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Task> tasks = manager.getTasks();
-        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "element in list should be of TASK type");
-        Task task = tasks.getFirst();
-        assertEquals(TEST_TASK_ID, task.getId(), "task id loaded incorrectly");
-        assertEquals(TEST_TITLE, task.getTitle(), "task title loaded incorrectly");
-        assertEquals(TEST_DESCRIPTION, task.getDescription(), "task description loaded incorrectly");
-        assertEquals(TEST_STATUS, task.getStatus(), "task status loaded incorrectly");
-    }
-
-    @Test
-    public void shouldLoadTaskWithNullFieldsFromFile() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,null,null,null,
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Task> tasks = manager.getTasks();
-        assertEquals(1, tasks.size(), "list should contain exactly 1 element");
-        assertEquals(TaskType.TASK, tasks.getFirst().getType(), "element in list should be of TASK type");
-        Task task = tasks.getFirst();
-        assertEquals(TEST_TASK_ID, task.getId(), "task id loaded incorrectly");
-        assertNull(task.getTitle(), "task title loaded incorrectly");
-        assertNull(task.getDescription(), "task description loaded incorrectly");
-        assertNull(task.getStatus(), "task status loaded incorrectly");
-    }
-
-    @Test
-    public void shouldLoadEpicFromFile() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                2,EPIC,"Title",,"Description",
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Epic> epics = manager.getEpics();
-        assertEquals(1, epics.size(), "list should contain exactly 1 element");
-        assertEquals(TaskType.EPIC, epics.getFirst().getType(), "element in list should be of EPIC type");
-        Epic epic = epics.getFirst();
-        assertEquals(TEST_EPIC_ID, epic.getId(), "epic id loaded incorrectly");
-        assertEquals(TEST_TITLE, epic.getTitle(), "epic title loaded incorrectly");
-        assertEquals(TEST_DESCRIPTION, epic.getDescription(), "epic description loaded incorrectly");
-        assertTrue(epic.getSubtaskIds().isEmpty(), "list of epic subtasks should be empty");
-    }
-
-    @Test
-    public void shouldLoadEpicWithNullFieldsFromFile() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                2,EPIC,null,,null,
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Epic> epics = manager.getEpics();
-        assertEquals(1, epics.size(), "list should contain exactly 1 element");
-        assertEquals(TaskType.EPIC, epics.getFirst().getType(), "element in list should be of EPIC type");
-        Epic epic = epics.getFirst();
-        assertEquals(TEST_EPIC_ID, epic.getId(), "epic id loaded incorrectly");
-        assertNull(epic.getTitle(), "epic title loaded incorrectly");
-        assertNull(epic.getDescription(), "epic description loaded incorrectly");
-        assertTrue(epic.getSubtaskIds().isEmpty(), "list of epic subtasks should be empty");
-    }
-
-    @Test
-    public void shouldLoadSubtaskFromFile() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                2,EPIC,"Title",,"Description",
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",2
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Subtask> subtasks = manager.getSubtasks();
-        assertEquals(1, subtasks.size(), "list should contain exactly 1 element");
-        assertEquals(TaskType.SUBTASK, subtasks.getFirst().getType(), "element in list should be of SUBTASK type");
-        Subtask subtask = subtasks.getFirst();
-        assertEquals(TEST_SUBTASK_ID, subtask.getId(), "subtask id loaded incorrectly");
-        assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");
-        assertEquals(TEST_TITLE, subtask.getTitle(), "subtask title loaded incorrectly");
-        assertEquals(TEST_DESCRIPTION, subtask.getDescription(), "subtask description loaded incorrectly");
-        assertEquals(TEST_STATUS, subtask.getStatus(), "subtask status loaded incorrectly");
-        Epic epic = manager.getEpics().getFirst();
-        assertEquals(1, epic.getSubtaskIds().size(), "list of epic subtasks should contain exactly 1 element");
-        assertEquals(TEST_SUBTASK_ID, epic.getSubtaskIds().getFirst(), "subtask id loaded incorrectly");
-    }
-
-    @Test
-    public void shouldLoadSubtaskWithNullFieldsFromFile() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                2,EPIC,"Title",,"Description",
-                3,SUBTASK,null,null,null,2
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Subtask> subtasks = manager.getSubtasks();
-        assertEquals(1, subtasks.size(), "list should contain exactly 1 element");
-        assertEquals(TaskType.SUBTASK, subtasks.getFirst().getType(), "element in list should be of SUBTASK type");
-        Subtask subtask = subtasks.getFirst();
-        assertEquals(TEST_SUBTASK_ID, subtask.getId(), "subtask id loaded incorrectly");
-        assertEquals(TEST_EPIC_ID, subtask.getEpicId(), "epic id of subtask loaded incorrectly");
-        assertNull(subtask.getTitle(), "subtask title loaded incorrectly");
-        assertNull(subtask.getDescription(), "subtask description loaded incorrectly");
-        assertNull(subtask.getStatus(), "subtask status loaded incorrectly");
-        Epic epic = manager.getEpics().getFirst();
-        assertEquals(1, epic.getSubtaskIds().size(), "list of epic subtasks should contain exactly 1 element");
-        assertEquals(TEST_SUBTASK_ID, epic.getSubtaskIds().getFirst(), "subtask id loaded incorrectly");
-    }
-
-    @Test
-    public void shouldRecalculateEpicStatusOnLoad() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic 1",,"Epic with no subtasks",
-                2,EPIC,"Epic 2",,"Epic with all subtasks in status NEW",
-                3,EPIC,"Epic 3",,"Epic with all subtasks in status DONE",
-                4,EPIC,"Epic 4",,"Epic with subtasks in different statuses",
-                5,SUBTASK,"Subtask 1",NEW,"Subtask 1 description",2
-                6,SUBTASK,"Subtask 2",NEW,"Subtask 2 description",2
-                7,SUBTASK,"Subtask 3",DONE,"Subtask 3 description",3
-                8,SUBTASK,"Subtask 4",DONE,"Subtask 4 description",3
-                9,SUBTASK,"Subtask 5",NEW,"Subtask 5 description",4
-                10,SUBTASK,"Subtask 6",DONE,"Subtask 6 description",4
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-
-        List<Epic> epics = manager.getEpics();
-        assertEquals(4, epics.size(), "list should contain exactly 4 elements");
-        assertEquals(TaskStatus.NEW, epics.getFirst().getStatus(), "epic should have status NEW");
-        assertEquals(TaskStatus.NEW, epics.get(1).getStatus(), "epic should have status NEW");
-        assertEquals(TaskStatus.DONE, epics.get(2).getStatus(), "epic should have status DONE");
-        assertEquals(TaskStatus.IN_PROGRESS, epics.getLast().getStatus(), "epic should have status IN_PROGRESS");
-    }
-
-    @Test
-    public void shouldResetLastUsedIdWhenLoadFile() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1000,TASK,"Title",IN_PROGRESS,"Description",
-                """);
-
-        manager = FileBackedTaskManager.loadFromFile(file, historyManager);
-        long id = manager.addTask(testTask);
-
-        assertEquals(1001, id, "last used id loaded incorrectly");
-    }
-
-    @Test
     public void shouldThrowWhenFileToLoadIsNull() {
-        Exception exception = assertThrows(NullPointerException.class,
+        final Exception exception = assertThrows(NullPointerException.class,
                 () -> FileBackedTaskManager.loadFromFile(null, historyManager));
         assertEquals("cannot start: file is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenCannotLoadFromFile() {
-        String filename = ".";
-        String expectedMessage = "cannot load from file \"" + filename + "\"";
+        final String filename = ".";
+        final String expectedMessage = "cannot load from file \"" + filename + "\"";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(new File(filename), historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(Paths.get(filename), historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenFileIsEmpty() throws IOException {
-        file = File.createTempFile("kanban", null);
-        String expectedMessage = "\"id\" expected (" + file + ":1:1)";
+        fillTestFileWithData("");
+        final String expectedMessage = "wrong file header, expected \"id,type,name,status,description,duration,start,"
+                + "epic\"";
 
-        ManagerLoadException exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenFileContainsNoHeader() throws IOException {
-        file = makeTestFileFromString("""
+        fillTestFileWithData("""
                 """);
-        String expectedMessage = "\"id\" expected (" + file + ":1:1)";
+        final String expectedMessage = "wrong file header, expected \"id,type,name,status,description,duration,start,"
+                + "epic\"";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenCannotFindIdInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                text,type,name,status,description,epic
+    public void shouldThrowWhenFileContainsWrongHeader() throws IOException {
+        fillTestFileWithData("""
+                id, type,name,status,description,duration,start,epic
                 """);
-        String expectedMessage = "\"id\" expected (" + file + ":1:1)";
+        final String expectedMessage = "wrong file header, expected \"id,type,name,status,description,duration,start,"
+                + "epic\"";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenCannotFindFirstCommaInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id:type:name:status:description:epic
-                """);
-        String expectedMessage = "comma expected (" + file + ":1:3)";
+    public void shouldThrowWhenTaskIdFromFileIsEmpty() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                %s
+                """.formatted(""));
+        final String expectedMessage = "line does not start with numeric id";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindTypeInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,text,name,status,description,epic
-                """);
-        String expectedMessage = "\"type\" expected (" + file + ":1:4)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindSecondCommaInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type:name,status,description,epic
-                """);
-        String expectedMessage = "comma expected (" + file + ":1:8)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindNameInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,text,status,description,epic
-                """);
-        String expectedMessage = "\"name\" expected (" + file + ":1:9)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindThirdCommaInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name:status,description,epic
-                """);
-        String expectedMessage = "comma expected (" + file + ":1:13)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindStatusInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,text,description,epic
-                """);
-        String expectedMessage = "\"status\" expected (" + file + ":1:14)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindFourthCommaInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status:description,epic
-                """);
-        String expectedMessage = "comma expected (" + file + ":1:20)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindDescriptionInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,text,epic
-                """);
-        String expectedMessage = "\"description\" expected (" + file + ":1:21)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindFifthCommaInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description:epic
-                """);
-        String expectedMessage = "comma expected (" + file + ":1:32)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenCannotFindEpicInFileHeader() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,text
-                """);
-        String expectedMessage = "\"epic\" expected (" + file + ":1:33)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenFileHeaderHasExcessiveCharacters() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic,
-                """);
-        String expectedMessage = "unexpected data (" + file + ":1:37)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenTaskFromFileHasNotEnoughFields() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Title",IN_PROGRESS,"Description"
-                """);
-        String expectedMessage = "unexpected end of line (" + file + ":2:41)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenEpicFromFileHasNotEnoughFields() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Title",,"Description"
-                """);
-        String expectedMessage = "unexpected end of line (" + file + ":2:30)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenSubtaskFromFileHasNotEnoughFields() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask",NEW,"Subtask description"
-                """);
-        String expectedMessage = "unexpected end of line (" + file + ":3:46)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenTaskFromFileHasExcessiveFields() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Task",IN_PROGRESS,"Task description",,
-                """);
-        String expectedMessage = "unexpected data (" + file + ":2:46)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenEpicFromFileHasExcessiveFields() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",,
-                """);
-        String expectedMessage = "unexpected data (" + file + ":2:35)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenSubtaskFromFileHasExcessiveFields() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask",NEW,"Subtask description",1,
-                """);
-        String expectedMessage = "unexpected data (" + file + ":3:48)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenTaskIdFromFileNotNumber() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                one,TASK,"Title",IN_PROGRESS,"Description",
-                """);
-        String expectedMessage = "number expected (" + file + ":2:1)";
-
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldThrowWhenTaskFromFileHasUnknownType() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,text,"Title",IN_PROGRESS,"Description",
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,text,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "unknown task type (" + file + ":2:3)";
+        final String expectedMessage = "unknown task type for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskTitleFromFileDoesNotStartWithQuote() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,Title",IN_PROGRESS,"Description",
+    public void shouldNotLoadTaskWhenNotEnoughFields() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30
                 """);
-        String expectedMessage = "unexpected double quote (" + file + ":2:13)";
+        final String expectedMessage = "unexpected end of line for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskTitleFromFileDoesNotEndWithQuote() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Title,IN_PROGRESS,"Description",
+    public void shouldNotLoadTaskWhenExcessiveFields() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Task",IN_PROGRESS,"Task description",30,2000-05-01T13:30,,
                 """);
-        String expectedMessage = "comma expected (" + file + ":2:28)";
+        final String expectedMessage = "unexpected data for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskTitleFromFileHasNoQuotes() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,Title,IN_PROGRESS,"Description",
+    public void shouldNotLoadTaskWhenIdNotNumber() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                one,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "text value must be inside double quotes (" + file + ":2:8)";
+        final String expectedMessage = "line does not start with numeric id";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskFromFileHasUnknownStatus() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Title",text,"Description",
+    public void shouldNotLoadTaskWhenIdIsAnotherTaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Task A",NEW,"Task A description",30,2000-05-01T13:30,
+                1,TASK,"Task B",NEW,"Task B description",90,2000-05-01T15:00,
                 """);
-        String expectedMessage = "unknown task status (" + file + ":2:16)";
+        final String expectedMessage = "duplicate id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenEpicFromFileHasStatus() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Title",DONE,"Description",
+    public void shouldNotLoadTaskWhenIdIsEpicId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                1,TASK,"Task",NEW,"Task description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "explicit epic status (" + file + ":2:16)";
+        final String expectedMessage = "duplicate id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskDescriptionFromFileDoesNotStartWithQuote() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Title",IN_PROGRESS,Description",
+    public void shouldNotLoadTaskWhenIdIsSubtaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,SUBTASK,"Subtask",NEW,"Subtask description",90,2000-05-01T15:00,1
+                2,TASK,"Task",NEW,"Task description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "unexpected double quote (" + file + ":2:39)";
+        final String expectedMessage = "duplicate id=2";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskDescriptionFromFileDoesNotEndWithQuote() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Title",IN_PROGRESS,"Description,
+    public void shouldNotLoadTaskWhenTitleDoesNotStartWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "double quote expected (" + file + ":2:41)";
+        final String expectedMessage = "no comma before opening double quote for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskDescriptionFromFileHasNoQuotes() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Title",IN_PROGRESS,Description,
+    public void shouldNotLoadTaskWhenTitleDoesNotEndWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title,IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "text value must be inside double quotes (" + file + ":2:28)";
+        final String expectedMessage = "no comma after closing double quote for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskFromFileHasEpicId() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,TASK,"Task",IN_PROGRESS,"Task description",1
+    public void shouldNotLoadTaskWhenTitleHasNoQuotes() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,Title,IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "unexpected data (" + file + ":3:46)";
+        final String expectedMessage = "text value must be inside double quotes for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenEpicFromFileHasEpicId() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic A",,"Epic A description",
-                2,EPIC,"Epic B",,"Epic B description",1
+    public void shouldNotLoadTaskWhenHasUnknownStatus() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",text,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "unexpected data (" + file + ":3:39)";
+        final String expectedMessage = "unknown task status for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenSubtaskFromFileHasNoEpicId() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask",NEW,"Subtask description",
+    public void shouldNotLoadTaskWhenDescriptionDoesNotStartWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "number expected (" + file + ":3:47)";
+        final String expectedMessage = "no comma before opening double quote for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenEpicIdOfSubtaskFromFileIsNotNumber() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask",NEW,"Subtask description",one
+    public void shouldNotLoadTaskWhenDescriptionDoesNotEndWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description,30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "number expected (" + file + ":3:47)";
+        final String expectedMessage = "no closing double quote for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenSubtaskFromFileHasUnknownEpicId() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask",NEW,"Subtask description",3
+    public void shouldNotLoadTaskWhenDescriptionHasNoQuotes() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,Description,30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "no epic with id=3 (" + file + ":3:47)";
+        final String expectedMessage = "text value must be inside double quotes for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenSubtaskFromFileHasTaskIdAsEpicId() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Task",NEW,"Task description",
-                2,EPIC,"Epic",,"Epic description",
-                3,SUBTASK,"Subtask",NEW,"Subtask description",1
+    public void shouldNotLoadTaskWhenDurationNotNumber() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",thirty,2000-05-01T13:30,
                 """);
-        String expectedMessage = "no epic with id=1 (" + file + ":4:47)";
+        final String expectedMessage = "wrong duration format for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenSubtaskFromFileHasSubtaskIdAsEpicId() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask A",NEW,"Subtask A description",1
-                3,SUBTASK,"Subtask B",NEW,"Subtask B description",2
+    public void shouldNotLoadTaskWhenDurationZero() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",0,2000-05-01T13:30,
                 """);
-        String expectedMessage = "no epic with id=2 (" + file + ":4:51)";
+        final String expectedMessage = "duration cannot be negative or zero for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskFromFileHasIdOfAnotherTask() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Task A",NEW,"Task A description",
-                1,TASK,"Task B",NEW,"Task B description",
+    public void shouldNotLoadTaskWhenDurationNegative() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",-30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        final String expectedMessage = "duration cannot be negative or zero for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskFromFileHasIdOfEpic() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                1,TASK,"Task",NEW,"Task description",
+    public void shouldNotLoadTaskWhenStartTimeNotDateTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,text,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        final String expectedMessage = "wrong start time format for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenTaskFromFileHasIdOfSubtask() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask",NEW,"Subtask description",1
-                2,TASK,"Task",NEW,"Task description",
+    public void shouldNotLoadTaskWhenDurationNullAndStartTimeNotNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",null,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        final String expectedMessage = "duration and start time must be either both set or both null for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenEpicFromFileHasIdOfTask() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Task",NEW,"Task description",
-                1,EPIC,"Epic",,"Epic description",
+    public void shouldNotLoadTaskWhenDurationNotNullAndStartTimeNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,null,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        final String expectedMessage = "duration and start time must be either both set or both null for id=1";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenEpicFromFileHasIdOfAnotherEpic() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic A",,"Epic A description",
-                1,EPIC,"Epic B",,"Epic B description",
+    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskCoversStartTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:15,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":3:1)";
+        final String expectedMessage = "conflict with another task for time slot for id=1000";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenEpicFromFileHasIdOfSubtask() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic A",,"Epic A description",
-                2,SUBTASK,"Subtask",NEW,"Subtask description",1
-                2,EPIC,"Epic B",,"Epic B description",
+    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskCoversEndTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:45,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        final String expectedMessage = "conflict with another task for time slot for id=1000";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenSubtaskFromFileHasIdOfTask() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,TASK,"Task",NEW,"Task description",
-                2,EPIC,"Epic",,"Subtask description",
-                1,SUBTASK,"Subtask",NEW,"Subtask description",2
+    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskCoversWholeInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",60,2000-05-01T13:15,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        final String expectedMessage = "conflict with another task for time slot for id=1000";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenSubtaskFromFileHasIdOfEpic() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic A",,"Epic A description",
-                2,EPIC,"Epic B",,"Epic B description",
-                1,SUBTASK,"Subtask",NEW,"Subtask description",2
+    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithinInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:35,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        final String expectedMessage = "conflict with another task for time slot for id=1000";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenSubtaskFromFileHasIdOfAnotherSubtask() throws IOException {
-        file = makeTestFileFromString("""
-                id,type,name,status,description,epic
-                1,EPIC,"Epic",,"Epic description",
-                2,SUBTASK,"Subtask A",NEW,"Subtask A description",1
-                2,SUBTASK,"Subtask B",NEW,"Subtask B description",1
+    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:30,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
                 """);
-        String expectedMessage = "duplicate task id (" + file + ":4:1)";
+        final String expectedMessage = "conflict with another task for time slot for id=1000";
 
-        Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(file, historyManager));
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
-    private File makeTestFileFromString(String testData) throws IOException {
-        File testFile = File.createTempFile("kanban", null);
-        Files.writeString(testFile.toPath(), testData, StandardCharsets.UTF_8);
-        return testFile;
+    @Test
+    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:40,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=1000";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithSameInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=1000";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadTaskWhenHasEpicId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,TASK,"Task",IN_PROGRESS,"Task description",30,2000-05-01T13:30,1
+                """);
+        final String expectedMessage = "unexpected data for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldLoadTaskToGetAndTasksAndPrioritizedWhenStartTimeNotNull() throws IOException {
+        final Task expectedTask = fromTestTask().build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Task savedTask = manager.getTask(1L);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadTaskToGetAndTasksNotPrioritizedWhenStartTimeNull() throws IOException {
+        final Task expectedTask = fromTestTask().withDuration(null).withStartTime(null).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",null,null,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Task savedTask = manager.getTask(1L);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task loaded with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "task loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadTaskToGetAndTasksNotPrioritizedWhenFieldsNull() throws IOException {
+        final Task expectedTask = fromEmptyTask().withId(TEST_TASK_ID).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,null,null,null,null,null,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Task savedTask = manager.getTask(1L);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task loaded with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "task loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadTaskToGetAndTasksAndPrioritizedWhenExactlyBeforeAnotherPrioritizedTask() throws IOException {
+        final Subtask expectedSubtask = fromTestSubtask().withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION))
+                .build();
+        final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T14:00,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Task savedTask = manager.getTask(1000L);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task loaded with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "task loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadTaskToGetAndTasksAndPrioritizedWhenExactlyAfterAnotherPrioritizedTask() throws IOException {
+        final Subtask expectedSubtask = fromTestSubtask().withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION))
+                .build();
+        final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:00,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Task savedTask = manager.getTask(1000L);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task loaded with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "task loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenNotEnoughFields() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",,
+                """);
+        final String expectedMessage = "unexpected end of line for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenExcessiveFields() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Epic",,"Epic description",,,,
+                """);
+        final String expectedMessage = "unexpected data for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenIdNotNumber() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                two,EPIC,"Title",,"Description",,,
+                """);
+        final String expectedMessage = "line does not start with numeric id";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenIdIsTaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Task",NEW,"Task description",30,2000-05-01T13:30,
+                1,EPIC,"Epic",,"Epic description",,,
+                """);
+        final String expectedMessage = "duplicate id=1";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenIdIsAnotherEpicId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic A",,"Epic A description",,,
+                1,EPIC,"Epic B",,"Epic B description",,,
+                """);
+        final String expectedMessage = "duplicate id=1";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenIdIsSubtaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic A",,"Epic A description",,,
+                2,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,1
+                2,EPIC,"Epic B",,"Epic B description",,,
+                """);
+        final String expectedMessage = "duplicate id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenTitleDoesNotStartWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,Title",,"Description",,,
+                """);
+        final String expectedMessage = "no comma before opening double quote for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenTitleDoesNotEndWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title,,"Description",,,
+                """);
+        final String expectedMessage = "no comma after closing double quote for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenTitleHasNoQuotes() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,Title,,"Description",,,
+                """);
+        final String expectedMessage = "text value must be inside double quotes for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenHasStatus() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",DONE,"Description",,,
+                """);
+        final String expectedMessage = "explicit epic status for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenDescriptionDoesNotStartWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,Description",,,
+                """);
+        final String expectedMessage = "no comma before opening double quote for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenDescriptionDoesNotEndWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description,,,
+                """);
+        final String expectedMessage = "no closing double quote for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenDescriptionHasNoQuotes() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,Description,,,
+                """);
+        final String expectedMessage = "text value must be inside double quotes for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLodEpicWhenHasDuration() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",30,,
+                """);
+        final String expectedMessage = "explicit epic duration for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenHasStartTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",,2000-05-01T13:30,
+                """);
+        String expectedMessage = "explicit epic start time for id=2";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenHasEpicId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic A",,"Epic A description",,,
+                2,EPIC,"Epic B",,"Epic B description",,,1
+                """);
+        final String expectedMessage = "unexpected data for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldLoadEpicToGetAndEpics() throws IOException {
+        final Epic expectedEpic = fromTestEpic().build();
+        final List<Epic> expectedEpics = List.of(expectedEpic);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",,,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Epic savedEpic = manager.getEpic(2L);
+        final List<Epic> epics = manager.getEpics();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedEpic, savedEpic, "task loaded with errors"),
+                () -> assertListEquals(expectedEpics, epics, "task loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadEpicToGetAndEpicsWhenFieldsNull() throws IOException {
+        final Epic expectedEpic = fromEmptyEpic().withId(TEST_EPIC_ID).build();
+        final List<Epic> expectedEpics = List.of(expectedEpic);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Epic savedEpic = manager.getEpic(2L);
+        final List<Epic> epics = manager.getEpics();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedEpic, savedEpic, "task loaded with errors"),
+                () -> assertListEquals(expectedEpics, epics, "task loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenNotEnoughFields() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Epic",,"Epic description",,,
+                3,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30
+                """);
+        final String expectedMessage = "unexpected end of line for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenExcessiveFields() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Epic",,"Epic description",,,
+                3,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,2,
+                """);
+        final String expectedMessage = "unexpected data for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenIdNotNumber() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                three,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "line does not start with numeric id";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenIdIsTaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Task",NEW,"Task description",90,2000-05-01T15:00,
+                2,EPIC,"Epic",,"Subtask description",,,
+                1,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "duplicate id=1";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenIdIsEpicId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic A",,"Epic A description",,,
+                2,EPIC,"Epic B",,"Epic B description",,,
+                1,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "duplicate id=1";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenIdIsAnotherSubtaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,SUBTASK,"Subtask A",NEW,"Subtask A description",90,2000-05-01T15:00,1
+                2,SUBTASK,"Subtask B",NEW,"Subtask B description",30,2000-05-01T13:30,1
+                """);
+        final String expectedMessage = "duplicate id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenTitleDoesNotStartWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "no comma before opening double quote for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenTitleDoesNotEndWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title,IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "no comma after closing double quote for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenTitleHasNoQuotes() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,Title,IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "text value must be inside double quotes for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenHasUnknownStatus() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",text,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "unknown task status for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDescriptionDoesNotStartWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "no comma before opening double quote for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDescriptionDoesNotEndWithQuote() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description,30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "no closing double quote for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDescriptionHasNoQuotes() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,TASK,"Title",IN_PROGRESS,Description,30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "text value must be inside double quotes for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDurationNotNumber() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",thirty,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "wrong duration format for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDurationZero() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",0,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "duration cannot be negative or zero for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDurationNegative() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",-30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "duration cannot be negative or zero for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenStartTimeNotDateTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,text,2
+                """);
+        final String expectedMessage = "wrong start time format for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDurationNullAndStartTimeNotNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",null,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "duration and start time must be either both set or both null for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDurationNotNullAndStartTimeNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,null,2
+                """);
+        final String expectedMessage = "duration and start time must be either both set or both null for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskCoversStartTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:15,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskCoversEndTime() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:45,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskCoversWholeInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",60,2000-05-01T13:15,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithinInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:35,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:30,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:40,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithSameInterval() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "conflict with another task for time slot for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenHasNoEpicId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,
+                """);
+        final String expectedMessage = "wrong epic id format for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenEpicIdNotNumber() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,one
+                """);
+        final String expectedMessage = "wrong epic id format for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenUnknownEpicId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,3
+                """);
+        final String expectedMessage = "no epic with id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenEpicIdIsTaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Task",NEW,"Task description",90,2000-05-01T15:00,
+                2,EPIC,"Epic",,"Epic description",,,
+                3,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,1
+                """);
+        final String expectedMessage = "no epic with id=1";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenEpicIdIsSubtaskId() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,SUBTASK,"Subtask A",NEW,"Subtask A description",90,2000-05-01T15:00,1
+                3,SUBTASK,"Subtask B",NEW,"Subtask B description",30,2000-05-01T13:30,2
+                """);
+        String expectedMessage = "no epic with id=2";
+
+        Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldLoadSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenStartTimeNotNull() throws IOException {
+        final Subtask expectedSubtask = fromTestSubtask().build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Subtask savedSubtask = manager.getSubtask(3L);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask loaded with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadSubtaskToGetAndEpicAndSubtasksNotPrioritizedWhenStartTimeNull() throws IOException {
+        final Subtask expectedSubtask = fromTestSubtask().withDuration(null).withStartTime(null).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",null,null,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Subtask savedSubtask = manager.getSubtask(3L);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask loaded with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "subtask loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadSubtaskToGetAndEpicAndSubtasksNotPrioritizedWhenFieldsNull() throws IOException {
+        final Subtask expectedSubtask = fromEmptySubtask().withId(TEST_SUBTASK_ID).withEpicId(TEST_EPIC_ID).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",,,
+                3,SUBTASK,null,null,null,null,null,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Subtask savedSubtask = manager.getSubtask(3L);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask loaded with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "subtask loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenExactlyBeforePrioritize() throws IOException {
+        final Task expectedTask = fromTestTask().withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+        final Subtask expectedSubtask = fromTestSubtask().build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T14:00,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Subtask savedSubtask = manager.getSubtask(3L);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask loaded with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "subtask loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldLoadSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenExactlyAfterPrioritized() throws IOException {
+        final Task expectedTask = fromTestTask().withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+        final Subtask expectedSubtask = fromTestSubtask().build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:00,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Subtask savedSubtask = manager.getSubtask(3L);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask loaded with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "subtask loaded with errors")
+        );
+    }
+
+    @Test
+    public void shouldResetLastUsedIdWhenLoadFile() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final long taskId = manager.addTask(modifiedTask);
+
+        assertEquals(1001, taskId, "last used id loaded incorrectly");
+    }
+
+    private void fillTestFileWithData(String data) throws IOException {
+        Files.writeString(path, data, StandardCharsets.UTF_8);
     }
 }

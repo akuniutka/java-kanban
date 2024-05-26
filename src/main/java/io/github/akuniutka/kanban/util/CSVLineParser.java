@@ -18,21 +18,19 @@ public class CSVLineParser {
         return prevDelimiterAt != line.length();
     }
 
-    public CSVToken next() {
+    public String next() {
         if (!hasNext()) {
-            throw new CSVParsingException("unexpected end of line", prevDelimiterAt + 1);
+            throw new CSVParsingException("unexpected end of line");
         }
         int startIndex = prevDelimiterAt + 1;
-        boolean isQuoted = false;
         if (line.length() > startIndex && line.charAt(startIndex) == '"') {
-            isQuoted = true;
             prevDelimiterAt = line.indexOf('"', startIndex + 1);
             if (prevDelimiterAt == -1) {
-                throw new CSVParsingException("double quote expected", line.length() + 1);
+                throw new CSVParsingException("no closing double quote");
             }
             prevDelimiterAt++;
             if (prevDelimiterAt != line.length() && line.charAt(prevDelimiterAt) != ',') {
-                throw new CSVParsingException("comma expected", prevDelimiterAt + 1);
+                throw new CSVParsingException("no comma after closing double quote");
             }
         } else {
             prevDelimiterAt = line.indexOf(',', startIndex);
@@ -41,13 +39,9 @@ public class CSVLineParser {
             }
             int doubleQuoteIndex = line.indexOf('"', startIndex);
             if (doubleQuoteIndex != -1 && doubleQuoteIndex < prevDelimiterAt) {
-                throw new CSVParsingException("unexpected double quote", doubleQuoteIndex + 1);
+                throw new CSVParsingException("no comma before opening double quote");
             }
         }
-        if (isQuoted) {
-            return new CSVToken(startIndex, line.substring(startIndex + 1, prevDelimiterAt - 1), true);
-        } else {
-            return new CSVToken(startIndex, line.substring(startIndex, prevDelimiterAt), false);
-        }
+        return line.substring(startIndex, prevDelimiterAt);
     }
 }

@@ -1,11 +1,16 @@
 package io.github.akuniutka.kanban.model;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 public class Task {
     private Long id;
     private String title;
     private String description;
+    private Duration duration;
+    private LocalDateTime startTime;
     private TaskStatus status;
 
     public Task() {
@@ -40,6 +45,32 @@ public class Task {
         this.description = description;
     }
 
+    public Long getDuration() {
+        return duration == null ? null : duration.toMinutes();
+    }
+
+    public void setDuration(Long minutes) {
+        if (minutes == null) {
+            this.duration = null;
+        } else if (minutes <= 0L) {
+            throw new IllegalArgumentException("duration cannot be negative or zero");
+        } else {
+            this.duration = Duration.ofMinutes(minutes);
+        }
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime == null ? null : startTime.truncatedTo(ChronoUnit.MINUTES);
+    }
+
+    public LocalDateTime getEndTime() {
+        return startTime == null || duration == null ? null : startTime.plus(duration);
+    }
+
     public TaskStatus getStatus() {
         return status;
     }
@@ -49,7 +80,7 @@ public class Task {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -61,26 +92,14 @@ public class Task {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(id);
     }
 
     @Override
     public String toString() {
-        String string = "Task{";
-        string += "id=" + id;
-        if (title == null) {
-            string += ", title=null";
-        } else {
-            string += ", title='" + title + "'";
-        }
-        if (description == null) {
-            string += ", description=null";
-        } else {
-            string += ", description.length=" + description.length();
-        }
-        string += ", status=" + status;
-        string += "}";
-        return string;
+        return "Task{id=%s, title=%s, description%s, duration=%s, startTime=%s, status=%s}".formatted(id,
+                title == null ? "null" : "\"" + title + "\"",
+                description == null ? "=null" : ".length=" + description.length(), getDuration(), startTime, status);
     }
 }
