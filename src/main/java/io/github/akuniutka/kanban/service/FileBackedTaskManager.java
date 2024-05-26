@@ -116,15 +116,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private void save() {
         List<String> lines = new ArrayList<>();
         lines.add(FILE_HEADER);
-        for (Task task : tasks.values()) {
-            lines.add(toString(task));
-        }
-        for (Epic epic : epics.values()) {
-            lines.add(toString(epic));
-        }
-        for (Subtask subtask : subtasks.values()) {
-            lines.add(toString(subtask));
-        }
+        lines.addAll(tasks.values().stream().map(this::toString).toList());
+        lines.addAll(epics.values().stream().map(this::toString).toList());
+        lines.addAll(subtasks.values().stream().map(this::toString).toList());
         try {
             Files.write(path, lines, StandardCharsets.UTF_8);
         } catch (IOException exception) {
@@ -148,19 +142,20 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try {
             List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
             checkFileHeader(lines.isEmpty() ? "" : lines.getFirst());
-            for (int i = 1; i < lines.size(); i++) {
-                final Task task = fromString(lines.get(i));
-                lastUsedId = Math.max(lastUsedId, task.getId());
-                switch (task.getType()) {
-                    case TASK -> tasks.put(task.getId(), task);
-                    case EPIC -> epics.put(task.getId(), (Epic) task);
-                    case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
-                    default -> throw new AssertionError();
-                }
-                if (task.getType() == TaskType.TASK || task.getType() == TaskType.SUBTASK) {
-                    addToPrioritizedIfStartTimeNotNull(task);
-                }
-            }
+            lines.stream()
+                    .skip(1L)
+                    .map(this::fromString)
+                    .peek(this::updateLastUsedId)
+                    .peek(task -> {
+                        switch (task.getType()) {
+                            case TASK -> tasks.put(task.getId(), task);
+                            case EPIC -> epics.put(task.getId(), (Epic) task);
+                            case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
+                            default -> throw new AssertionError();
+                        }
+                    })
+                    .filter(task -> task.getType() == TaskType.TASK || task.getType() == TaskType.SUBTASK)
+                    .forEach(this::addToPrioritizedIfStartTimeNotNull);
         } catch (TaskNotFoundException exception) {
             throw new ManagerLoadException(exception.getMessage());
         } catch (IOException exception) {
@@ -311,5 +306,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         if (parser.hasNext()) {
             throw new CSVParsingException("unexpected data");
         }
+    }
+
+    private void updateLastUsedId(Task task) {
+        lastUsedId = Math.max(lastUsedId, task.getId());
     }
 }

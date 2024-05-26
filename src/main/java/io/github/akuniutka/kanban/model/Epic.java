@@ -2,6 +2,7 @@ package io.github.akuniutka.kanban.model;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Epic extends Task {
     private List<Subtask> subtasks;
@@ -26,15 +27,12 @@ public class Epic extends Task {
 
     @Override
     public Long getDuration() {
-        Long duration = null;
-        for (Subtask subtask : subtasks) {
-            if (duration == null) {
-                duration = subtask.getDuration();
-            } else if (subtask.getDuration() != null) {
-                duration += subtask.getDuration();
-            }
-        }
-        return duration;
+        LongSummaryStatistics stats = subtasks.stream()
+                .map(Subtask::getDuration)
+                .filter(Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .summaryStatistics();
+        return stats.getCount() > 0 ? stats.getSum() : null;
     }
 
     @Override
@@ -44,13 +42,11 @@ public class Epic extends Task {
 
     @Override
     public LocalDateTime getStartTime() {
-        LocalDateTime startTime = null;
-        for (Subtask subtask : subtasks) {
-            if (startTime == null || (subtask.getStartTime() != null && subtask.getStartTime().isBefore(startTime))) {
-                startTime = subtask.getStartTime();
-            }
-        }
-        return startTime;
+        return subtasks.stream()
+                .map(Subtask::getStartTime)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
     }
 
     @Override
@@ -60,27 +56,24 @@ public class Epic extends Task {
 
     @Override
     public LocalDateTime getEndTime() {
-        LocalDateTime endTime = null;
-        for (Subtask subtask : subtasks) {
-            if (endTime == null || (subtask.getEndTime() != null && subtask.getEndTime().isAfter(endTime))) {
-                endTime = subtask.getEndTime();
-            }
-        }
-        return endTime;
+        return subtasks.stream()
+                .map(Subtask::getEndTime)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
     }
 
     @Override
     public TaskStatus getStatus() {
-        final Set<TaskStatus> subtaskStatuses = new HashSet<>();
-        for (Subtask subtask : subtasks) {
-            subtaskStatuses.add(subtask.getStatus());
-        }
-        if (subtaskStatuses.isEmpty()) {
+        final Set<TaskStatus> statuses = subtasks.stream()
+                .map(Subtask::getStatus)
+                .collect(Collectors.toSet());
+        if (statuses.isEmpty()) {
             return TaskStatus.NEW;
-        } else if (subtaskStatuses.size() > 1) {
+        } else if (statuses.size() > 1) {
             return TaskStatus.IN_PROGRESS;
         } else {
-            return subtaskStatuses.iterator().next();
+            return statuses.iterator().next();
         }
     }
 
