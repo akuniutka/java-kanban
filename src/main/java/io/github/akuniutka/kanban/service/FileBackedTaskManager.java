@@ -210,7 +210,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private long extractId(String token) {
         try {
             final long id = Long.parseLong(token);
-            checkIdForDuplicates(id);
+            requireIdNotExist(id);
             return id;
         } catch (NumberFormatException exception) {
             throw new ManagerLoadException("line does not start with numeric id");
