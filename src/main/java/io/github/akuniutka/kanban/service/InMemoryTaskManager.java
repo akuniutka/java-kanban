@@ -48,7 +48,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addTask(Task task) {
         Objects.requireNonNull(task, "cannot add null to list of tasks");
-        checkIdForDuplicates(task.getId());
+        requireIdNotExist(task.getId());
         requireDoesNotOverlapOtherTasks(task);
         final long id = generateId();
         task.setId(id);
@@ -100,7 +100,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addEpic(Epic epic) {
         Objects.requireNonNull(epic, "cannot add null to list of epics");
-        checkIdForDuplicates(epic.getId());
+        requireIdNotExist(epic.getId());
         final long id = generateId();
         epic.setId(id);
         epic.setSubtasks(new ArrayList<>());
@@ -153,7 +153,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
-        checkIdForDuplicates(subtask.getId());
+        requireIdNotExist(subtask.getId());
         requireDoesNotOverlapOtherTasks(subtask);
         subtask.setId(generateId());
         saveSubtaskAndLinkToEpic(subtask);
@@ -204,7 +204,7 @@ public class InMemoryTaskManager implements TaskManager {
         return new ArrayList<>(prioritizedTasks);
     }
 
-    protected void checkIdForDuplicates(Long id) {
+    protected void requireIdNotExist(Long id) {
         if (tasks.containsKey(id) || epics.containsKey(id) || subtasks.containsKey(id)) {
             throw new ManagerException("duplicate id=" + id);
         }
