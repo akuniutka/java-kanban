@@ -109,7 +109,7 @@ public class InMemoryTaskManager implements TaskManager {
         checkIdForDuplicates(epic.getId());
         final long id = generateId();
         epic.setId(id);
-        epic.getSubtasks().clear();
+        epic.setSubtasks(new ArrayList<>());
         epics.put(id, epic);
         return id;
     }
