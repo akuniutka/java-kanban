@@ -352,8 +352,7 @@ class EpicTest {
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
         final String expectedEpicString = String.format("Epic{id=2, title=\"Title\", description.length=11, "
-                        + "subtasks=[%s], duration=30, startTime=2000-05-01T13:30, status=IN_PROGRESS}",
-                testSubtasks.getFirst());
+                        + "subtasks=%s, duration=30, startTime=2000-05-01T13:30, status=IN_PROGRESS}", testSubtasks);
         final Epic epic = fromTestEpic().withSubtasks(testSubtasks).build();
 
         final String actualString = epic.toString();

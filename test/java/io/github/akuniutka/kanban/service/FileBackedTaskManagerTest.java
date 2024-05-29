@@ -64,6 +64,13 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldThrowWhenHistoryManagerIsNull() {
+        final Exception exception = assertThrows(NullPointerException.class,
+                () -> new FileBackedTaskManager(path, null));
+        assertEquals("cannot start: history manager is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldSaveWhenAddTask() throws IOException {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic

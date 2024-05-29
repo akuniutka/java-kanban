@@ -13,7 +13,7 @@ import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 abstract class AbstractTaskManagerTest {
-    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
+    protected static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
     protected TaskManager manager;
     protected HistoryManager historyManager;
     private Task emptyTask;
@@ -34,17 +34,6 @@ abstract class AbstractTaskManagerTest {
         this.emptyEpic = fromEmptyEpic().build();
         this.testEpic = fromTestEpic().withId(null).build();
         this.modifiedEpic = fromModifiedEpic().withId(null).build();
-    }
-
-    @Test
-    public void shouldCreateInMemoryTaskManagerOfInterfaceType() {
-        assertNotNull(manager, "task manager was not created");
-    }
-
-    @Test
-    public void shouldThrowWhenHistoryManagerIsNull() {
-        final Exception exception = assertThrows(NullPointerException.class, () -> new InMemoryTaskManager(null));
-        assertEquals("cannot start: history manager is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
