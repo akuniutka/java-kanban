@@ -9,6 +9,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public final class TestModels {
+    public static final long TEST_TASK_ID = 1L;
+    public static final long TEST_EPIC_ID = 2L;
+    public static final long TEST_SUBTASK_ID = 3L;
+    public static final long ANOTHER_TEST_ID = 1_000L;
     public static final String TEST_TITLE = "Title";
     public static final String TEST_DESCRIPTION = "Description";
     public static final Long TEST_DURATION = 30L;
@@ -21,10 +25,6 @@ public final class TestModels {
     public static final LocalDateTime MODIFIED_START_TIME = LocalDateTime.of(2000, 5, 1, 15, 0);
     public static final LocalDateTime MODIFIED_END_TIME = LocalDateTime.of(2000, 5, 1, 16, 30);
     public static final TaskStatus MODIFIED_STATUS = TaskStatus.DONE;
-    public static final long TEST_TASK_ID = 1L;
-    public static final long TEST_EPIC_ID = 2L;
-    public static final long TEST_SUBTASK_ID = 3L;
-    public static final long ANOTHER_TEST_ID = 1_000L;
 
     private TestModels() {
     }
@@ -85,6 +85,7 @@ public final class TestModels {
                 () -> assertEquals(expected.getDescription(), actual.getDescription(), "wrong description"),
                 () -> assertEquals(expected.getDuration(), actual.getDuration(), "wrong duration"),
                 () -> assertEquals(expected.getStartTime(), actual.getStartTime(), "wrong start time"),
+                () -> assertEquals(expected.getEndTime(), actual.getEndTime(), "wrong end time"),
                 () -> assertEquals(expected.getStatus(), actual.getStatus(), "wrong status"),
                 () -> {
                     if (expected.getType() == TaskType.SUBTASK) {
