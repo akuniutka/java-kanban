@@ -202,7 +202,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             }
             requireNoMoreData(parser);
             return task;
-        } catch (CSVParsingException | IllegalArgumentException | ManagerException exception) {
+        } catch (CSVParsingException | ManagerValidationException exception) {
             throw new ManagerLoadException(exception.getMessage() + " for id=" + id);
         }
     }
@@ -214,7 +214,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             return id;
         } catch (NumberFormatException exception) {
             throw new ManagerLoadException("line does not start with numeric id");
-        } catch (ManagerException exception) {
+        } catch (DuplicateIdException exception) {
             throw new ManagerLoadException(exception.getMessage());
         }
     }

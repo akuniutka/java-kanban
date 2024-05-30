@@ -1,5 +1,7 @@
 package io.github.akuniutka.kanban.model;
 
+import io.github.akuniutka.kanban.exception.ManagerException;
+import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -87,15 +89,15 @@ class SubtaskTest {
     public void shouldThrowWhenDurationZero() {
         final Subtask subtask = new Subtask();
 
-        final Exception exception = assertThrows(IllegalArgumentException.class, () -> subtask.setDuration(0L));
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> subtask.setDuration(0L));
         assertEquals("duration cannot be negative or zero", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldThrowWhenNegativeDuration() {
+    public void shouldThrowWhenDurationNegative() {
         final Subtask subtask = new Subtask();
 
-        final Exception exception = assertThrows(IllegalArgumentException.class,
+        final Exception exception = assertThrows(ManagerException.class,
                 () -> subtask.setDuration(-TEST_DURATION));
         assertEquals("duration cannot be negative or zero", exception.getMessage(), "message for exception is wrong");
     }

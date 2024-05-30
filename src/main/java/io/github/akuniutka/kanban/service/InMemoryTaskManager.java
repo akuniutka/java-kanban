@@ -1,6 +1,7 @@
 package io.github.akuniutka.kanban.service;
 
-import io.github.akuniutka.kanban.exception.ManagerException;
+import io.github.akuniutka.kanban.exception.DuplicateIdException;
+import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
@@ -216,7 +217,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     protected void requireIdNotExist(Long id) {
         if (tasks.containsKey(id) || epics.containsKey(id) || subtasks.containsKey(id)) {
-            throw new ManagerException("duplicate id=" + id);
+            throw new DuplicateIdException("duplicate id=" + id);
         }
     }
 
@@ -256,18 +257,18 @@ public class InMemoryTaskManager implements TaskManager {
         if (task.getDuration() == null && task.getStartTime() == null) {
             return;
         } else if (task.getDuration() == null || task.getStartTime() == null) {
-            throw new ManagerException("duration and start time must be either both set or both null");
+            throw new ManagerValidationException("duration and start time must be either both set or both null");
         }
         final Task taskBefore = prioritizedTasks.floor(task);
         if (taskBefore != null && !task.equals(taskBefore) && task.getStartTime().isBefore(taskBefore.getEndTime())) {
-            throw new ManagerException("conflict with another task for time slot");
+            throw new ManagerValidationException("conflict with another task for time slot");
         }
         Task taskAfter = prioritizedTasks.higher(task);
         if (task.equals(taskAfter)) {
             taskAfter = prioritizedTasks.higher(taskAfter);
         }
         if (taskAfter != null && task.getEndTime().isAfter(taskAfter.getStartTime())) {
-            throw new ManagerException("conflict with another task for time slot");
+            throw new ManagerValidationException("conflict with another task for time slot");
         }
     }
 
