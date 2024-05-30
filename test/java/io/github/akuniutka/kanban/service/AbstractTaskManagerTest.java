@@ -181,16 +181,20 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldAddTaskToGetAndTasksAndPrioritizedWhenIdSetButNotExist() {
         final Task task = fromTestTask().withId(ANOTHER_TEST_ID).build();
+        final Task nextTask = fromModifiedTask().withId(null).build();
 
         final long taskId = manager.addTask(task);
+        final long nextId = manager.addTask(nextTask);
         final Task savedTask = manager.getTask(taskId);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        final Task expectedTask = fromTestTask().withId(taskId).build();
-        final List<Task> expectedTasks = List.of(expectedTask);
+        final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
+        final Task expectedNextTask = fromModifiedTask().withId(nextId).build();
+        final List<Task> expectedTasks = List.of(expectedTask, expectedNextTask);
         assertAll("task saved with errors",
-                () -> assertNotEquals(ANOTHER_TEST_ID, taskId, "new task should have new id"),
+                () -> assertEquals(ANOTHER_TEST_ID, taskId, "task saved with errors"),
+                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "task saved with errors"),
                 () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
@@ -783,15 +787,19 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldAddEpicToGetAndEpicsWhenIdSetButNotExist() {
         final Epic epic = fromTestEpic().withId(ANOTHER_TEST_ID).build();
+        final Epic nextEpic = fromModifiedEpic().withId(null).build();
 
         final long epicId = manager.addEpic(epic);
+        final long nextId = manager.addEpic(nextEpic);
         final Epic savedEpic = manager.getEpic(epicId);
         final List<Epic> epics = manager.getEpics();
 
-        final Epic expectedEpic = fromTestEpic().withId(epicId).build();
-        final List<Epic> expectedEpics = List.of(expectedEpic);
+        final Epic expectedEpic = fromTestEpic().withId(ANOTHER_TEST_ID).build();
+        final Epic expectedNextEpic = fromModifiedEpic().withId(nextId).build();
+        final List<Epic> expectedEpics = List.of(expectedEpic, expectedNextEpic);
         assertAll("epic saved with errors",
-                () -> assertNotEquals(ANOTHER_TEST_ID, epicId, "new epic should have new id"),
+                () -> assertEquals(ANOTHER_TEST_ID, epicId, "epic saved with errors"),
+                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "epic saved with errors"),
                 () -> assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors"),
                 () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
         );
@@ -1117,17 +1125,21 @@ abstract class AbstractTaskManagerTest {
     public void shouldAddSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenIdSetButNotExist() {
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
+        final Subtask nextSubtask = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
 
         final long subtaskId = manager.addSubtask(subtask);
+        final long nextId = manager.addSubtask(nextSubtask);
         final Subtask savedSubtask = manager.getSubtask(subtaskId);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
-        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final Subtask expectedSubtask = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
+        final Subtask expectedNextSubtask = fromModifiedSubtask().withId(nextId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask, expectedNextSubtask);
         assertAll("subtask saved with errors",
-                () -> assertNotEquals(ANOTHER_TEST_ID, subtaskId, "new subtask should have new id"),
+                () -> assertEquals(ANOTHER_TEST_ID, subtaskId, "new subtask should have new id"),
+                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "new subtask should have new id"),
                 () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),

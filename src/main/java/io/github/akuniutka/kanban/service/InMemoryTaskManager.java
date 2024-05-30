@@ -48,13 +48,16 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addTask(Task task) {
         Objects.requireNonNull(task, "cannot add null to list of tasks");
-        requireIdNotExist(task.getId());
+        if (task.getId() == null) {
+            task.setId(++lastUsedId);
+        } else {
+            requireIdNotExist(task.getId());
+            lastUsedId = Long.max(lastUsedId, task.getId());
+        }
         requireDoesNotOverlapOtherTasks(task);
-        final long id = generateId();
-        task.setId(id);
-        tasks.put(id, task);
+        tasks.put(task.getId(), task);
         addToPrioritizedIfStartTimeNotNull(task);
-        return id;
+        return task.getId();
     }
 
     @Override
@@ -100,12 +103,15 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addEpic(Epic epic) {
         Objects.requireNonNull(epic, "cannot add null to list of epics");
-        requireIdNotExist(epic.getId());
-        final long id = generateId();
-        epic.setId(id);
+        if (epic.getId() == null) {
+            epic.setId(++lastUsedId);
+        } else {
+            requireIdNotExist(epic.getId());
+            lastUsedId = Long.max(lastUsedId, epic.getId());
+        }
         epic.setSubtasks(new ArrayList<>());
-        epics.put(id, epic);
-        return id;
+        epics.put(epic.getId(), epic);
+        return epic.getId();
     }
 
     @Override
@@ -153,9 +159,13 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot add null to list of subtasks");
-        requireIdNotExist(subtask.getId());
+        if (subtask.getId() == null) {
+            subtask.setId(++lastUsedId);
+        } else {
+            requireIdNotExist(subtask.getId());
+            lastUsedId = Long.max(lastUsedId, subtask.getId());
+        }
         requireDoesNotOverlapOtherTasks(subtask);
-        subtask.setId(generateId());
         saveSubtaskAndLinkToEpic(subtask);
         addToPrioritizedIfStartTimeNotNull(subtask);
         return subtask.getId();
@@ -208,10 +218,6 @@ public class InMemoryTaskManager implements TaskManager {
         if (tasks.containsKey(id) || epics.containsKey(id) || subtasks.containsKey(id)) {
             throw new ManagerException("duplicate id=" + id);
         }
-    }
-
-    protected long generateId() {
-        return ++lastUsedId;
     }
 
     protected void saveSubtaskAndLinkToEpic(Subtask subtask) {
