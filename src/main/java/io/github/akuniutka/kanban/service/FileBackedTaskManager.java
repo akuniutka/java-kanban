@@ -145,18 +145,19 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             lines.stream()
                     .skip(1L)
                     .map(this::fromString)
-                    .peek(this::updateLastUsedId)
-                    .peek(task -> {
-                        switch (task.getType()) {
-                            case TASK -> tasks.put(task.getId(), task);
-                            case EPIC -> epics.put(task.getId(), (Epic) task);
-                            case SUBTASK -> saveSubtaskAndLinkToEpic((Subtask) task);
-                            default -> throw new AssertionError();
+                    .forEach(task -> {
+                        try {
+                            switch (task.getType()) {
+                                case TASK -> addTask(task);
+                                case EPIC -> addEpic((Epic) task);
+                                case SUBTASK -> addSubtask((Subtask) task);
+                                default -> throw new AssertionError();
+                            }
+                        } catch (ManagerValidationException exception) {
+                            throw new ManagerLoadException(exception.getMessage() + " for id=" + task.getId());
                         }
-                    })
-                    .filter(task -> task.getType() == TaskType.TASK || task.getType() == TaskType.SUBTASK)
-                    .forEach(this::addToPrioritizedIfStartTimeNotNull);
-        } catch (TaskNotFoundException exception) {
+                    });
+        } catch (TaskNotFoundException | DuplicateIdException exception) {
             throw new ManagerLoadException(exception.getMessage());
         } catch (IOException exception) {
             throw new ManagerLoadException("cannot load from file \"%s\"".formatted(path), exception);
@@ -187,7 +188,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                 task.setDescription(extractText(parser.next()));
                 task.setDuration(extractDuration(parser.next()));
                 task.setStartTime(extractDateTime(parser.next()));
-                requireDoesNotOverlapOtherTasks(task);
             } else {
                 requireNoStatusForEpic(token);
                 task.setDescription(extractText(parser.next()));
@@ -209,13 +209,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private long extractId(String token) {
         try {
-            final long id = Long.parseLong(token);
-            requireIdNotExist(id);
-            return id;
+            return Long.parseLong(token);
         } catch (NumberFormatException exception) {
             throw new ManagerLoadException("line does not start with numeric id");
-        } catch (DuplicateIdException exception) {
-            throw new ManagerLoadException(exception.getMessage());
         }
     }
 
@@ -306,9 +302,5 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         if (parser.hasNext()) {
             throw new CSVParsingException("unexpected data");
         }
-    }
-
-    private void updateLastUsedId(Task task) {
-        lastUsedId = Math.max(lastUsedId, task.getId());
     }
 }
