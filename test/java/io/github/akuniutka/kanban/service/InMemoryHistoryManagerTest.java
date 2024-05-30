@@ -12,15 +12,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class InMemoryHistoryManagerTest {
     private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
     private final HistoryManager manager;
-    private Task testTask;
-    private Task modifiedTask;
-    private List<Task> expectedHistory;
+    private final Task testTask;
 
     public InMemoryHistoryManagerTest() {
         this.manager = new InMemoryHistoryManager();
         this.testTask = fromTestTask().build();
-        this.modifiedTask = fromModifiedTask().build();
-        this.expectedHistory = List.of(fromTestTask().build());
     }
 
     @Test
@@ -39,14 +35,15 @@ class InMemoryHistoryManagerTest {
     @Test
     public void shouldNotAddTaskWhenIdNull() {
         final String expectedMessage = "cannot add task with null id to visited tasks history";
-        testTask = fromTestTask().withId(null).build();
+        final Task task = fromTestTask().withId(null).build();
 
-        final Exception exception = assertThrows(NullPointerException.class, () -> manager.add(testTask));
+        final Exception exception = assertThrows(NullPointerException.class, () -> manager.add(task));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldAddTaskToHistory() {
+        final List<Task> expectedHistory = List.of(fromTestTask().build());
         manager.add(testTask);
         final List<Task> history = manager.getHistory();
 
@@ -55,10 +52,10 @@ class InMemoryHistoryManagerTest {
 
     @Test
     public void shouldAddTaskToHistoryWhenFieldsNull() {
-        expectedHistory = List.of(fromEmptyTask().withId(TEST_TASK_ID).build());
-        testTask = fromEmptyTask().withId(TEST_TASK_ID).build();
+        final List<Task> expectedHistory = List.of(fromEmptyTask().withId(TEST_TASK_ID).build());
+        final Task task = fromEmptyTask().withId(TEST_TASK_ID).build();
 
-        manager.add(testTask);
+        manager.add(task);
         final List<Task> history = manager.getHistory();
 
         assertListEquals(expectedHistory, history, "task saved with errors");
@@ -66,7 +63,7 @@ class InMemoryHistoryManagerTest {
 
     @Test
     public void shouldAddTaskToHistoryWhenSubclass() {
-        expectedHistory = List.of(fromTestSubtask().build());
+        final List<Task> expectedHistory = List.of(fromTestSubtask().build());
         final Subtask subtask = fromTestSubtask().build();
 
         manager.add(subtask);
@@ -77,10 +74,11 @@ class InMemoryHistoryManagerTest {
 
     @Test
     public void shouldUpdateTaskInHistory() {
-        expectedHistory = List.of(fromModifiedTask().build());
+        final List<Task> expectedHistory = List.of(fromModifiedTask().build());
+        final Task anotherTask = fromModifiedTask().build();
 
         manager.add(testTask);
-        manager.add(modifiedTask);
+        manager.add(anotherTask);
         final List<Task> history = manager.getHistory();
 
         assertListEquals(expectedHistory, history, "task saved with errors");
@@ -97,13 +95,14 @@ class InMemoryHistoryManagerTest {
 
     @Test
     public void shouldKeepTasksInOrderTheyLastTimeVisited() {
-        final Task taskA = fromTestTask().build();
-        final Task taskB = fromModifiedTask().withId(ANOTHER_TEST_ID).build();
-        expectedHistory = List.of(taskB, taskA);
-        modifiedTask = fromModifiedTask().withId(ANOTHER_TEST_ID).build();
+        final List<Task> expectedHistory = List.of(
+                fromModifiedTask().withId(ANOTHER_TEST_ID).build(),
+                fromTestTask().build()
+        );
+        final Task anotherTask = fromModifiedTask().withId(ANOTHER_TEST_ID).build();
 
         manager.add(testTask);
-        manager.add(modifiedTask);
+        manager.add(anotherTask);
         manager.add(testTask);
         final List<Task> history = manager.getHistory();
 
@@ -112,6 +111,7 @@ class InMemoryHistoryManagerTest {
 
     @Test
     public void shouldNotRemoveTaskFromHistoryWhenNotExist() {
+        final List<Task> expectedHistory = List.of(fromTestTask().build());
         manager.add(testTask);
 
         manager.remove(ANOTHER_TEST_ID);
@@ -122,9 +122,10 @@ class InMemoryHistoryManagerTest {
 
     @Test
     public void shouldRemoveTaskFromHistory() {
-        modifiedTask = fromModifiedTask().withId(ANOTHER_TEST_ID).build();
+        final List<Task> expectedHistory = List.of(fromTestTask().build());
+        final Task anotherTask = fromModifiedTask().withId(ANOTHER_TEST_ID).build();
         manager.add(testTask);
-        manager.add(modifiedTask);
+        manager.add(anotherTask);
 
         manager.remove(ANOTHER_TEST_ID);
         List<Task> history = manager.getHistory();
