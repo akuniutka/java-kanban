@@ -55,7 +55,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotAddTaskWhenNull() {
-        final String expectedMessage = "cannot add null to list of tasks";
+        final String expectedMessage = "cannot add null";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.addTask(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
@@ -286,7 +286,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateTaskWhenNull() {
-        final String expectedMessage = "cannot apply null update to task";
+        final String expectedMessage = "cannot apply null update";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.updateTask(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
@@ -756,7 +756,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotAddEpicWhenNull() {
-        final String expectedMessage = "cannot add null to list of epics";
+        final String expectedMessage = "cannot add null";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.addEpic(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
@@ -822,7 +822,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateEpicWhenNull() {
-        final String expectedMessage = "cannot apply null update to epic";
+        final String expectedMessage = "cannot apply null update";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.updateEpic(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
@@ -941,7 +941,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotAddSubtaskWhenNull() {
-        final String expectedMessage = "cannot add null to list of subtasks";
+        final String expectedMessage = "cannot add null";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.addSubtask(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
@@ -1247,7 +1247,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateSubtaskWhenNull() {
-        final String expectedMessage = "cannot apply null update to subtask";
+        final String expectedMessage = "cannot apply null update";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.updateSubtask(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
