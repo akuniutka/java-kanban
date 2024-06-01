@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -129,7 +130,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private String toString(Task task) {
         return "%s,%s,%s,%s,%s,%s,%s,%s".formatted(task.getId(), task.getType(), quoteIfNotNull(task.getTitle()),
                 task.getType() != TaskType.EPIC ? task.getStatus() : "", quoteIfNotNull(task.getDescription()),
-                task.getType() != TaskType.EPIC ? task.getDuration() : "",
+                task.getType() != TaskType.EPIC ?
+                        (task.getDuration() != null ? task.getDuration().toMinutes() : "null") : "",
                 task.getType() != TaskType.EPIC ? task.getStartTime() : "",
                 task.getType() == TaskType.SUBTASK ? ((Subtask) task).getEpicId() : "");
     }
@@ -202,7 +204,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             }
             requireNoMoreData(parser);
             return task;
-        } catch (CSVParsingException | ManagerValidationException exception) {
+        } catch (CSVParsingException exception) {
             throw new ManagerLoadException(exception.getMessage() + " for id=" + id);
         }
     }
@@ -250,13 +252,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         return token.substring(1, token.length() - 1);
     }
 
-    private Long extractDuration(String token) {
+    private Duration extractDuration(String token) {
         if ("null".equals(token)) {
             return null;
         }
         try {
-            return Long.parseLong(token);
-        } catch (NumberFormatException exception) {
+            long minutes = Long.parseLong(token);
+            return Duration.ofMinutes(minutes);
+        } catch (NumberFormatException | ArithmeticException exception) {
             throw new CSVParsingException("wrong duration format");
         }
     }

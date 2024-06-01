@@ -2,6 +2,7 @@ package io.github.akuniutka.kanban.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -85,7 +86,7 @@ class EpicTest {
     public void shouldHaveNullDurationWhenNoSubtasks() {
         final Epic epic = new Epic();
 
-        final Long actualDuration = epic.getDuration();
+        final Duration actualDuration = epic.getDuration();
 
         assertNull(actualDuration, "epic has wrong duration");
     }
@@ -96,7 +97,7 @@ class EpicTest {
         final List<Subtask> subtasks = List.of(fromEmptySubtask().build());
         epic.setSubtasks(subtasks);
 
-        final Long actualDuration = epic.getDuration();
+        final Duration actualDuration = epic.getDuration();
 
         assertNull(actualDuration, "epic has wrong duration");
     }
@@ -106,7 +107,7 @@ class EpicTest {
         final Epic epic = new Epic();
         epic.setSubtasks(testSubtasks);
 
-        final Long actualDuration = epic.getDuration();
+        final Duration actualDuration = epic.getDuration();
 
         assertEquals(TEST_DURATION, actualDuration, "epic has wrong duration");
     }
@@ -116,9 +117,9 @@ class EpicTest {
         final Epic epic = new Epic();
         epic.setSubtasks(twoTestSubtasks);
 
-        final Long actualDuration = epic.getDuration();
+        final Duration actualDuration = epic.getDuration();
 
-        assertEquals(TEST_DURATION + MODIFIED_DURATION, actualDuration, "epic has wrong duration");
+        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), actualDuration, "epic has wrong duration");
     }
 
     @Test
@@ -352,7 +353,7 @@ class EpicTest {
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
         final String expectedEpicString = String.format("Epic{id=2, title=\"Title\", description.length=11, "
-                        + "subtasks=%s, duration=30, startTime=2000-05-01T13:30, status=IN_PROGRESS}", testSubtasks);
+                + "subtasks=%s, duration=PT30M, startTime=2000-05-01T13:30, status=IN_PROGRESS}", testSubtasks);
         final Epic epic = fromTestEpic().withSubtasks(testSubtasks).build();
 
         final String actualString = epic.toString();

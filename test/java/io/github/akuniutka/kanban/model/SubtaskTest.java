@@ -1,17 +1,14 @@
 package io.github.akuniutka.kanban.model;
 
-import io.github.akuniutka.kanban.exception.ManagerException;
-import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SubtaskTest {
-    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
-
     @Test
     public void shouldCreateSubtask() {
         final Subtask subtask = new Subtask();
@@ -70,7 +67,7 @@ class SubtaskTest {
         final Subtask subtask = new Subtask();
 
         subtask.setDuration(TEST_DURATION);
-        final Long actualDuration = subtask.getDuration();
+        final Duration actualDuration = subtask.getDuration();
 
         assertEquals(TEST_DURATION, actualDuration, "subtask has wrong duration");
     }
@@ -80,26 +77,9 @@ class SubtaskTest {
         final Subtask subtask = new Subtask();
 
         subtask.setDuration(null);
-        final Long actualDuration = subtask.getDuration();
+        final Duration actualDuration = subtask.getDuration();
 
         assertNull(actualDuration, "subtask has wrong duration");
-    }
-
-    @Test
-    public void shouldThrowWhenDurationZero() {
-        final Subtask subtask = new Subtask();
-
-        final Exception exception = assertThrows(ManagerValidationException.class, () -> subtask.setDuration(0L));
-        assertEquals("duration cannot be negative or zero", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenDurationNegative() {
-        final Subtask subtask = new Subtask();
-
-        final Exception exception = assertThrows(ManagerException.class,
-                () -> subtask.setDuration(-TEST_DURATION));
-        assertEquals("duration cannot be negative or zero", exception.getMessage(), "message for exception is wrong");
     }
 
     @Test
@@ -107,16 +87,6 @@ class SubtaskTest {
         final Subtask subtask = new Subtask();
 
         subtask.setStartTime(TEST_START_TIME);
-        final LocalDateTime actualStartTime = subtask.getStartTime();
-
-        assertEquals(TEST_START_TIME, actualStartTime, "subtask has wrong start time");
-    }
-
-    @Test
-    public void shouldTruncateStartTimeToMinutes() {
-        final Subtask subtask = new Subtask();
-
-        subtask.setStartTime(TEST_START_TIME.plusSeconds(25));
         final LocalDateTime actualStartTime = subtask.getStartTime();
 
         assertEquals(TEST_START_TIME, actualStartTime, "subtask has wrong start time");
@@ -202,7 +172,7 @@ class SubtaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        final String expected = "Subtask{id=3, epicId=2, title=\"Title\", description.length=11, duration=30, "
+        final String expected = "Subtask{id=3, epicId=2, title=\"Title\", description.length=11, duration=PT30M, "
                 + "startTime=2000-05-01T13:30, status=IN_PROGRESS}";
         final Subtask subtask = fromTestSubtask().build();
 

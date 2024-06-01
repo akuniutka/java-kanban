@@ -61,7 +61,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 id,type,name,status,description,duration,start,epic
                 %%d,TASK,"%s",%s,"%s",%s,%s,
                 """.formatted(testTask.getTitle(), testTask.getStatus(), testTask.getDescription(),
-                testTask.getDuration(), testTask.getStartTime());
+                testTask.getDuration().toMinutes(), testTask.getStartTime());
 
         final long taskId = manager.addTask(testTask);
 
@@ -91,7 +91,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 id,type,name,status,description,duration,start,epic
                 %d,TASK,"%s",%s,"%s",%s,%s,
                 """.formatted(taskId, modifiedTask.getTitle(), modifiedTask.getStatus(),
-                modifiedTask.getDescription(), modifiedTask.getDuration(), modifiedTask.getStartTime());
+                modifiedTask.getDescription(), modifiedTask.getDuration().toMinutes(), modifiedTask.getStartTime());
         final Task update = fromModifiedTask().withId(taskId).build();
 
         manager.updateTask(update);
@@ -177,8 +177,8 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 %%d,EPIC,"%s",,"%s",,,
                 %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
-                expectedSubtask.getStatus(), expectedSubtask.getDescription(), expectedSubtask.getDuration(),
-                expectedSubtask.getStartTime());
+                expectedSubtask.getStatus(), expectedSubtask.getDescription(),
+                expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
 
@@ -190,7 +190,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
-    public void shouldSaveWhenAddSubtaskAndFieldsNUll() throws IOException {
+    public void shouldSaveWhenAddSubtaskAndFieldsNull() throws IOException {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 %%d,EPIC,"%s",,"%s",,,
@@ -215,7 +215,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
                 expectedSubtask.getStatus(), expectedSubtask.getDescription(),
-                expectedSubtask.getDuration(), expectedSubtask.getStartTime());
+                expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
         final long subtaskId = manager.addSubtask(subtask);
@@ -411,6 +411,19 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldNotLoadTaskWhenIdNotInteger() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1.5,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
+                """);
+        final String expectedMessage = "line does not start with numeric id";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldNotLoadTaskWhenIdIsAnotherTaskId() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -549,6 +562,19 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
                 1,TASK,"Title",IN_PROGRESS,"Description",thirty,2000-05-01T13:30,
+                """);
+        final String expectedMessage = "wrong duration format for id=1";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadTaskWhenDurationNotInteger() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30.5,2000-05-01T13:30,
                 """);
         final String expectedMessage = "wrong duration format for id=1";
 
@@ -763,6 +789,27 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldLoadTaskToGetAndTasksAndPrioritizedWithStartTimeTruncatedToMinutes() throws IOException {
+        final Task expectedTask = fromTestTask().build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30:25,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Task savedTask = manager.getTask(1L);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task loaded with errors")
+        );
+    }
+
+    @Test
     public void shouldLoadTaskToGetAndTasksNotPrioritizedWhenStartTimeNull() throws IOException {
         final Task expectedTask = fromTestTask().withDuration(null).withStartTime(null).build();
         final List<Task> expectedTasks = List.of(expectedTask);
@@ -806,8 +853,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldLoadTaskToGetAndTasksAndPrioritizedWhenExactlyBeforeAnotherPrioritizedTask() throws IOException {
-        final Subtask expectedSubtask = fromTestSubtask().withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION))
-                .build();
+        final Subtask expectedSubtask = fromTestSubtask().withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
@@ -831,9 +877,34 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldLoadTaskToGetAndTasksAndPrioritizedWhenWithStartTimeTruncatedExactlyBeforeAnotherTask()
+            throws IOException {
+        final Subtask expectedSubtask = fromTestSubtask().withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T14:00,2
+                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30:25,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Task savedTask = manager.getTask(1000L);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task loaded with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task loaded with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task loaded with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "task loaded with errors")
+        );
+    }
+
+    @Test
     public void shouldLoadTaskToGetAndTasksAndPrioritizedWhenExactlyAfterAnotherPrioritizedTask() throws IOException {
-        final Subtask expectedSubtask = fromTestSubtask().withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION))
-                .build();
+        final Subtask expectedSubtask = fromTestSubtask().withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
@@ -887,6 +958,19 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
                 two,EPIC,"Title",,"Description",,,
+                """);
+        final String expectedMessage = "line does not start with numeric id";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadEpicWhenIdNotInteger() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2.5,EPIC,"Title",,"Description",,,
                 """);
         final String expectedMessage = "line does not start with numeric id";
 
@@ -1150,6 +1234,20 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldNotLoadSubtaskWhenIdNotInteger() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3.5,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "line does not start with numeric id";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldNotLoadSubtaskWhenIdIsTaskId() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -1298,6 +1396,20 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 id,type,name,status,description,duration,start,epic
                 2,EPIC,null,,null,,,
                 3,SUBTASK,"Title",IN_PROGRESS,"Description",thirty,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "wrong duration format for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotLoadSubtaskWhenDurationNotInteger() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30.5,2000-05-01T13:30,2
                 """);
         final String expectedMessage = "wrong duration format for id=3";
 
@@ -1510,6 +1622,20 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldNotLoadSubtaskWhenEpicIdNotInteger() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Epic",,"Epic description",,,
+                2,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,1.5
+                """);
+        final String expectedMessage = "wrong epic id format for id=2";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldNotLoadSubtaskWhenUnknownEpicId() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -1578,6 +1704,30 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldLoadSubtaskToGetAndEpicAndSubtasksAndPrioritizedWithStartTimeTruncated() throws IOException {
+        final Subtask expectedSubtask = fromTestSubtask().build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,"Title",,"Description",,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30:25,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Subtask savedSubtask = manager.getSubtask(3L);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask loaded with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask loaded with errors")
+        );
+    }
+
+    @Test
     public void shouldLoadSubtaskToGetAndEpicAndSubtasksNotPrioritizedWhenStartTimeNull() throws IOException {
         final Subtask expectedSubtask = fromTestSubtask().withDuration(null).withStartTime(null).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
@@ -1627,7 +1777,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldLoadSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenExactlyBeforePrioritize() throws IOException {
-        final Task expectedTask = fromTestTask().withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final Subtask expectedSubtask = fromTestSubtask().build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
@@ -1653,8 +1803,36 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldLoadSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenWithStartTimeTruncatedExactlyBeforeTask()
+            throws IOException {
+        final Task expectedTask = fromTestTask().withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final Subtask expectedSubtask = fromTestSubtask().build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T14:00,
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30:25,2
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Subtask savedSubtask = manager.getSubtask(3L);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask loaded with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "subtask loaded with errors")
+        );
+    }
+
+    @Test
     public void shouldLoadSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenExactlyAfterPrioritized() throws IOException {
-        final Task expectedTask = fromTestTask().withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final Subtask expectedSubtask = fromTestSubtask().build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);

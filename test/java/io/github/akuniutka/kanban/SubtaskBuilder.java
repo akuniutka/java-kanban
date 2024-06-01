@@ -3,6 +3,7 @@ package io.github.akuniutka.kanban;
 import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.TaskStatus;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 public class SubtaskBuilder {
@@ -10,7 +11,7 @@ public class SubtaskBuilder {
     private Long epicId;
     private String title;
     private String description;
-    private Long duration;
+    private Duration duration;
     private LocalDateTime startTime;
     private TaskStatus status;
 
@@ -34,7 +35,7 @@ public class SubtaskBuilder {
         return this;
     }
 
-    public SubtaskBuilder withDuration(Long duration) {
+    public SubtaskBuilder withDuration(Duration duration) {
         this.duration = duration;
         return this;
     }
