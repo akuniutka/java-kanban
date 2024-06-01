@@ -1,16 +1,14 @@
 package io.github.akuniutka.kanban.model;
 
-import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TaskTest {
-    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
-
     @Test
     public void shouldCreateTask() {
         final Task task = new Task();
@@ -59,7 +57,7 @@ public class TaskTest {
         final Task task = new Task();
 
         task.setDuration(TEST_DURATION);
-        final Long actualDuration = task.getDuration();
+        final Duration actualDuration = task.getDuration();
 
         assertEquals(TEST_DURATION, actualDuration, "task has wrong duration");
     }
@@ -69,26 +67,9 @@ public class TaskTest {
         final Task task = new Task();
 
         task.setDuration(null);
-        final Long actualDuration = task.getDuration();
+        final Duration actualDuration = task.getDuration();
 
         assertNull(actualDuration, "task has wrong duration");
-    }
-
-    @Test
-    public void shouldThrowWhenDurationZero() {
-        final Task task = new Task();
-
-        final Exception exception = assertThrows(ManagerValidationException.class, () -> task.setDuration(0L));
-        assertEquals("duration cannot be negative or zero", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenDurationNegative() {
-        final Task task = new Task();
-
-        final Exception exception = assertThrows(ManagerValidationException.class,
-                () -> task.setDuration(-TEST_DURATION));
-        assertEquals("duration cannot be negative or zero", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -96,16 +77,6 @@ public class TaskTest {
         final Task task = new Task();
 
         task.setStartTime(TEST_START_TIME);
-        final LocalDateTime actualStartTime = task.getStartTime();
-
-        assertEquals(TEST_START_TIME, actualStartTime, "task has wrong start time");
-    }
-
-    @Test
-    public void shouldTruncateStartTimeToMinutes() {
-        final Task task = new Task();
-
-        task.setStartTime(TEST_START_TIME.plusSeconds(25));
         final LocalDateTime actualStartTime = task.getStartTime();
 
         assertEquals(TEST_START_TIME, actualStartTime, "task has wrong start time");
@@ -191,7 +162,7 @@ public class TaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        final String expected = "Task{id=1, title=\"Title\", description.length=11, duration=30, "
+        final String expected = "Task{id=1, title=\"Title\", description.length=11, duration=PT30M, "
                 + "startTime=2000-05-01T13:30, status=IN_PROGRESS}";
         final Task task = fromTestTask().build();
 

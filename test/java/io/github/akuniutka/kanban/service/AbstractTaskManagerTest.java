@@ -8,6 +8,7 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 
 import static io.github.akuniutka.kanban.TestModels.*;
@@ -113,8 +114,8 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldNotAddTaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(60L)
-                .withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(60L)).withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
         manager.addSubtask(overlappingSubtask);
 
         final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.addTask(testTask));
@@ -124,8 +125,8 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldNotAddTaskWhenAnotherPrioritizedTaskWithinInterval() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(20L)
-                .withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(20L)).withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
         manager.addSubtask(overlappingSubtask);
 
         final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.addTask(testTask));
@@ -135,7 +136,8 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldNotAddTaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(20L).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(20L)).build();
         manager.addSubtask(overlappingSubtask);
 
         final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.addTask(testTask));
@@ -145,8 +147,8 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldNotAddTaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(20L)
-                .withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(20L)).withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
         manager.addSubtask(overlappingSubtask);
 
         final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.addTask(testTask));
@@ -203,6 +205,40 @@ abstract class AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldAddTaskToGetAndTasksAndPrioritizedWithDurationTruncatedToMinutes() {
+        final Task task = fromTestTask().withId(null).withDuration(TEST_DURATION.plusSeconds(25L)).build();
+        final long taskId = manager.addTask(task);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Task expectedTask = fromTestTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAddTaskToGetAndTasksAndPrioritizedWithStartTimeTruncatedToMinutes() {
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
+        final long taskId = manager.addTask(task);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Task expectedTask = fromTestTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
     public void shouldAddTaskToGetAndTasksNotPrioritizedWhenDurationNullAndStartTimeNull() {
         final Task task = fromTestTask().withId(null).withDuration(null).withStartTime(null).build();
 
@@ -240,7 +276,7 @@ abstract class AbstractTaskManagerTest {
     public void shouldAddTaskToGetAndTasksAndPrioritizedWhenExactlyBeforeAnotherPrioritizedTask() {
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final long subtaskId = manager.addSubtask(subtask);
 
         final long taskId = manager.addTask(testTask);
@@ -249,7 +285,57 @@ abstract class AbstractTaskManagerTest {
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAddTaskToGetAndTasksAndPrioritizedWhenWithDurationTruncatedToMinutesExactlyBeforeAnotherTask() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long subtaskId = manager.addSubtask(subtask);
+        final Task task = fromTestTask().withId(null).withDuration(TEST_DURATION.plusSeconds(25L)).build();
+
+        final long taskId = manager.addTask(task);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAddTaskToGetAndTasksAndPrioritizedWhenWithStartTimeTruncatedToMinutesExactlyBeforeAnotherTask() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long subtaskId = manager.addSubtask(subtask);
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
+
+        final long taskId = manager.addTask(task);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
@@ -264,7 +350,7 @@ abstract class AbstractTaskManagerTest {
     public void shouldAddTaskToGetAndTasksAndPrioritizedWhenExactlyAfterAnotherPrioritizedTask() {
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final long subtaskId = manager.addSubtask(subtask);
 
         final long taskId = manager.addTask(testTask);
@@ -273,7 +359,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
@@ -360,8 +446,8 @@ abstract class AbstractTaskManagerTest {
     public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
         final long taskId = manager.addTask(emptyTask);
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(60L)
-                .withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(60L)).withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
         manager.addSubtask(overlappingSubtask);
         final Task update = fromTestTask().withId(taskId).build();
 
@@ -373,8 +459,8 @@ abstract class AbstractTaskManagerTest {
     public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskWithinInterval() {
         final long taskId = manager.addTask(emptyTask);
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(20L)
-                .withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(20L)).withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
         manager.addSubtask(overlappingSubtask);
         final Task update = fromTestTask().withId(taskId).build();
 
@@ -386,7 +472,8 @@ abstract class AbstractTaskManagerTest {
     public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
         final long taskId = manager.addTask(emptyTask);
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(20L).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(20L)).build();
         manager.addSubtask(overlappingSubtask);
         final Task update = fromTestTask().withId(taskId).build();
 
@@ -398,8 +485,8 @@ abstract class AbstractTaskManagerTest {
     public void shouldNotUpdateTaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
         final long taskId = manager.addTask(emptyTask);
         final long epicId = manager.addEpic(testEpic);
-        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(20L)
-                .withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
+        final Subtask overlappingSubtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(Duration.ofMinutes(20L)).withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
         manager.addSubtask(overlappingSubtask);
         final Task update = fromTestTask().withId(taskId).build();
 
@@ -423,6 +510,46 @@ abstract class AbstractTaskManagerTest {
     public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenDurationNotNullAndStartTimeNotNull() {
         final long taskId = manager.addTask(testTask);
         final Task update = fromModifiedTask().withId(taskId).build();
+        final Task expectedTask = fromModifiedTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+
+        manager.updateTask(update);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateTaskInGetAndTasksAndPrioritizesWhenDurationTruncatedToMinutes() {
+        final long taskId = manager.addTask(testTask);
+        final Task update = fromModifiedTask().withId(taskId).withDuration(MODIFIED_DURATION.plusSeconds(25L))
+                .build();
+        final Task expectedTask = fromModifiedTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+
+        manager.updateTask(update);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateTaskInGetAndTasksAndPrioritizesWhenStartTimeTruncatedToMinutes() {
+        final long taskId = manager.addTask(testTask);
+        final Task update = fromModifiedTask().withId(taskId).withStartTime(MODIFIED_START_TIME.plusSeconds(25L))
+                .build();
         final Task expectedTask = fromModifiedTask().withId(taskId).build();
         final List<Task> expectedTasks = List.of(expectedTask);
 
@@ -482,7 +609,8 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenPreviousVersionCoversWholeInterval() {
-        final Task oldTask = fromEmptyTask().withDuration(60L).withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
+        final Task oldTask = fromEmptyTask().withDuration(Duration.ofMinutes(60L))
+                .withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
         final long taskId = manager.addTask(oldTask);
         final Task update = fromTestTask().withId(taskId).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
@@ -502,7 +630,8 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenPreviousVersionWithinInterval() {
-        final Task oldTask = fromEmptyTask().withDuration(20L).withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
+        final Task oldTask = fromEmptyTask().withDuration(Duration.ofMinutes(20L))
+                .withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
         final long taskId = manager.addTask(oldTask);
         final Task update = fromTestTask().withId(taskId).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
@@ -522,7 +651,8 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenPreviousVersionWithinIntervalLeftAligned() {
-        final Task oldTask = fromEmptyTask().withDuration(20L).withStartTime(TEST_START_TIME).build();
+        final Task oldTask = fromEmptyTask().withDuration(Duration.ofMinutes(20L)).withStartTime(TEST_START_TIME)
+                .build();
         final long taskId = manager.addTask(oldTask);
         final Task update = fromTestTask().withId(taskId).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
@@ -542,7 +672,8 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenPreviousVersionWithinIntervalRightAligned() {
-        final Task oldTask = fromEmptyTask().withDuration(20L).withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
+        final Task oldTask = fromEmptyTask().withDuration(Duration.ofMinutes(20L))
+                .withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
         final long taskId = manager.addTask(oldTask);
         final Task update = fromTestTask().withId(taskId).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
@@ -584,12 +715,64 @@ abstract class AbstractTaskManagerTest {
     public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenExactlyBeforeAnotherPrioritizedTask() {
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final long subtaskId = manager.addSubtask(subtask);
         final long taskId = manager.addTask(emptyTask);
         final Task update = fromTestTask().withId(taskId).build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
+
+        manager.updateTask(update);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenWithDurationTruncatedExactlyBeforeAnotherTask() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long subtaskId = manager.addSubtask(subtask);
+        final long taskId = manager.addTask(emptyTask);
+        final Task update = fromTestTask().withId(taskId).withDuration(TEST_DURATION.plusSeconds(25L)).build();
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
+
+        manager.updateTask(update);
+        final Task savedTask = manager.getTask(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task saved with errors",
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenWithStartTimeTruncatedExactlyBeforeAnotherTask() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long subtaskId = manager.addSubtask(subtask);
+        final long taskId = manager.addTask(emptyTask);
+        final Task update = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
@@ -610,12 +793,12 @@ abstract class AbstractTaskManagerTest {
     public void shouldUpdateTaskInGetAndTasksAndPrioritizedWhenExactlyAfterAnotherPrioritizedTask() {
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final long subtaskId = manager.addSubtask(subtask);
         final long taskId = manager.addTask(emptyTask);
         final Task update = fromTestTask().withId(taskId).build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId)
-                .withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+                .withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final Task expectedTask = fromTestTask().withId(taskId).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
@@ -1046,7 +1229,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(60L)
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(60L))
                 .withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
@@ -1058,7 +1241,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskWithinInterval() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(20L)
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(20L))
                 .withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
@@ -1070,7 +1253,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(20L).build();
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(20L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
@@ -1081,7 +1264,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotAddSubtaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(20L)
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(20L))
                 .withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
@@ -1149,6 +1332,50 @@ abstract class AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldAddSubtaskToGetAndEpicAndSubtasksAndPrioritizedWithDurationTruncatedToMinutes() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(TEST_DURATION.plusSeconds(25L)).build();
+
+        final long subtaskId = manager.addSubtask(subtask);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAddSubtaskToGetAndEpicAndSubtasksAndPrioritizedWithStartTimeTruncatedToMinutes() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
+
+        final long subtaskId = manager.addSubtask(subtask);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
     public void shouldAddSubtaskToGetAndEpicAndSubtasksNotPrioritizedWhenDurationAndStartTimeNull() {
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null).withStartTime(null)
@@ -1194,7 +1421,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldAddSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenExactlyBeforeAnotherPrioritizedTask() {
-        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final long taskId = manager.addTask(task);
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
@@ -1205,8 +1432,62 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        final Task expectedTask = fromTestTask().withId(taskId)
-                .withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.plus(TEST_DURATION))
+                .build();
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAddSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenWithDurationTruncatedExactlyBeforeTask() {
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long taskId = manager.addTask(task);
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withDuration(TEST_DURATION.plusSeconds(25L)).build();
+
+        final long subtaskId = manager.addSubtask(subtask);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.plus(TEST_DURATION))
+                .build();
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAddSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenWithStartTimeTruncatedExactlyBeforeTask() {
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long taskId = manager.addTask(task);
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId)
+                .withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
+
+        final long subtaskId = manager.addSubtask(subtask);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.plus(TEST_DURATION))
+                .build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
@@ -1220,8 +1501,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldAddSubtaskToGetAndEpicAndSubtasksAndPrioritizedWhenExactlyAfterAnotherPrioritizedTask() {
-        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION))
-                .build();
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final long taskId = manager.addTask(task);
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
@@ -1232,8 +1512,8 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        final Task expectedTask = fromTestTask().withId(taskId)
-                .withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.minus(TEST_DURATION))
+                .build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
@@ -1328,7 +1608,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskCoversWholeInterval() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(60L)
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(60L))
                 .withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
@@ -1342,7 +1622,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskWithinInterval() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(20L)
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(20L))
                 .withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
@@ -1356,7 +1636,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(20L).build();
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(20L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
         final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).build();
@@ -1369,7 +1649,7 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateSubtaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() {
-        final Task overlappingTask = fromTestTask().withId(null).withDuration(20L)
+        final Task overlappingTask = fromTestTask().withId(null).withDuration(Duration.ofMinutes(20L))
                 .withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
         manager.addTask(overlappingTask);
         final long epicId = manager.addEpic(testEpic);
@@ -1399,6 +1679,54 @@ abstract class AbstractTaskManagerTest {
         final Subtask oldSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
         final long subtaskId = manager.addSubtask(oldSubtask);
         final Subtask update = fromModifiedSubtask().withId(subtaskId).build();
+        final Subtask expectedSubtask = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+
+        manager.updateSubtask(update);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWithDurationTruncatedToMinutes() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask oldSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(oldSubtask);
+        final Subtask update = fromModifiedSubtask().withId(subtaskId)
+                .withDuration(MODIFIED_DURATION.plusSeconds(25L)).build();
+        final Subtask expectedSubtask = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+
+        manager.updateSubtask(update);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWithStartTimeTruncatedToMinutes() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask oldSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(oldSubtask);
+        final Subtask update = fromModifiedSubtask().withId(subtaskId)
+                .withStartTime(MODIFIED_START_TIME.plusSeconds(25L)).build();
         final Subtask expectedSubtask = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
@@ -1467,7 +1795,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenPreviousVersionCoversWholeInterval() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(60L)
+        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(Duration.ofMinutes(60L))
                 .withStartTime(TEST_START_TIME.minusMinutes(15L)).build();
         final long subtaskId = manager.addSubtask(oldSubtask);
         final Subtask update = fromTestSubtask().withId(subtaskId).build();
@@ -1491,7 +1819,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenPreviousVersionWithinInterval() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(20L)
+        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(Duration.ofMinutes(20L))
                 .withStartTime(TEST_START_TIME.plusMinutes(5L)).build();
         final long subtaskId = manager.addSubtask(oldSubtask);
         final Subtask update = fromTestSubtask().withId(subtaskId).build();
@@ -1515,7 +1843,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenPreviousVersionWithinIntervalLeftAligned() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(20L)
+        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(Duration.ofMinutes(20L))
                 .withStartTime(TEST_START_TIME)
                 .build();
         final long subtaskId = manager.addSubtask(oldSubtask);
@@ -1540,7 +1868,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenPreviousVersionWithinIntervalRAligned() {
         final long epicId = manager.addEpic(testEpic);
-        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(20L)
+        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).withDuration(Duration.ofMinutes(20L))
                 .withStartTime(TEST_START_TIME.plusMinutes(10L)).build();
         final long subtaskId = manager.addSubtask(oldSubtask);
         final Subtask update = fromTestSubtask().withId(subtaskId).build();
@@ -1587,14 +1915,71 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenExactlyBeforeAnotherPrioritizedTask() {
-        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
         final long taskId = manager.addTask(task);
         final long epicId = manager.addEpic(testEpic);
         final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).build();
         final long subtaskId = manager.addSubtask(oldSubtask);
         final Subtask update = fromTestSubtask().withId(subtaskId).build();
-        final Task expectedTask = fromTestTask().withId(taskId)
-                .withStartTime(TEST_START_TIME.plusMinutes(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.plus(TEST_DURATION))
+                .build();
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
+
+        manager.updateSubtask(update);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenWithDurationTruncatedExactlyBeforeTask() {
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long taskId = manager.addTask(task);
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(oldSubtask);
+        final Subtask update = fromTestSubtask().withId(subtaskId).withDuration(TEST_DURATION.plusSeconds(25L)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.plus(TEST_DURATION))
+                .build();
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
+
+        manager.updateSubtask(update);
+        final Subtask savedSubtask = manager.getSubtask(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("subtask saved with errors",
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedPrioritized, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenWithStartTimeTruncatedExactlyBeforeTask() {
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plus(TEST_DURATION)).build();
+        final long taskId = manager.addTask(task);
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(oldSubtask);
+        final Subtask update = fromTestSubtask().withId(subtaskId).withStartTime(TEST_START_TIME.plusSeconds(25L))
+                .build();
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.plus(TEST_DURATION))
+                .build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
@@ -1615,15 +2000,14 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldUpdateSubtaskInGetAndEpicAndSubtasksAndPrioritizedWhenExactlyAfterAnotherPrioritizedTask() {
-        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION))
-                .build();
+        final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.minus(TEST_DURATION)).build();
         final long taskId = manager.addTask(task);
         final long epicId = manager.addEpic(testEpic);
         final Subtask oldSubtask = fromEmptySubtask().withEpicId(epicId).build();
         final long subtaskId = manager.addSubtask(oldSubtask);
         final Subtask update = fromTestSubtask().withId(subtaskId).build();
-        final Task expectedTask = fromTestTask().withId(taskId)
-                .withStartTime(TEST_START_TIME.minusMinutes(TEST_DURATION)).build();
+        final Task expectedTask = fromTestTask().withId(taskId).withStartTime(TEST_START_TIME.minus(TEST_DURATION))
+                .build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);

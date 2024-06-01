@@ -1,10 +1,7 @@
 package io.github.akuniutka.kanban.model;
 
-import io.github.akuniutka.kanban.exception.ManagerValidationException;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 public class Task {
@@ -47,18 +44,12 @@ public class Task {
         this.description = description;
     }
 
-    public Long getDuration() {
-        return duration == null ? null : duration.toMinutes();
+    public Duration getDuration() {
+        return duration;
     }
 
-    public void setDuration(Long minutes) {
-        if (minutes == null) {
-            this.duration = null;
-        } else if (minutes <= 0L) {
-            throw new ManagerValidationException("duration cannot be negative or zero");
-        } else {
-            this.duration = Duration.ofMinutes(minutes);
-        }
+    public void setDuration(Duration duration) {
+        this.duration = duration;
     }
 
     public LocalDateTime getStartTime() {
@@ -66,7 +57,7 @@ public class Task {
     }
 
     public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime == null ? null : startTime.truncatedTo(ChronoUnit.MINUTES);
+        this.startTime = startTime;
     }
 
     public LocalDateTime getEndTime() {

@@ -1,5 +1,6 @@
 package io.github.akuniutka.kanban.model;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,17 +27,16 @@ public class Epic extends Task {
     }
 
     @Override
-    public Long getDuration() {
-        LongSummaryStatistics stats = subtasks.stream()
+    public Duration getDuration() {
+        return subtasks.stream()
                 .map(Subtask::getDuration)
                 .filter(Objects::nonNull)
-                .mapToLong(Long::longValue)
-                .summaryStatistics();
-        return stats.getCount() > 0 ? stats.getSum() : null;
+                .reduce(Duration::plus)
+                .orElse(null);
     }
 
     @Override
-    public void setDuration(Long duration) {
+    public void setDuration(Duration duration) {
         throw new UnsupportedOperationException("cannot explicitly set epic duration");
     }
 

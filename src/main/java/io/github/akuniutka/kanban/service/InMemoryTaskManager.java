@@ -8,6 +8,7 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskType;
 
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class InMemoryTaskManager implements TaskManager {
@@ -235,9 +236,18 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     protected void validateDurationAndStartTime(Task task) {
-        if (task.getType() != TaskType.EPIC) {
-            requireDoesNotOverlapOtherTasks(task);
+        if (task.getType() == TaskType.EPIC || (task.getDuration() == null && task.getStartTime() == null)) {
+            return;
         }
+        if (task.getDuration() == null || task.getStartTime() == null) {
+            throw new ManagerValidationException("duration and start time must be either both set or both null");
+        }
+        task.setDuration(task.getDuration().truncatedTo(ChronoUnit.MINUTES));
+        if (!task.getDuration().isPositive()) {
+            throw new ManagerValidationException("duration cannot be negative or zero");
+        }
+        task.setStartTime(task.getStartTime().truncatedTo(ChronoUnit.MINUTES));
+        requireDoesNotOverlapOtherTasks(task);
     }
 
     protected void requireIdNotExist(Long id) {
@@ -271,12 +281,6 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     protected void requireDoesNotOverlapOtherTasks(Task task) {
-        Objects.requireNonNull(task, "cannot check time slot for null task");
-        if (task.getDuration() == null && task.getStartTime() == null) {
-            return;
-        } else if (task.getDuration() == null || task.getStartTime() == null) {
-            throw new ManagerValidationException("duration and start time must be either both set or both null");
-        }
         final Task taskBefore = prioritizedTasks.floor(task);
         if (taskBefore != null && !task.equals(taskBefore) && task.getStartTime().isBefore(taskBefore.getEndTime())) {
             throw new ManagerValidationException("conflict with another task for time slot");
