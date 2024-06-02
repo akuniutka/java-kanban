@@ -151,8 +151,10 @@ public class TaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
-        final String expected = "Task{id=null, title=null, description=null, duration=null, startTime=null, "
-                + "status=null}";
+        final String expected = """
+                Task{id=null, type=TASK, title=null, description=null, duration=null, startTime=null, endTime=null, \
+                status=null}\
+                """;
         final Task task = fromEmptyTask().build();
 
         final String actual = task.toString();
@@ -162,8 +164,10 @@ public class TaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        final String expected = "Task{id=1, title=\"Title\", description.length=11, duration=PT30M, "
-                + "startTime=2000-05-01T13:30, status=IN_PROGRESS}";
+        final String expected = """
+                Task{id=1, type=TASK, title="Title", description.length=11, duration=PT30M, \
+                startTime=2000-05-01T13:30, endTime=2000-05-01T14:00, status=IN_PROGRESS}\
+                """;
         final Task task = fromTestTask().build();
 
         final String actual = task.toString();

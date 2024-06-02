@@ -2,11 +2,15 @@ package io.github.akuniutka.kanban.model;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Epic extends Task {
     private List<Subtask> subtasks;
+    private LocalDateTime endTime;
 
     public Epic() {
         this.subtasks = new ArrayList<>();
@@ -41,26 +45,12 @@ public class Epic extends Task {
     }
 
     @Override
-    public LocalDateTime getStartTime() {
-        return subtasks.stream()
-                .map(Subtask::getStartTime)
-                .filter(Objects::nonNull)
-                .min(Comparator.naturalOrder())
-                .orElse(null);
-    }
-
-    @Override
-    public void setStartTime(LocalDateTime startTime) {
-        throw new UnsupportedOperationException("cannot explicitly set epic start time");
-    }
-
-    @Override
     public LocalDateTime getEndTime() {
-        return subtasks.stream()
-                .map(Subtask::getEndTime)
-                .filter(Objects::nonNull)
-                .max(Comparator.naturalOrder())
-                .orElse(null);
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
     }
 
     @Override
@@ -84,9 +74,12 @@ public class Epic extends Task {
 
     @Override
     public String toString() {
-        return "Epic{id=%s, title=%s, description%s, subtasks=%s, duration=%s, startTime=%s, status=%s}".formatted(
-                getId(), getTitle() == null ? "null" : "\"" + getTitle() + "\"",
-                getDescription() == null ? "=null" : ".length=" + getDescription().length(), subtasks, getDuration(),
-                getStartTime(), getStatus());
+        return """
+                Epic{id=%s, type=%s, title=%s, description%s, subtasks=%s, duration=%s, startTime=%s, endTime=%s, \
+                status=%s}\
+                """.formatted(getId(), getType(), getTitle() == null ? "null" : "\"" + getTitle() + "\"",
+                getDescription() == null ? "=null" : ".length=" + getDescription().length(), subtasks,
+                getDuration(),
+                getStartTime(), getEndTime(), getStatus());
     }
 }
