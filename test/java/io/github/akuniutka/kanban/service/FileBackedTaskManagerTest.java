@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static io.github.akuniutka.kanban.TestModels.*;
@@ -312,8 +313,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     @Test
     public void shouldThrowWhenFileIsEmpty() throws IOException {
         fillTestFileWithData("");
-        final String expectedMessage = "wrong file header, expected \"id,type,name,status,description,duration,start,"
-                + "epic\"";
+        final String expectedMessage = """
+                wrong file header, expected "id,type,name,status,description,duration,start,epic"\
+                """;
 
         final Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(path, historyManager));
@@ -324,8 +326,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     public void shouldThrowWhenFileContainsNoHeader() throws IOException {
         fillTestFileWithData("""
                 """);
-        final String expectedMessage = "wrong file header, expected \"id,type,name,status,description,duration,start,"
-                + "epic\"";
+        final String expectedMessage = """
+                wrong file header, expected "id,type,name,status,description,duration,start,epic"\
+                """;
 
         final Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(path, historyManager));
@@ -337,8 +340,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         fillTestFileWithData("""
                 id, type,name,status,description,duration,start,epic
                 """);
-        final String expectedMessage = "wrong file header, expected \"id,type,name,status,description,duration,start,"
-                + "epic\"";
+        final String expectedMessage = """
+                wrong file header, expected "id,type,name,status,description,duration,start,epic"\
+                """;
 
         final Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(path, historyManager));
@@ -1855,6 +1859,129 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
                 () -> assertListEquals(expectedPrioritized, prioritized, "subtask loaded with errors")
         );
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenLoadNoSubtasks() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenLoadSubtasksAndSubtasksStartTimeNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",null,null,1
+                4,SUBTASK,"Modified Title",DONE,"Modified Description",null,null,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenLoadSubtasksAndSubtasksStartTimeNotNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,1
+                4,SUBTASK,"Modified Title",DONE,"Modified Description",90,2000-05-01T15:00,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenLoadSubtasksAndSubtasksStartTimeNotNullInOppositeOrder() throws
+            IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Modified Title",DONE,"Modified Description",90,2000-05-01T15:00,1
+                4,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenLoadNoSubtasks() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenLoadSubtasksAndSubtasksEndTimeNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",null,null,1
+                4,SUBTASK,"Modified Title",DONE,"Modified Description",null,null,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenLoadSubtasksAndSubtasksEndTimeNotNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,1
+                4,SUBTASK,"Modified Title",DONE,"Modified Description",90,2000-05-01T15:00,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenLoadSubtasksAndSubtasksEndTimeNotNullInOppositeOrder() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Modified Title",DONE,"Modified Description",90,2000-05-01T15:00,1
+                4,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic start time");
     }
 
     @Test

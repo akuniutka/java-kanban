@@ -149,11 +149,10 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     .map(this::fromString)
                     .forEach(task -> {
                         try {
-                            switch (task.getType()) {
-                                case TASK -> addTask(task);
-                                case EPIC -> addEpic((Epic) task);
-                                case SUBTASK -> addSubtask((Subtask) task);
-                                default -> throw new AssertionError();
+                            switch (task) {
+                                case Subtask subtask -> addSubtask(subtask);
+                                case Epic epic -> addEpic(epic);
+                                default -> addTask(task);
                             }
                         } catch (ManagerValidationException exception) {
                             throw new ManagerLoadException(exception.getMessage() + " for id=" + task.getId());

@@ -91,8 +91,10 @@ public class Task {
 
     @Override
     public String toString() {
-        return "Task{id=%s, title=%s, description%s, duration=%s, startTime=%s, status=%s}".formatted(id,
-                title == null ? "null" : "\"" + title + "\"",
-                description == null ? "=null" : ".length=" + description.length(), getDuration(), startTime, status);
+        return """
+                Task{id=%s, type=%s, title=%s, description%s, duration=%s, startTime=%s, endTime=%s, status=%s}\
+                """.formatted(id, getType(), title == null ? "null" : "\"" + title + "\"",
+                description == null ? "=null" : ".length=" + description.length(), getDuration(), startTime,
+                getEndTime(), status);
     }
 }

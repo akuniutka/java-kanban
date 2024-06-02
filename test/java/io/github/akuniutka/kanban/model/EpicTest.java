@@ -132,92 +132,43 @@ class EpicTest {
     }
 
     @Test
-    public void shouldHaveNullStartTimeWhenNoSubtasks() {
+    public void shouldHaveStartTime() {
         final Epic epic = new Epic();
 
-        final LocalDateTime actualStartTime = epic.getStartTime();
-
-        assertNull(actualStartTime, "epic has wrong start time");
-    }
-
-    @Test
-    public void shouldHaveNullStartTimeWhenNoSubtasksWithStartTime() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromEmptySubtask().build());
-        epic.setSubtasks(subtasks);
-
-        final LocalDateTime actualStartTime = epic.getStartTime();
-
-        assertNull(actualStartTime, "epic has wrong start time");
-    }
-
-    @Test
-    public void shouldHaveStartTimeWhenSubtaskWithStartTime() {
-        final Epic epic = new Epic();
-        epic.setSubtasks(testSubtasks);
-
+        epic.setStartTime(TEST_START_TIME);
         final LocalDateTime actualStartTime = epic.getStartTime();
 
         assertEquals(TEST_START_TIME, actualStartTime, "epic has wrong start time");
     }
 
     @Test
-    public void shouldHaveMinStartTimeWhenSeveralSubtasksWithStartTime() {
+    public void shouldAcceptNullStartTime() {
         final Epic epic = new Epic();
-        epic.setSubtasks(twoTestSubtasks);
 
+        epic.setStartTime(null);
         final LocalDateTime actualStartTime = epic.getStartTime();
 
-        assertEquals(TEST_START_TIME, actualStartTime, "epic has wrong start time");
+        assertNull(actualStartTime, "epic start time should be null");
     }
 
     @Test
-    public void shouldThrowWhenSetStartTime() {
+    public void shouldHaveEndTime() {
         final Epic epic = new Epic();
 
-        final Exception exception = assertThrows(UnsupportedOperationException.class,
-                () -> epic.setStartTime(TEST_START_TIME));
-        assertEquals("cannot explicitly set epic start time", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldHaveNullEndTimeWhenNoSubtasks() {
-        final Epic epic = new Epic();
-
-        final LocalDateTime actualEndTime = epic.getEndTime();
-
-        assertNull(actualEndTime, "epic has wrong end time");
-    }
-
-    @Test
-    public void shouldHaveNullEndTimeWhenNoSubtasksWithEndTime() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromEmptySubtask().build());
-        epic.setSubtasks(subtasks);
-
-        final LocalDateTime actualEndTime = epic.getEndTime();
-
-        assertNull(actualEndTime, "epic has wrong end time");
-    }
-
-    @Test
-    public void shouldHaveEndTimeWhenSubtaskWithEndTime() {
-        final Epic epic = new Epic();
-        epic.setSubtasks(testSubtasks);
-
+        epic.setEndTime(TEST_END_TIME);
         final LocalDateTime actualEndTime = epic.getEndTime();
 
         assertEquals(TEST_END_TIME, actualEndTime, "epic has wrong end time");
     }
 
     @Test
-    public void shouldHaveMaxEndTimeWhenSeveralSubtasksWithEndTime() {
+    public void shouldAcceptNullEndTime() {
         final Epic epic = new Epic();
-        epic.setSubtasks(twoTestSubtasks);
 
+        epic.setEndTime(null);
         final LocalDateTime actualEndTime = epic.getEndTime();
 
-        assertEquals(MODIFIED_END_TIME, actualEndTime, "epic has wrong start time");
+        assertNull(actualEndTime, "epic has wrong end time");
     }
 
     @Test
@@ -341,8 +292,10 @@ class EpicTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
-        final String expected = "Epic{id=null, title=null, description=null, subtasks=[], duration=null, "
-                + "startTime=null, status=NEW}";
+        final String expected = """
+                Epic{id=null, type=EPIC, title=null, description=null, subtasks=[], duration=null, startTime=null, \
+                endTime=null, status=NEW}\
+                """;
         final Epic epic = new Epic();
 
         final String actual = epic.toString();
@@ -352,9 +305,12 @@ class EpicTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        final String expectedEpicString = String.format("Epic{id=2, title=\"Title\", description.length=11, "
-                + "subtasks=%s, duration=PT30M, startTime=2000-05-01T13:30, status=IN_PROGRESS}", testSubtasks);
-        final Epic epic = fromTestEpic().withSubtasks(testSubtasks).build();
+        final String expectedEpicString = """
+                Epic{id=2, type=EPIC, title="Title", description.length=11, subtasks=%s, duration=PT30M, \
+                startTime=2000-05-01T13:30, endTime=2000-05-01T14:00, status=IN_PROGRESS}\
+                """.formatted(testSubtasks);
+        final Epic epic = fromTestEpic().withSubtasks(testSubtasks).withStartTime(TEST_START_TIME)
+                .withEndTime(TEST_END_TIME).build();
 
         final String actualString = epic.toString();
 

@@ -8,6 +8,7 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskType;
 
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -37,7 +38,7 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void removeTasks() {
         tasks.values().forEach(this::removeFromPrioritizedIfPresent);
-        tasks.values().forEach(task -> historyManager.remove(task.getId()));
+        tasks.keySet().forEach(historyManager::remove);
         tasks.clear();
     }
 
@@ -81,9 +82,9 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void removeEpics() {
         subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
-        subtasks.values().forEach(subtask -> historyManager.remove(subtask.getId()));
+        subtasks.keySet().forEach(historyManager::remove);
         subtasks.clear();
-        epics.values().forEach(epic -> historyManager.remove(epic.getId()));
+        epics.keySet().forEach(historyManager::remove);
         epics.clear();
     }
 
@@ -97,14 +98,17 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public long addEpic(Epic epic) {
         validate(epic, Mode.CREATE);
-        epics.put(epic.getId(), epic);
-        return epic.getId();
+        final long epicId = epic.getId();
+        epics.put(epicId, epic);
+        updateEpic(epicId);
+        return epicId;
     }
 
     @Override
     public void updateEpic(Epic epic) {
         validate(epic, Mode.UPDATE);
         epics.put(epic.getId(), epic);
+        updateEpic(epic.getId());
     }
 
     @Override
@@ -127,8 +131,9 @@ public class InMemoryTaskManager implements TaskManager {
     @Override
     public void removeSubtasks() {
         epics.values().forEach(epic -> epic.setSubtasks(new ArrayList<>()));
+        epics.keySet().forEach(this::updateEpic);
         subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
-        subtasks.values().forEach(subtask -> historyManager.remove(subtask.getId()));
+        subtasks.keySet().forEach(historyManager::remove);
         subtasks.clear();
     }
 
@@ -145,6 +150,7 @@ public class InMemoryTaskManager implements TaskManager {
         final Epic epic = epics.get(subtask.getEpicId());
         subtasks.put(subtask.getId(), subtask);
         epic.getSubtasks().add(subtask);
+        updateEpic(subtask.getEpicId());
         addToPrioritizedIfStartTimeNotNull(subtask);
         return subtask.getId();
     }
@@ -159,6 +165,7 @@ public class InMemoryTaskManager implements TaskManager {
         final Epic epic = epics.get(subtask.getEpicId());
         final int index = epic.getSubtasks().indexOf(subtask);
         epic.getSubtasks().set(index, subtask);
+        updateEpic(subtask.getEpicId());
     }
 
     @Override
@@ -168,6 +175,7 @@ public class InMemoryTaskManager implements TaskManager {
         final long epicId = subtask.getEpicId();
         final Epic epic = epics.get(epicId);
         epic.getSubtasks().remove(subtask);
+        updateEpic(epicId);
         historyManager.remove(id);
         removeFromPrioritizedIfPresent(subtask);
     }
@@ -305,6 +313,31 @@ public class InMemoryTaskManager implements TaskManager {
         if (task != null && task.getStartTime() != null) {
             prioritizedTasks.remove(task);
         }
+    }
+
+    protected void updateEpic(long epicId) {
+        updateEpicStartTime(epicId);
+        updateEpicEndTime(epicId);
+    }
+
+    protected void updateEpicStartTime(long epicId) {
+        Epic epic = epics.get(epicId);
+        LocalDateTime startTime = epic.getSubtasks().stream()
+                .map(Subtask::getStartTime)
+                .filter(Objects::nonNull)
+                .min(Comparator.naturalOrder())
+                .orElse(null);
+        epic.setStartTime(startTime);
+    }
+
+    protected void updateEpicEndTime(long epicId) {
+        Epic epic = epics.get(epicId);
+        LocalDateTime endTime = epic.getSubtasks().stream()
+                .map(Subtask::getEndTime)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        epic.setEndTime(endTime);
     }
 
     protected enum Mode {

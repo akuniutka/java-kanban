@@ -9,6 +9,7 @@ import io.github.akuniutka.kanban.model.Task;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static io.github.akuniutka.kanban.TestModels.*;
@@ -1070,7 +1071,8 @@ abstract class AbstractTaskManagerTest {
         final long subtaskId = manager.addSubtask(subtask);
         final Epic update = fromModifiedEpic().withId(epicId).build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
-        final Epic expectedEpic = fromModifiedEpic().withId(epicId).withSubtasks(List.of(expectedSubtask)).build();
+        final Epic expectedEpic = fromModifiedEpic().withId(epicId).withSubtasks(List.of(expectedSubtask))
+                .withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME).build();
 
         manager.updateEpic(update);
         final Epic savedEpic = manager.getEpic(epicId);
@@ -2167,6 +2169,536 @@ abstract class AbstractTaskManagerTest {
                 () -> assertTrue(subtasks.isEmpty(), "subtask removed with errors"),
                 () -> assertTrue(prioritized.isEmpty(), "subtask removed with errors")
         );
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenAddEpicAndStartTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenAddEpicAndStartTimeNotNull() {
+        final Epic epic = fromTestEpic().withId(null).withStartTime(TEST_START_TIME).build();
+
+        final long epicId = manager.addEpic(epic);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenAddSubtasksAndSubtasksStartTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenAddSubtasksAndSubtasksStartTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenAddSubtasksAndSubtasksStartTimeNotNullAndInOppositeOrder() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+
+        manager.addSubtask(subtaskC);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskA);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenUpdateSubtasksAndSubtasksStartTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).withDuration(null).withStartTime(null).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).withDuration(null).withStartTime(null).build();
+
+        manager.updateSubtask(updateB);
+        manager.updateSubtask(updateC);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenUpdateSubtasksAndSubtasksStartTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).build();
+
+        manager.updateSubtask(updateB);
+        manager.updateSubtask(updateC);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenUpdateSubtasksAndSubtasksStartTimeNotNullInOppositeOrder() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).build();
+
+        manager.updateSubtask(updateC);
+        manager.updateSubtask(updateB);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenRemoveSubtaskAndNoSubtasksLeft() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskBId);
+        manager.removeSubtask(subtaskCId);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenRemoveSubtaskAndSubtasksStartTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskBId);
+        manager.removeSubtask(subtaskCId);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenRemoveSubtaskAndMinStartTimeNotChanged() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskCId);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicMinStartTimeWhenRemoveSubtaskAndMinStartTimeChanged() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskBId);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertEquals(MODIFIED_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldRetainEpicStartTimeWhenUpdateEpicAndStartTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Epic update = fromModifiedEpic().withId(epicId).withStartTime(TEST_START_TIME).build();
+
+        manager.updateEpic(update);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldRetainEpicStartTimeWhenUpdateEpicAndStartTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Epic update = fromModifiedEpic().withId(epicId).build();
+
+        manager.updateEpic(update);
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenRemoveSubtasksAndSubtasksStartTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtasks();
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStartTimeNullWhenRemoveSubtasksAndSubtasksStartTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtasks();
+        final LocalDateTime expectedStartTime = manager.getEpic(epicId).getStartTime();
+
+        assertNull(expectedStartTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenAddEpicAndEndTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenAddEpicAndEndTimeNotNull() {
+        final Epic epic = fromTestEpic().withId(null).withEndTime(TEST_END_TIME).build();
+
+        final long epicId = manager.addEpic(epic);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenAddSubtasksAndSubtasksEndTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenAddSubtasksAndSubtasksEndTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenAddSubtasksAndSubtasksEndTimeNotNullAndInOppositeOrder() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+
+        manager.addSubtask(subtaskC);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskA);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenUpdateSubtasksAndSubtasksEndTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).withDuration(null).withStartTime(null).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).withDuration(null).withStartTime(null).build();
+
+        manager.updateSubtask(updateB);
+        manager.updateSubtask(updateC);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenUpdateSubtasksAndSubtasksEndTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).build();
+
+        manager.updateSubtask(updateB);
+        manager.updateSubtask(updateC);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenUpdateSubtasksAndSubtasksEndTimeNotNullInOppositeOrder() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).build();
+
+        manager.updateSubtask(updateC);
+        manager.updateSubtask(updateB);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenRemoveSubtaskAndNoSubtasksLeft() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskBId);
+        manager.removeSubtask(subtaskCId);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenRemoveSubtaskAndSubtasksEndTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskBId);
+        manager.removeSubtask(subtaskCId);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenRemoveSubtaskAndMaxEndTimeNotChanged() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskBId);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicMaxEndTimeWhenRemoveSubtaskAndMaxEndTimeChanged() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskCId);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertEquals(TEST_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldRetainEpicEndTimeWhenUpdateEpicAndEndTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Epic update = fromModifiedEpic().withId(epicId).withEndTime(MODIFIED_END_TIME).build();
+
+        manager.updateEpic(update);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldRetainEpicEndTimeWhenUpdateEpicAndEndTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Epic update = fromModifiedEpic().withId(epicId).build();
+
+        manager.updateEpic(update);
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenRemoveSubtasksAndSubtasksEndTimeNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtasks();
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
+    }
+
+    @Test
+    public void shouldSetEpicEndTimeNullWhenRemoveSubtasksAndSubtasksEndTimeNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtasks();
+        final LocalDateTime expectedEndTime = manager.getEpic(epicId).getEndTime();
+
+        assertNull(expectedEndTime, "wrong epic end time");
     }
 
     @Test

@@ -161,8 +161,10 @@ class SubtaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
-        final String expected = "Subtask{id=null, epicId=null, title=null, description=null, duration=null, "
-                + "startTime=null, status=null}";
+        final String expected = """
+                Subtask{id=null, type=SUBTASK, epicId=null, title=null, description=null, duration=null, \
+                startTime=null, endTime=null, status=null}\
+                """;
         final Subtask subtask = fromEmptySubtask().build();
 
         final String actual = subtask.toString();
@@ -172,8 +174,10 @@ class SubtaskTest {
 
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
-        final String expected = "Subtask{id=3, epicId=2, title=\"Title\", description.length=11, duration=PT30M, "
-                + "startTime=2000-05-01T13:30, status=IN_PROGRESS}";
+        final String expected = """
+                Subtask{id=3, type=SUBTASK, epicId=2, title="Title", description.length=11, duration=PT30M, \
+                startTime=2000-05-01T13:30, endTime=2000-05-01T14:00, status=IN_PROGRESS}\
+                """;
         final Subtask subtask = fromTestSubtask().build();
 
         final String actual = subtask.toString();
