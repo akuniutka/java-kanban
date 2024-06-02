@@ -8,6 +8,7 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskType;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -316,8 +317,19 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     protected void updateEpic(long epicId) {
+        updateEpicDuration(epicId);
         updateEpicStartTime(epicId);
         updateEpicEndTime(epicId);
+    }
+
+    protected void updateEpicDuration(long epicId) {
+        Epic epic = epics.get(epicId);
+        Duration duration = epic.getSubtasks().stream()
+                .map(Subtask::getDuration)
+                .filter(Objects::nonNull)
+                .reduce(Duration::plus)
+                .orElse(null);
+        epic.setDuration(duration);
     }
 
     protected void updateEpicStartTime(long epicId) {

@@ -12,12 +12,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class EpicTest {
     private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
     private final List<Subtask> testSubtasks;
-    private final List<Subtask> twoTestSubtasks;
 
     public EpicTest() {
         this.testSubtasks = List.of(fromTestSubtask().build());
-        this.twoTestSubtasks = List.of(fromTestSubtask().build(),
-                fromModifiedSubtask().withId(ANOTHER_TEST_ID).build());
     }
 
     @Test
@@ -83,52 +80,23 @@ class EpicTest {
     }
 
     @Test
-    public void shouldHaveNullDurationWhenNoSubtasks() {
+    public void shouldHaveDuration() {
         final Epic epic = new Epic();
 
-        final Duration actualDuration = epic.getDuration();
-
-        assertNull(actualDuration, "epic has wrong duration");
-    }
-
-    @Test
-    public void shouldHaveNullDurationWhenNoSubtaskWithDuration() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromEmptySubtask().build());
-        epic.setSubtasks(subtasks);
-
-        final Duration actualDuration = epic.getDuration();
-
-        assertNull(actualDuration, "epic has wrong duration");
-    }
-
-    @Test
-    public void shouldHaveDurationWhenSubtaskWithDuration() {
-        final Epic epic = new Epic();
-        epic.setSubtasks(testSubtasks);
-
+        epic.setDuration(TEST_DURATION);
         final Duration actualDuration = epic.getDuration();
 
         assertEquals(TEST_DURATION, actualDuration, "epic has wrong duration");
     }
 
     @Test
-    public void shouldHaveAggregateDurationWhenSeveralSubtasksWithDuration() {
+    public void shouldAcceptNullDuration() {
         final Epic epic = new Epic();
-        epic.setSubtasks(twoTestSubtasks);
 
+        epic.setDuration(null);
         final Duration actualDuration = epic.getDuration();
 
-        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), actualDuration, "epic has wrong duration");
-    }
-
-    @Test
-    public void shouldThrowWhenSetDuration() {
-        final Epic epic = new Epic();
-
-        final Exception exception = assertThrows(UnsupportedOperationException.class,
-                () -> epic.setDuration(TEST_DURATION));
-        assertEquals("cannot explicitly set epic duration", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        assertNull(actualDuration, "epic duration should be null");
     }
 
     @Test
@@ -168,7 +136,7 @@ class EpicTest {
         epic.setEndTime(null);
         final LocalDateTime actualEndTime = epic.getEndTime();
 
-        assertNull(actualEndTime, "epic has wrong end time");
+        assertNull(actualEndTime, "epic end time should be null");
     }
 
     @Test
@@ -309,8 +277,8 @@ class EpicTest {
                 Epic{id=2, type=EPIC, title="Title", description.length=11, subtasks=%s, duration=PT30M, \
                 startTime=2000-05-01T13:30, endTime=2000-05-01T14:00, status=IN_PROGRESS}\
                 """.formatted(testSubtasks);
-        final Epic epic = fromTestEpic().withSubtasks(testSubtasks).withStartTime(TEST_START_TIME)
-                .withEndTime(TEST_END_TIME).build();
+        final Epic epic = fromTestEpic().withSubtasks(testSubtasks).withDuration(TEST_DURATION)
+                .withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME).build();
 
         final String actualString = epic.toString();
 

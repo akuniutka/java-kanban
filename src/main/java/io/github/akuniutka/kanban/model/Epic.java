@@ -1,6 +1,5 @@
 package io.github.akuniutka.kanban.model;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,20 +27,6 @@ public class Epic extends Task {
     public void setSubtasks(List<Subtask> subtasks) {
         Objects.requireNonNull(subtasks, "list of subtasks cannot be null");
         this.subtasks = subtasks;
-    }
-
-    @Override
-    public Duration getDuration() {
-        return subtasks.stream()
-                .map(Subtask::getDuration)
-                .filter(Objects::nonNull)
-                .reduce(Duration::plus)
-                .orElse(null);
-    }
-
-    @Override
-    public void setDuration(Duration duration) {
-        throw new UnsupportedOperationException("cannot explicitly set epic duration");
     }
 
     @Override
