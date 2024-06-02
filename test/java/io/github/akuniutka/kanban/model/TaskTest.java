@@ -136,7 +136,7 @@ public class TaskTest {
     @Test
     public void shouldBeEqualWhenEqualIds() {
         final Task task = fromTestTask().build();
-        final Task anotherTask = fromEmptyTask().withId(TEST_TASK_ID).build();
+        final Task anotherTask = fromModifiedTask().build();
 
         assertEquals(task, anotherTask, "tasks with same id must be considered equal");
     }
@@ -155,7 +155,7 @@ public class TaskTest {
                 Task{id=null, type=TASK, title=null, description=null, duration=null, startTime=null, endTime=null, \
                 status=null}\
                 """;
-        final Task task = fromEmptyTask().build();
+        final Task task = new Task();
 
         final String actual = task.toString();
 

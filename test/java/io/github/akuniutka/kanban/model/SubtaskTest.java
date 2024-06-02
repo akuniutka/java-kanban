@@ -146,7 +146,7 @@ class SubtaskTest {
     @Test
     public void shouldBeEqualWhenEqualIds() {
         final Subtask subtask = fromTestSubtask().build();
-        final Subtask anotherSubtask = fromEmptySubtask().withId(TEST_SUBTASK_ID).build();
+        final Subtask anotherSubtask = fromModifiedSubtask().build();
 
         assertEquals(subtask, anotherSubtask, "subtasks with same id must be considered equal");
     }
@@ -165,7 +165,7 @@ class SubtaskTest {
                 Subtask{id=null, type=SUBTASK, epicId=null, title=null, description=null, duration=null, \
                 startTime=null, endTime=null, status=null}\
                 """;
-        final Subtask subtask = fromEmptySubtask().build();
+        final Subtask subtask = new Subtask();
 
         final String actual = subtask.toString();
 

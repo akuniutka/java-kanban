@@ -5,6 +5,7 @@ import io.github.akuniutka.kanban.exception.ManagerSaveException;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
+import io.github.akuniutka.kanban.model.TaskStatus;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -76,10 +77,10 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     public void shouldSaveWhenAddTaskAndFieldsNull() throws IOException {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
-                %d,TASK,null,null,null,null,null,
+                %d,TASK,null,NEW,null,null,null,
                 """;
 
-        final long taskId = manager.addTask(fromEmptyTask().build());
+        final long taskId = manager.addTask(fromEmptyTask().withStatus(TaskStatus.NEW).build());
 
         expectedString = expectedString.formatted(taskId);
         final String actualString = Files.readString(path);
@@ -196,10 +197,10 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 %%d,EPIC,"%s",,"%s",,,
-                %%d,SUBTASK,null,null,null,null,null,%%d
+                %%d,SUBTASK,null,NEW,null,null,null,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
         final long epicId = manager.addEpic(testEpic);
-        final Subtask subtask = fromEmptySubtask().withEpicId(epicId).build();
+        final Subtask subtask = fromEmptySubtask().withEpicId(epicId).withStatus(TaskStatus.NEW).build();
 
         final long subtaskId = manager.addSubtask(subtask);
 
@@ -524,6 +525,19 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldNotLoadTaskWhenStatusNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,TASK,"Title",null,"Description",30,2000-05-01T13:30,
+                """);
+        final String expectedMessage = "status cannot be null for id=1";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldNotLoadTaskWhenDescriptionDoesNotStartWithQuote() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -837,11 +851,11 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldLoadTaskToGetAndTasksNotPrioritizedWhenFieldsNull() throws IOException {
-        final Task expectedTask = fromEmptyTask().withId(TEST_TASK_ID).build();
+        final Task expectedTask = fromEmptyTask().withId(TEST_TASK_ID).withStatus(TaskStatus.NEW).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
-                1,TASK,null,null,null,null,null,
+                1,TASK,null,NEW,null,null,null,
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
@@ -1354,6 +1368,20 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
+    public void shouldNotLoadSubtaskWhenStatusNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                2,EPIC,null,,null,,,
+                3,SUBTASK,"Title",null,"Description",30,2000-05-01T13:30,2
+                """);
+        final String expectedMessage = "status cannot be null for id=3";
+
+        final Exception exception = assertThrows(ManagerLoadException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
     public void shouldNotLoadSubtaskWhenDescriptionDoesNotStartWithQuote() throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -1758,12 +1786,13 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldLoadSubtaskToGetAndEpicAndSubtasksNotPrioritizedWhenFieldsNull() throws IOException {
-        final Subtask expectedSubtask = fromEmptySubtask().withId(TEST_SUBTASK_ID).withEpicId(TEST_EPIC_ID).build();
+        final Subtask expectedSubtask = fromEmptySubtask().withId(TEST_SUBTASK_ID).withEpicId(TEST_EPIC_ID)
+                .withStatus(TaskStatus.NEW).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
                 2,EPIC,"Title",,"Description",,,
-                3,SUBTASK,null,null,null,null,null,2
+                3,SUBTASK,null,NEW,null,null,null,2
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
