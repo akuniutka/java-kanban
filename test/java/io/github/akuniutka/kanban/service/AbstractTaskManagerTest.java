@@ -1072,7 +1072,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).build();
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
         final Epic expectedEpic = fromModifiedEpic().withId(epicId).withSubtasks(List.of(expectedSubtask))
-                .withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME).build();
+                .withDuration(TEST_DURATION).withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME).build();
 
         manager.updateEpic(update);
         final Epic savedEpic = manager.getEpic(epicId);
@@ -2169,6 +2169,234 @@ abstract class AbstractTaskManagerTest {
                 () -> assertTrue(subtasks.isEmpty(), "subtask removed with errors"),
                 () -> assertTrue(prioritized.isEmpty(), "subtask removed with errors")
         );
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenAddEpicAndDurationNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenAddEpicAndDurationNotNull() {
+        final Epic epic = fromTestEpic().withId(null).withDuration(TEST_DURATION).build();
+
+        final long epicId = manager.addEpic(epic);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenAddSubtasksAndSubtasksDurationNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNotNullWhenAddSubtasksAndSubtasksDurationNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenUpdateSubtasksAndSubtasksDurationNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).withDuration(null).withStartTime(null).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).withDuration(null).withStartTime(null).build();
+
+        manager.updateSubtask(updateB);
+        manager.updateSubtask(updateC);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNotNullWhenUpdateSubtasksAndSubtasksDurationNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+        final Subtask updateB = fromTestSubtask().withId(subtaskBId).build();
+        final Subtask updateC = fromModifiedSubtask().withId(subtaskCId).build();
+
+        manager.updateSubtask(updateB);
+        manager.updateSubtask(updateC);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenRemoveSubtaskAndNoSubtasksLeft() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskBId);
+        manager.removeSubtask(subtaskCId);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenRemoveSubtaskAndSubtasksDurationNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        final long subtaskCId = manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskBId);
+        manager.removeSubtask(subtaskCId);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNotNullWhenRemoveSubtaskAndAggregateDurationNotChanged() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNotNullWhenRemoveSubtaskAndAggregateDurationChanged() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskAId = manager.addSubtask(subtaskA);
+        final long subtaskBId = manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtask(subtaskAId);
+        manager.removeSubtask(subtaskBId);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertEquals(MODIFIED_DURATION, expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldRetainEpicDurationWhenUpdateEpicAndDurationNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Epic update = fromModifiedEpic().withId(epicId).withDuration(TEST_DURATION).build();
+
+        manager.updateEpic(update);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldRetainEpicDurationWhenUpdateEpicAndDurationNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+        final Epic update = fromModifiedEpic().withId(epicId).build();
+
+        manager.updateEpic(update);
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenRemoveSubtasksAndSubtasksDurationNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).withDuration(null)
+                .withStartTime(null).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtasks();
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenRemoveSubtasksAndSubtasksDurationNotNull() {
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromEmptySubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskC = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+        manager.addSubtask(subtaskC);
+
+        manager.removeSubtasks();
+        final Duration expectedDuration = manager.getEpic(epicId).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
     }
 
     @Test

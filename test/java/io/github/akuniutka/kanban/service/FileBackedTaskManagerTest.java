@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -1859,6 +1860,51 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 () -> assertListEquals(expectedSubtasks, subtasks, "subtask loaded with errors"),
                 () -> assertListEquals(expectedPrioritized, prioritized, "subtask loaded with errors")
         );
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenLoadNoSubtasks() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Duration expectedDuration = manager.getEpic(1L).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNullWhenLoadSubtasksAndSubtasksDurationNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",null,null,1
+                4,SUBTASK,"Modified Title",DONE,"Modified Description",null,null,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Duration expectedDuration = manager.getEpic(1L).getDuration();
+
+        assertNull(expectedDuration, "wrong epic duration");
+    }
+
+    @Test
+    public void shouldSetEpicDurationNotNullWhenLoadSubtasksAndSubtasksDurationNotNull() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,1
+                4,SUBTASK,"Modified Title",DONE,"Modified Description",90,2000-05-01T15:00,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final Duration expectedDuration = manager.getEpic(1L).getDuration();
+
+        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), expectedDuration, "wrong epic duration");
     }
 
     @Test

@@ -3,6 +3,7 @@ package io.github.akuniutka.kanban;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public class EpicBuilder {
     private String title;
     private String description;
     private List<Subtask> subtasks;
+    private Duration duration;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
@@ -34,6 +36,11 @@ public class EpicBuilder {
         return this;
     }
 
+    public EpicBuilder withDuration(Duration duration) {
+        this.duration = duration;
+        return this;
+    }
+
     public EpicBuilder withStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
         return this;
@@ -52,6 +59,7 @@ public class EpicBuilder {
         epic.setTitle(title);
         epic.setDescription(description);
         epic.setSubtasks(subtasks);
+        epic.setDuration(duration);
         epic.setStartTime(startTime);
         epic.setEndTime(endTime);
         return epic;
