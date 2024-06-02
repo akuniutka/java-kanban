@@ -223,9 +223,9 @@ class EpicTest {
     @Test
     public void shouldHaveStatusInProgressWhenSubtasksHaveStatusNewAndDoneAndInProgress() {
         final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().withStatus(TaskStatus.NEW).build(),
-                fromModifiedSubtask().withStatus(TaskStatus.DONE).build(),
-                fromEmptySubtask().withStatus(TaskStatus.IN_PROGRESS).build());
+        final List<Subtask> subtasks = List.of(fromTestSubtask().build(),
+                fromModifiedSubtask().build(),
+                fromEmptySubtask().withStatus(TaskStatus.NEW).build());
         epic.setSubtasks(subtasks);
 
         final TaskStatus actualStatus = epic.getStatus();

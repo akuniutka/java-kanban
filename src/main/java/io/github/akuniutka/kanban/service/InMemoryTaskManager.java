@@ -203,6 +203,7 @@ public class InMemoryTaskManager implements TaskManager {
         validateSubtasks(task, mode);
         validateEpicId(task, mode);
         validateDurationAndStartTime(task);
+        validateStatus(task);
     }
 
     protected void validateId(Task task, Mode mode) {
@@ -257,6 +258,12 @@ public class InMemoryTaskManager implements TaskManager {
         }
         task.setStartTime(task.getStartTime().truncatedTo(ChronoUnit.MINUTES));
         requireDoesNotOverlapOtherTasks(task);
+    }
+
+    protected void validateStatus(Task task) {
+        if (task.getType() != TaskType.EPIC && task.getStatus() == null) {
+            throw new ManagerValidationException("status cannot be null");
+        }
     }
 
     protected void requireIdNotExist(Long id) {

@@ -12,10 +12,6 @@ public class Task {
     private LocalDateTime startTime;
     private TaskStatus status;
 
-    public Task() {
-        this.status = TaskStatus.NEW;
-    }
-
     public Long getId() {
         return id;
     }
