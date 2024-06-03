@@ -3,14 +3,13 @@ package io.github.akuniutka.kanban.model;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Epic extends Task {
-    private List<Subtask> subtasks;
+    private List<Long> subtaskIds;
     private LocalDateTime endTime;
 
     public Epic() {
-        this.subtasks = new ArrayList<>();
+        this.subtaskIds = new ArrayList<>();
     }
 
     @Override
@@ -18,13 +17,12 @@ public class Epic extends Task {
         return TaskType.EPIC;
     }
 
-    public List<Subtask> getSubtasks() {
-        return subtasks;
+    public List<Long> getSubtaskIds() {
+        return subtaskIds;
     }
 
-    public void setSubtasks(List<Subtask> subtasks) {
-        Objects.requireNonNull(subtasks, "list of subtasks cannot be null");
-        this.subtasks = subtasks;
+    public void setSubtaskIds(List<Long> subtasks) {
+        this.subtaskIds = subtasks;
     }
 
     @Override
@@ -39,10 +37,10 @@ public class Epic extends Task {
     @Override
     public String toString() {
         return """
-                Epic{id=%s, type=%s, title=%s, description%s, subtasks=%s, duration=%s, startTime=%s, endTime=%s, \
+                Epic{id=%s, type=%s, title=%s, description%s, subtaskIds=%s, duration=%s, startTime=%s, endTime=%s, \
                 status=%s}\
                 """.formatted(getId(), getType(), getTitle() == null ? "null" : "\"" + getTitle() + "\"",
-                getDescription() == null ? "=null" : ".length=" + getDescription().length(), subtasks, getDuration(),
+                getDescription() == null ? "=null" : ".length=" + getDescription().length(), subtaskIds, getDuration(),
                 getStartTime(), getEndTime(), getStatus());
     }
 }
