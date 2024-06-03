@@ -7,6 +7,8 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.model.TaskStatus;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -310,6 +312,13 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         final Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(Paths.get(filename), historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenHistoryManagerNull() {
+        final Exception exception = assertThrows(NullPointerException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, null));
+        assertEquals("cannot start: history manager is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -1174,7 +1183,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldLoadEpicToGetAndEpics() throws IOException {
-        final Epic expectedEpic = fromTestEpic().build();
+        final Epic expectedEpic = fromTestEpic().withStatus(TaskStatus.NEW).build();
         final List<Epic> expectedEpics = List.of(expectedEpic);
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -1193,7 +1202,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldLoadEpicToGetAndEpicsWhenFieldsNull() throws IOException {
-        final Epic expectedEpic = fromEmptyEpic().withId(TEST_EPIC_ID).build();
+        final Epic expectedEpic = fromEmptyEpic().withId(TEST_EPIC_ID).withStatus(TaskStatus.NEW).build();
         final List<Epic> expectedEpics = List.of(expectedEpic);
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
@@ -1899,9 +1908,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Duration expectedDuration = manager.getEpic(1L).getDuration();
+        final Duration duration = manager.getEpic(1L).getDuration();
 
-        assertNull(expectedDuration, "wrong epic duration");
+        assertNull(duration, "wrong epic duration");
     }
 
     @Test
@@ -1915,9 +1924,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Duration expectedDuration = manager.getEpic(1L).getDuration();
+        final Duration duration = manager.getEpic(1L).getDuration();
 
-        assertNull(expectedDuration, "wrong epic duration");
+        assertNull(duration, "wrong epic duration");
     }
 
     @Test
@@ -1931,9 +1940,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Duration expectedDuration = manager.getEpic(1L).getDuration();
+        final Duration duration = manager.getEpic(1L).getDuration();
 
-        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), expectedDuration, "wrong epic duration");
+        assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), duration, "wrong epic duration");
     }
 
     @Test
@@ -1944,9 +1953,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpic(1L).getStartTime();
 
-        assertNull(expectedStartTime, "wrong epic start time");
+        assertNull(startTime, "wrong epic start time");
     }
 
     @Test
@@ -1960,9 +1969,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpic(1L).getStartTime();
 
-        assertNull(expectedStartTime, "wrong epic start time");
+        assertNull(startTime, "wrong epic start time");
     }
 
     @Test
@@ -1976,9 +1985,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpic(1L).getStartTime();
 
-        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+        assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
 
     @Test
@@ -1993,9 +2002,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedStartTime = manager.getEpic(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpic(1L).getStartTime();
 
-        assertEquals(TEST_START_TIME, expectedStartTime, "wrong epic start time");
+        assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
 
     @Test
@@ -2006,9 +2015,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpic(1L).getEndTime();
 
-        assertNull(expectedEndTime, "wrong epic end time");
+        assertNull(endTime, "wrong epic end time");
     }
 
     @Test
@@ -2022,9 +2031,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpic(1L).getEndTime();
 
-        assertNull(expectedEndTime, "wrong epic end time");
+        assertNull(endTime, "wrong epic end time");
     }
 
     @Test
@@ -2038,9 +2047,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpic(1L).getEndTime();
 
-        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic end time");
+        assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
 
     @Test
@@ -2054,9 +2063,56 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime expectedEndTime = manager.getEpic(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpic(1L).getEndTime();
 
-        assertEquals(MODIFIED_END_TIME, expectedEndTime, "wrong epic start time");
+        assertEquals(MODIFIED_END_TIME, endTime, "wrong epic start time");
+    }
+
+    @Test
+    public void shouldSetEpicStatusNewWhenLoadNoSubtasks() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final TaskStatus actualStatus = manager.getEpic(1L).getStatus();
+
+        assertEquals(TaskStatus.NEW, actualStatus, "wrong epic status");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"NEW,NEW", "NEW,IN_PROGRESS", "NEW,DONE", "IN_PROGRESS,NEW", "IN_PROGRESS,IN_PROGRESS",
+            "IN_PROGRESS,DONE", "DONE,NEW", "DONE,IN_PROGRESS", "DONE,DONE"})
+    public void shouldSetEpicStatusWhenLoadSubtask(TaskStatus statusA, TaskStatus statusB) throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,"Title",%s,"Description",30,2000-05-01T13:30,1
+                3,SUBTASK,"Modified Title",%s,"Modified Description",90,2000-05-01T15:00,1
+                """.formatted(statusA, statusB));
+        final TaskStatus expectedStatus = statusA == statusB ? statusA : TaskStatus.IN_PROGRESS;
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final TaskStatus actualStatus = manager.getEpic(1L).getStatus();
+
+        assertEquals(expectedStatus, actualStatus, "wrong epic status");
+    }
+
+    @Test
+    public void shouldSetEpicStatusInProgressWhenLoadSubtaskAndAllStatuses() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                1,EPIC,"Title",,"Description",,,
+                2,SUBTASK,null,NEW,null,null,null,1
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,1
+                4,SUBTASK,"Modified Title",DONE,"Modified Description",90,2000-05-01T15:00,1
+                """);
+
+        manager = FileBackedTaskManager.loadFromFile(path, historyManager);
+        final TaskStatus actualStatus = manager.getEpic(1L).getStatus();
+
+        assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "wrong epic status");
     }
 
     @Test
