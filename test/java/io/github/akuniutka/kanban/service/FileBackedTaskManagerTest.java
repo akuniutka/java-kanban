@@ -9,6 +9,7 @@ import io.github.akuniutka.kanban.model.TaskStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -676,104 +677,16 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
-    @Test
-    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskCoversStartTime() throws IOException {
+    @ParameterizedTest
+    @MethodSource("io.github.akuniutka.kanban.TestModels#getOverlappingTimeSlots")
+    public void shouldNotLoadTaskWhenOverlapAnotherPrioritizedTask(Duration duration, LocalDateTime startTime)
+            throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
                 2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:15,2
+                3,SUBTASK,"Title",IN_PROGRESS,"Description",%s,%s,2
                 1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=1000";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskCoversEndTime() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:45,2
-                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=1000";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskCoversWholeInterval() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",60,2000-05-01T13:15,2
-                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=1000";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithinInterval() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:35,2
-                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=1000";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:30,2
-                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=1000";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:40,2
-                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=1000";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadTaskWhenAnotherPrioritizedTaskWithSameInterval() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                1000,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                """);
+                """.formatted(duration.toMinutes(), startTime));
         final String expectedMessage = "conflict with another task for time slot for id=1000";
 
         final Exception exception = assertThrows(ManagerLoadException.class,
@@ -1530,104 +1443,16 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
-    @Test
-    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskCoversStartTime() throws IOException {
+    @ParameterizedTest
+    @MethodSource("io.github.akuniutka.kanban.TestModels#getOverlappingTimeSlots")
+    public void shouldNotLoadSubtaskWhenOverlapAnotherPrioritizedTask(Duration duration, LocalDateTime startTime)
+            throws IOException {
         fillTestFileWithData("""
                 id,type,name,status,description,duration,start,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:15,
+                1,TASK,"Title",IN_PROGRESS,"Description",%s,%s,
                 2,EPIC,null,,null,,,
                 3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=3";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskCoversEndTime() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:45,
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=3";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskCoversWholeInterval() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",60,2000-05-01T13:15,
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=3";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithinInterval() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:35,
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=3";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithinIntervalLeftAligned() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:30,
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=3";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithinIntervalRightAligned() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",20,2000-05-01T13:40,
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                """);
-        final String expectedMessage = "conflict with another task for time slot for id=3";
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotLoadSubtaskWhenAnotherPrioritizedTaskWithSameInterval() throws IOException {
-        fillTestFileWithData("""
-                id,type,name,status,description,duration,start,epic
-                1,TASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,
-                2,EPIC,null,,null,,,
-                3,SUBTASK,"Title",IN_PROGRESS,"Description",30,2000-05-01T13:30,2
-                """);
+                """.formatted(duration.toMinutes(), startTime));
         final String expectedMessage = "conflict with another task for time slot for id=3";
 
         final Exception exception = assertThrows(ManagerLoadException.class,
