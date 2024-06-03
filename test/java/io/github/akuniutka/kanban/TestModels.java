@@ -1,11 +1,13 @@
 package io.github.akuniutka.kanban;
 
 import io.github.akuniutka.kanban.model.*;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -111,5 +113,17 @@ public final class TestModels {
         for (int i = 0; i < expected.size(); i++) {
             assertTaskEquals(expected.get(i), actual.get(i), message);
         }
+    }
+
+    public static Stream<Arguments> getOverlappingTimeSlots() {
+        return Stream.of(
+                Arguments.of(TEST_DURATION, TEST_START_TIME.minusMinutes(15L)),
+                Arguments.of(TEST_DURATION, TEST_START_TIME.plusMinutes(15L)),
+                Arguments.of(Duration.ofMinutes(60L), TEST_START_TIME.minusMinutes(15L)),
+                Arguments.of(Duration.ofMinutes(20L), TEST_START_TIME.plusMinutes(5L)),
+                Arguments.of(Duration.ofMinutes(20L), TEST_START_TIME),
+                Arguments.of(Duration.ofMinutes(20L), TEST_START_TIME.plusMinutes(10L)),
+                Arguments.of(TEST_DURATION, TEST_START_TIME)
+        );
     }
 }
