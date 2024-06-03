@@ -10,11 +10,10 @@ import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EpicTest {
-    private static final String WRONG_EXCEPTION_MESSAGE = "message for exception is wrong";
-    private final List<Subtask> testSubtasks;
+    private final List<Long> testSubtaskIds;
 
     public EpicTest() {
-        this.testSubtasks = List.of(fromTestSubtask().build());
+        this.testSubtaskIds = List.of(TEST_SUBTASK_ID);
     }
 
     @Test
@@ -61,22 +60,13 @@ class EpicTest {
     }
 
     @Test
-    public void shouldKeepSubtasks() {
-        final List<Subtask> expectedSubtasks = List.of(fromTestSubtask().build());
+    public void shouldKeepSubtaskIds() {
         final Epic epic = new Epic();
 
-        epic.setSubtasks(testSubtasks);
-        final List<Subtask> actualSubtasks = epic.getSubtasks();
+        epic.setSubtaskIds(testSubtaskIds);
+        final List<Long> actualSubtaskIds = epic.getSubtaskIds();
 
-        assertListEquals(expectedSubtasks, actualSubtasks, "epic has wrong list of subtasks");
-    }
-
-    @Test
-    public void shouldThrowWhenSubtasksNull() {
-        final Epic epic = new Epic();
-
-        final Exception exception = assertThrows(NullPointerException.class, () -> epic.setSubtasks(null));
-        assertEquals("list of subtasks cannot be null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        assertEquals(testSubtaskIds, actualSubtaskIds, "epic has wrong list of subtasks");
     }
 
     @Test
@@ -161,7 +151,7 @@ class EpicTest {
 
     @Test
     public void shouldBeEqualWhenEqualIds() {
-        final Epic epic = fromTestEpic().withSubtasks(testSubtasks).build();
+        final Epic epic = fromTestEpic().withSubtaskIds(testSubtaskIds).build();
         final Epic anotherEpic = fromEmptyEpic().withId(TEST_EPIC_ID).build();
 
         assertEquals(epic, anotherEpic, "epics with same id must be considered equal");
@@ -169,8 +159,8 @@ class EpicTest {
 
     @Test
     public void shouldNotBeEqualWhenNotEqualIds() {
-        final Epic epic = fromTestEpic().withSubtasks(testSubtasks).build();
-        final Epic anotherEpic = fromTestEpic().withId(ANOTHER_TEST_ID).withSubtasks(testSubtasks).build();
+        final Epic epic = fromTestEpic().withSubtaskIds(testSubtaskIds).build();
+        final Epic anotherEpic = fromTestEpic().withId(ANOTHER_TEST_ID).withSubtaskIds(testSubtaskIds).build();
 
         assertNotEquals(epic, anotherEpic, "epics with different ids may not considered equal");
     }
@@ -178,7 +168,7 @@ class EpicTest {
     @Test
     public void shouldConvertToStringWhenFieldsNull() {
         final String expected = """
-                Epic{id=null, type=EPIC, title=null, description=null, subtasks=[], duration=null, startTime=null, \
+                Epic{id=null, type=EPIC, title=null, description=null, subtaskIds=[], duration=null, startTime=null, \
                 endTime=null, status=null}\
                 """;
         final Epic epic = new Epic();
@@ -191,10 +181,10 @@ class EpicTest {
     @Test
     public void shouldConvertToStringWhenFieldsNonNull() {
         final String expectedEpicString = """
-                Epic{id=2, type=EPIC, title="Title", description.length=11, subtasks=%s, duration=PT30M, \
+                Epic{id=2, type=EPIC, title="Title", description.length=11, subtaskIds=%s, duration=PT30M, \
                 startTime=2000-05-01T13:30, endTime=2000-05-01T14:00, status=IN_PROGRESS}\
-                """.formatted(testSubtasks);
-        final Epic epic = fromTestEpic().withSubtasks(testSubtasks).withDuration(TEST_DURATION)
+                """.formatted(testSubtaskIds);
+        final Epic epic = fromTestEpic().withSubtaskIds(testSubtaskIds).withDuration(TEST_DURATION)
                 .withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME).withStatus(TaskStatus.IN_PROGRESS).build();
 
         final String actualString = epic.toString();

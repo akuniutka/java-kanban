@@ -829,8 +829,7 @@ abstract class AbstractTaskManagerTest {
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
         final long subtaskId = manager.addSubtask(subtask);
         final Epic update = fromModifiedEpic().withId(epicId).build();
-        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
-        final Epic expectedEpic = fromModifiedEpic().withId(epicId).withSubtasks(List.of(expectedSubtask))
+        final Epic expectedEpic = fromModifiedEpic().withId(epicId).withSubtaskIds(List.of(subtaskId))
                 .withDuration(TEST_DURATION).withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME)
                 .withStatus(TaskStatus.IN_PROGRESS).build();
 

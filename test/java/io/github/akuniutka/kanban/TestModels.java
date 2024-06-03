@@ -47,17 +47,17 @@ public final class TestModels {
     }
 
     public static EpicBuilder fromEmptyEpic() {
-        return new EpicBuilder().withSubtasks(Collections.emptyList());
+        return new EpicBuilder().withSubtaskIds(Collections.emptyList());
     }
 
     public static EpicBuilder fromTestEpic() {
         return new EpicBuilder().withId(TEST_EPIC_ID).withTitle(TEST_TITLE).withDescription(TEST_DESCRIPTION)
-                .withSubtasks(Collections.emptyList());
+                .withSubtaskIds(Collections.emptyList());
     }
 
     public static EpicBuilder fromModifiedEpic() {
         return new EpicBuilder().withId(TEST_EPIC_ID).withTitle(MODIFIED_TITLE).withDescription(MODIFIED_DESCRIPTION)
-                .withSubtasks(Collections.emptyList());
+                .withSubtaskIds(Collections.emptyList());
     }
 
     public static SubtaskBuilder fromEmptySubtask() {
@@ -98,7 +98,7 @@ public final class TestModels {
                 () -> {
                     if (expected.getType() == TaskType.EPIC) {
                         assert expected instanceof Epic;
-                        assertListEquals(((Epic) expected).getSubtasks(), ((Epic) actual).getSubtasks(),
+                        assertEquals(((Epic) expected).getSubtaskIds(), ((Epic) actual).getSubtaskIds(),
                                 "wrong subtask list");
                     }
                 });
