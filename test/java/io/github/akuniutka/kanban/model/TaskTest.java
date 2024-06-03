@@ -20,9 +20,19 @@ public class TaskTest {
         final Task task = new Task();
 
         task.setId(TEST_TASK_ID);
-        final long actualId = task.getId();
+        final Long actualId = task.getId();
 
         assertEquals(TEST_TASK_ID, actualId, "task has wrong id");
+    }
+
+    @Test
+    public void shouldAcceptNullId() {
+        final Task task = new Task();
+
+        task.setId(null);
+        final Long actualId = task.getId();
+
+        assertNull(actualId, "task id should be null");
     }
 
     @Test
@@ -43,6 +53,16 @@ public class TaskTest {
     }
 
     @Test
+    public void shouldAcceptNullTitle() {
+        final Task task = new Task();
+
+        task.setTitle(null);
+        final String actualTitle = task.getTitle();
+
+        assertNull(actualTitle, "task title should be null");
+    }
+
+    @Test
     public void shouldHaveDescription() {
         final Task task = new Task();
 
@@ -50,6 +70,16 @@ public class TaskTest {
         final String actualDescription = task.getDescription();
 
         assertEquals(TEST_DESCRIPTION, actualDescription, "task has wrong description");
+    }
+
+    @Test
+    public void shouldAcceptNullDescription() {
+        final Task task = new Task();
+
+        task.setDescription(null);
+        final String actualDescription = task.getDescription();
+
+        assertNull(actualDescription, "task description should be null");
     }
 
     @Test
@@ -131,6 +161,16 @@ public class TaskTest {
         final TaskStatus actualStatus = task.getStatus();
 
         assertEquals(TEST_STATUS, actualStatus, "task has wrong status");
+    }
+
+    @Test
+    public void shouldAcceptNullStatus() {
+        final Task task = new Task();
+
+        task.setStatus(null);
+        final TaskStatus actualStatus = task.getStatus();
+
+        assertNull(actualStatus, "task status should be null");
     }
 
     @Test

@@ -12,7 +12,7 @@ public class Subtask extends Task {
         return epicId;
     }
 
-    public void setEpicId(long epicId) {
+    public void setEpicId(Long epicId) {
         this.epicId = epicId;
     }
 

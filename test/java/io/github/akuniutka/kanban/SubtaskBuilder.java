@@ -52,12 +52,8 @@ public class SubtaskBuilder {
 
     public Subtask build() {
         Subtask subtask = new Subtask();
-        if (id != null) {
-            subtask.setId(id);
-        }
-        if (epicId != null) {
-            subtask.setEpicId(epicId);
-        }
+        subtask.setId(id);
+        subtask.setEpicId(epicId);
         subtask.setTitle(title);
         subtask.setDescription(description);
         subtask.setDuration(duration);

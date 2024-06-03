@@ -824,7 +824,7 @@ abstract class AbstractTaskManagerTest {
     }
 
     @Test
-    public void shouldRetainEpicSubtasksWhenUpdate() {
+    public void shouldRetainEpicSubtaskIdsWhenUpdate() {
         final long epicId = manager.addEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
         final long subtaskId = manager.addSubtask(subtask);
