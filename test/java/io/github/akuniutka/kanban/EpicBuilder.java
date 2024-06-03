@@ -2,6 +2,7 @@ package io.github.akuniutka.kanban;
 
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
+import io.github.akuniutka.kanban.model.TaskStatus;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ public class EpicBuilder {
     private Duration duration;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private TaskStatus status;
 
     public EpicBuilder withId(Long id) {
         this.id = id;
@@ -51,6 +53,11 @@ public class EpicBuilder {
         return this;
     }
 
+    public EpicBuilder withStatus(TaskStatus status) {
+        this.status = status;
+        return this;
+    }
+
     public Epic build() {
         Epic epic = new Epic();
         if (id != null) {
@@ -62,6 +69,7 @@ public class EpicBuilder {
         epic.setDuration(duration);
         epic.setStartTime(startTime);
         epic.setEndTime(endTime);
+        epic.setStatus(status);
         return epic;
     }
 }

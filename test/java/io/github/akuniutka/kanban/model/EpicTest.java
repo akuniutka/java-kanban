@@ -140,106 +140,23 @@ class EpicTest {
     }
 
     @Test
-    public void shouldHaveStatusNewWhenNoSubtasks() {
+    public void shouldHaveStatus() {
         final Epic epic = new Epic();
 
+        epic.setStatus(TEST_STATUS);
         final TaskStatus actualStatus = epic.getStatus();
 
-        assertEquals(TaskStatus.NEW, actualStatus, "epic has wrong status");
+        assertEquals(TEST_STATUS, actualStatus, "epic has wrong status");
     }
 
     @Test
-    public void shouldHaveStatusNewWhenAllSubtasksHaveStatusNew() {
+    public void shouldAcceptNullStatus() {
         final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().withStatus(TaskStatus.NEW).build(),
-                fromModifiedSubtask().withStatus(TaskStatus.NEW).build());
-        epic.setSubtasks(subtasks);
 
+        epic.setStatus(null);
         final TaskStatus actualStatus = epic.getStatus();
 
-        assertEquals(TaskStatus.NEW, actualStatus, "epic has wrong status");
-    }
-
-    @Test
-    public void shouldHaveStatusDoneWhenAllSubtasksHaveStatusDone() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().withStatus(TaskStatus.DONE).build(),
-                fromModifiedSubtask().withStatus(TaskStatus.DONE).build());
-        epic.setSubtasks(subtasks);
-
-        final TaskStatus actualStatus = epic.getStatus();
-
-        assertEquals(TaskStatus.DONE, actualStatus, "epic has wrong status");
-    }
-
-    @Test
-    public void shouldHaveStatusInProgressWhenAllSubtasksHaveStatusInProgress() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().withStatus(TaskStatus.IN_PROGRESS).build(),
-                fromModifiedSubtask().withStatus(TaskStatus.IN_PROGRESS).build());
-        epic.setSubtasks(subtasks);
-
-        final TaskStatus actualStatus = epic.getStatus();
-
-        assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "epic has wrong status");
-    }
-
-    @Test
-    public void shouldHaveStatusInProgressWhenSubtasksHaveStatusNewAndDone() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().withStatus(TaskStatus.NEW).build(),
-                fromModifiedSubtask().withStatus(TaskStatus.DONE).build());
-        epic.setSubtasks(subtasks);
-
-        final TaskStatus actualStatus = epic.getStatus();
-
-        assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "epic has wrong status");
-    }
-
-    @Test
-    public void shouldHaveStatusInProgressWhenSubtasksHaveStatusNewAndInProgress() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().withStatus(TaskStatus.NEW).build(),
-                fromModifiedSubtask().withStatus(TaskStatus.IN_PROGRESS).build());
-        epic.setSubtasks(subtasks);
-
-        final TaskStatus actualStatus = epic.getStatus();
-
-        assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "epic has wrong status");
-    }
-
-    @Test
-    public void shouldHaveStatusInProgressWhenSubtasksHaveStatusDoneAndInProgress() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().withStatus(TaskStatus.DONE).build(),
-                fromModifiedSubtask().withStatus(TaskStatus.IN_PROGRESS).build());
-        epic.setSubtasks(subtasks);
-
-        final TaskStatus actualStatus = epic.getStatus();
-
-        assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "epic has wrong status");
-    }
-
-    @Test
-    public void shouldHaveStatusInProgressWhenSubtasksHaveStatusNewAndDoneAndInProgress() {
-        final Epic epic = new Epic();
-        final List<Subtask> subtasks = List.of(fromTestSubtask().build(),
-                fromModifiedSubtask().build(),
-                fromEmptySubtask().withStatus(TaskStatus.NEW).build());
-        epic.setSubtasks(subtasks);
-
-        final TaskStatus actualStatus = epic.getStatus();
-
-        assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "epic has wrong status");
-    }
-
-    @Test
-    public void shouldThrowWhenSetStatus() {
-        final Epic epic = new Epic();
-
-        final Exception exception = assertThrows(UnsupportedOperationException.class,
-                () -> epic.setStatus(TEST_STATUS));
-        assertEquals("cannot explicitly set epic status", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        assertNull(actualStatus, "epic status should be null");
     }
 
     @Test
@@ -262,7 +179,7 @@ class EpicTest {
     public void shouldConvertToStringWhenFieldsNull() {
         final String expected = """
                 Epic{id=null, type=EPIC, title=null, description=null, subtasks=[], duration=null, startTime=null, \
-                endTime=null, status=NEW}\
+                endTime=null, status=null}\
                 """;
         final Epic epic = new Epic();
 
@@ -278,7 +195,7 @@ class EpicTest {
                 startTime=2000-05-01T13:30, endTime=2000-05-01T14:00, status=IN_PROGRESS}\
                 """.formatted(testSubtasks);
         final Epic epic = fromTestEpic().withSubtasks(testSubtasks).withDuration(TEST_DURATION)
-                .withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME).build();
+                .withStartTime(TEST_START_TIME).withEndTime(TEST_END_TIME).withStatus(TaskStatus.IN_PROGRESS).build();
 
         final String actualString = epic.toString();
 

@@ -3,15 +3,13 @@ package io.github.akuniutka.kanban.service;
 import io.github.akuniutka.kanban.exception.DuplicateIdException;
 import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
-import io.github.akuniutka.kanban.model.Epic;
-import io.github.akuniutka.kanban.model.Subtask;
-import io.github.akuniutka.kanban.model.Task;
-import io.github.akuniutka.kanban.model.TaskType;
+import io.github.akuniutka.kanban.model.*;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class InMemoryTaskManager implements TaskManager {
     protected final Map<Long, Task> tasks;
@@ -327,6 +325,7 @@ public class InMemoryTaskManager implements TaskManager {
         updateEpicDuration(epicId);
         updateEpicStartTime(epicId);
         updateEpicEndTime(epicId);
+        updateEpicStatus(epicId);
     }
 
     protected void updateEpicDuration(long epicId) {
@@ -357,6 +356,19 @@ public class InMemoryTaskManager implements TaskManager {
                 .max(Comparator.naturalOrder())
                 .orElse(null);
         epic.setEndTime(endTime);
+    }
+
+    protected void updateEpicStatus(long epicId) {
+        Epic epic = epics.get(epicId);
+        Set<TaskStatus> statuses = epic.getSubtasks().stream()
+                .map(Subtask::getStatus)
+                .collect(Collectors.toCollection(HashSet::new));
+        final TaskStatus status = switch (statuses.size()) {
+            case 0 -> TaskStatus.NEW;
+            case 1 -> statuses.iterator().next();
+            default -> TaskStatus.IN_PROGRESS;
+        };
+        epic.setStatus(status);
     }
 
     protected enum Mode {
