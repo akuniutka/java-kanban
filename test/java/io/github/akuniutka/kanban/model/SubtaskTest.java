@@ -20,9 +20,19 @@ class SubtaskTest {
         final Subtask subtask = new Subtask();
 
         subtask.setId(TEST_SUBTASK_ID);
-        final long actualId = subtask.getId();
+        final Long actualId = subtask.getId();
 
         assertEquals(TEST_SUBTASK_ID, actualId, "subtask has wrong id");
+    }
+
+    @Test
+    public void shouldAcceptNullId() {
+        final Subtask subtask = new Subtask();
+
+        subtask.setId(null);
+        final Long actualId = subtask.getId();
+
+        assertNull(actualId, "subtask id should be null");
     }
 
     @Test
@@ -37,9 +47,19 @@ class SubtaskTest {
         final Subtask subtask = new Subtask();
 
         subtask.setEpicId(TEST_EPIC_ID);
-        final long actualEpicId = subtask.getEpicId();
+        final Long actualEpicId = subtask.getEpicId();
 
         assertEquals(TEST_EPIC_ID, actualEpicId, "subtask has wrong epic id");
+    }
+
+    @Test
+    public void shouldAcceptNullEpicId() {
+        final Subtask subtask = new Subtask();
+
+        subtask.setEpicId(null);
+        final Long actualEpicId = subtask.getEpicId();
+
+        assertNull(actualEpicId, "subtask epic id should be null");
     }
 
     @Test
@@ -53,6 +73,16 @@ class SubtaskTest {
     }
 
     @Test
+    public void shouldAcceptNullTitle() {
+        final Subtask subtask = new Subtask();
+
+        subtask.setTitle(null);
+        final String actualTitle = subtask.getTitle();
+
+        assertNull(actualTitle, "subtask title should be null");
+    }
+
+    @Test
     public void shouldHaveDescription() {
         final Subtask subtask = new Subtask();
 
@@ -60,6 +90,16 @@ class SubtaskTest {
         final String actualDescription = subtask.getDescription();
 
         assertEquals(TEST_DESCRIPTION, actualDescription, "subtask has wrong description");
+    }
+
+    @Test
+    public void shouldAcceptNullDescription() {
+        final Subtask subtask = new Subtask();
+
+        subtask.setDescription(null);
+        final String actualDescription = subtask.getDescription();
+
+        assertNull(actualDescription, "subtask description should be null");
     }
 
     @Test
@@ -141,6 +181,16 @@ class SubtaskTest {
         final TaskStatus actualStatus = subtask.getStatus();
 
         assertEquals(TEST_STATUS, actualStatus, "subtask has wrong status");
+    }
+
+    @Test
+    public void shouldAcceptNullStatus() {
+        final Subtask subtask = new Subtask();
+
+        subtask.setStatus(null);
+        final TaskStatus actualStatus = subtask.getStatus();
+
+        assertNull(actualStatus, "subtask status should be null");
     }
 
     @Test

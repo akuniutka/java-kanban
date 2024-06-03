@@ -99,7 +99,7 @@ public final class TestModels {
                     if (expected.getType() == TaskType.EPIC) {
                         assert expected instanceof Epic;
                         assertEquals(((Epic) expected).getSubtaskIds(), ((Epic) actual).getSubtaskIds(),
-                                "wrong subtask list");
+                                "wrong subtask ids list");
                     }
                 });
     }

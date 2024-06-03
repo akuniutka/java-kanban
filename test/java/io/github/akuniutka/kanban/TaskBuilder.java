@@ -46,9 +46,7 @@ public class TaskBuilder {
 
     public Task build() {
         Task task = new Task();
-        if (id != null) {
-            task.setId(id);
-        }
+        task.setId(id);
         task.setTitle(title);
         task.setDescription(description);
         task.setDuration(duration);

@@ -27,9 +27,19 @@ class EpicTest {
         final Epic epic = new Epic();
 
         epic.setId(TEST_EPIC_ID);
-        final long actualId = epic.getId();
+        final Long actualId = epic.getId();
 
         assertEquals(TEST_EPIC_ID, actualId, "epic has wrong id");
+    }
+
+    @Test
+    public void shouldAcceptNullId() {
+        final Epic epic = new Epic();
+
+        epic.setId(null);
+        final Long actualId = epic.getId();
+
+        assertNull(actualId, "epic id should be null");
     }
 
     @Test
@@ -50,6 +60,16 @@ class EpicTest {
     }
 
     @Test
+    public void shouldAcceptNullTitle() {
+        final Epic epic = new Epic();
+
+        epic.setTitle(null);
+        final String actualTitle = epic.getTitle();
+
+        assertNull(actualTitle, "epic title should be null");
+    }
+
+    @Test
     public void shouldHaveDescription() {
         final Epic epic = new Epic();
 
@@ -60,13 +80,33 @@ class EpicTest {
     }
 
     @Test
+    public void shouldAcceptNullDescription() {
+        final Epic epic = new Epic();
+
+        epic.setDescription(null);
+        final String actualDescription = epic.getDescription();
+
+        assertNull(actualDescription, "epic description should be null");
+    }
+
+    @Test
     public void shouldKeepSubtaskIds() {
         final Epic epic = new Epic();
 
         epic.setSubtaskIds(testSubtaskIds);
         final List<Long> actualSubtaskIds = epic.getSubtaskIds();
 
-        assertEquals(testSubtaskIds, actualSubtaskIds, "epic has wrong list of subtasks");
+        assertEquals(testSubtaskIds, actualSubtaskIds, "epic has wrong list of subtask ids");
+    }
+
+    @Test
+    public void shouldAcceptNullSubtaskIds() {
+        final Epic epic = new Epic();
+
+        epic.setSubtaskIds(null);
+        final List<Long> actualSubtaskIds = epic.getSubtaskIds();
+
+        assertNull(actualSubtaskIds, "list of subtask ids should be null");
     }
 
     @Test

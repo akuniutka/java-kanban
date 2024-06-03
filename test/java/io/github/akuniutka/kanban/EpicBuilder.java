@@ -59,9 +59,7 @@ public class EpicBuilder {
 
     public Epic build() {
         Epic epic = new Epic();
-        if (id != null) {
-            epic.setId(id);
-        }
+        epic.setId(id);
         epic.setTitle(title);
         epic.setDescription(description);
         epic.setSubtaskIds(subtaskIds);
