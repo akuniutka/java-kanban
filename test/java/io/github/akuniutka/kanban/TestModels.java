@@ -91,13 +91,18 @@ public final class TestModels {
                 () -> assertEquals(expected.getEndTime(), actual.getEndTime(), "wrong end time"),
                 () -> assertEquals(expected.getStatus(), actual.getStatus(), "wrong status"),
                 () -> {
-                    if (expected.getType() == TaskType.SUBTASK) {
+                    if (expected.getType() != TaskType.SUBTASK) {
+                        assertNotEquals(TaskType.SUBTASK, actual.getType(), "wrong epic id");
+                    } else {
+                        assertEquals(TaskType.SUBTASK, actual.getType(), "wrong epic id");
                         assertEquals(((Subtask) expected).getEpicId(), ((Subtask) actual).getEpicId(), "wrong epic id");
                     }
                 },
                 () -> {
-                    if (expected.getType() == TaskType.EPIC) {
-                        assert expected instanceof Epic;
+                    if (expected.getType() != TaskType.EPIC) {
+                        assertNotEquals(TaskType.EPIC, actual.getType(), "wrong subtask ids list");
+                    } else {
+                        assertEquals(TaskType.EPIC, actual.getType(), "wrong subtask ids list");
                         assertEquals(((Epic) expected).getSubtaskIds(), ((Epic) actual).getSubtaskIds(),
                                 "wrong subtask ids list");
                     }
