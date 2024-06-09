@@ -19,13 +19,6 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private static final String FILE_HEADER = "id,type,name,status,description,duration,start,epic";
     private Path path;
 
-    public FileBackedTaskManager(Path path, HistoryManager historyManager) {
-        this(historyManager);
-        Objects.requireNonNull(path, "cannot start: file is null");
-        this.path = path;
-        save();
-    }
-
     private FileBackedTaskManager(HistoryManager historyManager) {
         super(historyManager);
     }
@@ -142,8 +135,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
 
     private void load() {
         try {
+            if (!Files.exists(path)) {
+                return;
+            }
             List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
-            checkFileHeader(lines.isEmpty() ? "" : lines.getFirst());
+            if (lines.isEmpty()) {
+                return;
+            }
+            checkFileHeader(lines.getFirst());
             lines.stream()
                     .skip(1L)
                     .map(this::fromString)

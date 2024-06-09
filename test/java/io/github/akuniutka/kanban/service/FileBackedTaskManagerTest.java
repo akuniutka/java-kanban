@@ -16,9 +16,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static io.github.akuniutka.kanban.TestModels.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,7 +33,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     public FileBackedTaskManagerTest() throws IOException {
         this.path = Files.createTempFile("kanban", null);
-        this.manager = new FileBackedTaskManager(this.path, this.historyManager);
+        this.manager = FileBackedTaskManager.loadFromFile(this.path, this.historyManager);
     }
 
     @Test
@@ -40,269 +44,15 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     @Test
     public void shouldThrowWhenFileIsNull() {
         final Exception exception = assertThrows(NullPointerException.class,
-                () -> new FileBackedTaskManager(null, historyManager));
-        assertEquals("cannot start: file is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldImmediatelyThrowWhenCannotInitializeDataFile() {
-        final String filename = ".";
-        final String expectedMessage = "cannot write to file \"" + filename + "\"";
-
-        final Exception exception = assertThrows(ManagerSaveException.class,
-                () -> new FileBackedTaskManager(Paths.get(filename), historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldThrowWhenHistoryManagerIsNull() {
-        final Exception exception = assertThrows(NullPointerException.class,
-                () -> new FileBackedTaskManager(path, null));
-        assertEquals("cannot start: history manager is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldSaveWhenAddTask() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %%d,TASK,"%s",%s,"%s",%s,%s,
-                """.formatted(testTask.getTitle(), testTask.getStatus(), testTask.getDescription(),
-                testTask.getDuration().toMinutes(), testTask.getStartTime());
-
-        final long taskId = manager.addTask(testTask);
-
-        expectedString = expectedString.formatted(taskId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenAddTaskAndFieldsNull() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %d,TASK,null,NEW,null,null,null,
-                """;
-
-        final long taskId = manager.addTask(fromEmptyTask().withStatus(TaskStatus.NEW).build());
-
-        expectedString = expectedString.formatted(taskId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenUpdateTask() throws IOException {
-        final long taskId = manager.addTask(testTask);
-        final String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %d,TASK,"%s",%s,"%s",%s,%s,
-                """.formatted(taskId, modifiedTask.getTitle(), modifiedTask.getStatus(),
-                modifiedTask.getDescription(), modifiedTask.getDuration().toMinutes(), modifiedTask.getStartTime());
-        final Task update = fromModifiedTask().withId(taskId).build();
-
-        manager.updateTask(update);
-
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenRemoveTask() throws IOException {
-        final long taskId = manager.addTask(testTask);
-        final String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                """;
-
-        manager.removeTask(taskId);
-
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenAddEpic() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %%d,EPIC,"%s",,"%s",,,
-                """.formatted(testEpic.getTitle(), testEpic.getDescription());
-
-        final long epicId = manager.addEpic(testEpic);
-
-        expectedString = expectedString.formatted(epicId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenAddEpicAndFieldsNull() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %d,EPIC,null,,null,,,
-                """;
-
-        final long epicId = manager.addEpic(fromEmptyEpic().build());
-
-        expectedString = expectedString.formatted(epicId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenUpdateEpic() throws IOException {
-        final long epicId = manager.addEpic(testEpic);
-        final String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %d,EPIC,"%s",,"%s",,,
-                """.formatted(epicId, modifiedEpic.getTitle(), modifiedEpic.getDescription());
-        final Epic update = fromModifiedEpic().withId(epicId).build();
-
-        manager.updateEpic(update);
-
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenRemoveEpic() throws IOException {
-        final long epicId = manager.addEpic(testEpic);
-        final String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                """;
-
-        manager.removeEpic(epicId);
-
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenAddSubtask() throws IOException {
-        final Subtask expectedSubtask = fromTestSubtask().build();
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %%d,EPIC,"%s",,"%s",,,
-                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
-                """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
-                expectedSubtask.getStatus(), expectedSubtask.getDescription(),
-                expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
-        final long epicId = manager.addEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
-
-        final long subtaskId = manager.addSubtask(subtask);
-
-        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenAddSubtaskAndFieldsNull() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %%d,EPIC,"%s",,"%s",,,
-                %%d,SUBTASK,null,NEW,null,null,null,%%d
-                """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        final long epicId = manager.addEpic(testEpic);
-        final Subtask subtask = fromEmptySubtask().withEpicId(epicId).withStatus(TaskStatus.NEW).build();
-
-        final long subtaskId = manager.addSubtask(subtask);
-
-        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenUpdateSubtask() throws IOException {
-        final Subtask expectedSubtask = fromModifiedSubtask().build();
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %%d,EPIC,"%s",,"%s",,,
-                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
-                """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
-                expectedSubtask.getStatus(), expectedSubtask.getDescription(),
-                expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
-        final long epicId = manager.addEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
-        final long subtaskId = manager.addSubtask(subtask);
-        final Subtask update = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
-
-        manager.updateSubtask(update);
-
-        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenRemoveSubtask() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %%d,EPIC,"%s",,"%s",,,
-                """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        final long epicId = manager.addEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
-        final long subtaskId = manager.addSubtask(subtask);
-
-        manager.removeSubtask(subtaskId);
-
-        expectedString = expectedString.formatted(epicId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenRemoveTasks() throws IOException {
-        manager.addTask(testTask);
-        manager.addTask(modifiedTask);
-        final String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                """;
-
-        manager.removeTasks();
-
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenRemoveEpics() throws IOException {
-        manager.addEpic(testEpic);
-        manager.addEpic(modifiedEpic);
-        final String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                """;
-
-        manager.removeEpics();
-
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldSaveWhenRemoveSubtasks() throws IOException {
-        String expectedString = """
-                id,type,name,status,description,duration,start,epic
-                %%d,EPIC,"%s",,"%s",,,
-                """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        final long epicId = manager.addEpic(testEpic);
-        final Subtask subtaskA = fromTestSubtask().withId(null).withEpicId(epicId).build();
-        final Subtask subtaskB = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
-        manager.addSubtask(subtaskA);
-        manager.addSubtask(subtaskB);
-
-        manager.removeSubtasks();
-
-        expectedString = expectedString.formatted(epicId);
-        final String actualString = Files.readString(path);
-        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
-    }
-
-    @Test
-    public void shouldThrowWhenFileToLoadIsNull() {
-        final Exception exception = assertThrows(NullPointerException.class,
                 () -> FileBackedTaskManager.loadFromFile(null, historyManager));
         assertEquals("cannot start: file is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldThrowWhenHistoryManagerNull() {
+        final Exception exception = assertThrows(NullPointerException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, null));
+        assertEquals("cannot start: history manager is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -316,28 +66,22 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     }
 
     @Test
-    public void shouldThrowWhenHistoryManagerNull() {
-        final Exception exception = assertThrows(NullPointerException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, null));
-        assertEquals("cannot start: history manager is null", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    public void shouldNotThrowWhenFileNotYetCreated() throws IOException {
+        Files.delete(path);
+        assertDoesNotThrow(() -> FileBackedTaskManager.loadFromFile(path, historyManager),
+                "should not throw when file not yet created");
     }
 
     @Test
-    public void shouldThrowWhenFileIsEmpty() throws IOException {
-        fillTestFileWithData("");
-        final String expectedMessage = """
-                wrong file header, expected "id,type,name,status,description,duration,start,epic"\
-                """;
-
-        final Exception exception = assertThrows(ManagerLoadException.class,
-                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    public void shouldNotThrowWhenFileEmpty() {
+        assertNotNull(manager, "task manager was not created");
     }
 
     @Test
     public void shouldThrowWhenFileContainsNoHeader() throws IOException {
         fillTestFileWithData("""
-                """);
+                %s
+                """.formatted(""));
         final String expectedMessage = """
                 wrong file header, expected "id,type,name,status,description,duration,start,epic"\
                 """;
@@ -359,6 +103,24 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         final Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(path, historyManager));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotThrowWhenFileContainsOnlyHeader() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic
+                """);
+        assertDoesNotThrow(() -> FileBackedTaskManager.loadFromFile(path, historyManager),
+                "should not throw when file contains only header");
+    }
+
+    @Test
+    public void shouldNotThrowWhenFileContainsOnlyHeaderAndNoNewLine() throws IOException {
+        fillTestFileWithData("""
+                id,type,name,status,description,duration,start,epic\
+                """);
+        assertDoesNotThrow(() -> FileBackedTaskManager.loadFromFile(path, historyManager),
+                "should not throw when file contains only header");
     }
 
     @Test
@@ -1951,6 +1713,259 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         final long taskId = manager.addTask(modifiedTask);
 
         assertEquals(1001, taskId, "last used id loaded incorrectly");
+    }
+
+    @Test
+    public void shouldImmediatelyThrowWhenFileReadOnly() throws IOException {
+        if (Files.getFileStore(path).supportsFileAttributeView(DosFileAttributeView.class)) {
+            Files.setAttribute(path, "dos:readonly", true);
+        } else if (Files.getFileStore(path).supportsFileAttributeView(PosixFileAttributeView.class)) {
+            Files.setPosixFilePermissions(path, Set.of(PosixFilePermission.OWNER_READ));
+        } else {
+            throw new AssertionError("cannot test with read-only file");
+        }
+        final String expectedMessage = "cannot write to file \"" + path + "\"";
+
+        final Exception exception = assertThrows(ManagerSaveException.class,
+                () -> FileBackedTaskManager.loadFromFile(path, historyManager));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldSaveWhenAddTask() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,TASK,"%s",%s,"%s",%s,%s,
+                """.formatted(testTask.getTitle(), testTask.getStatus(), testTask.getDescription(),
+                testTask.getDuration().toMinutes(), testTask.getStartTime());
+
+        final long taskId = manager.addTask(testTask);
+
+        expectedString = expectedString.formatted(taskId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenAddTaskAndFieldsNull() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %d,TASK,null,NEW,null,null,null,
+                """;
+
+        final long taskId = manager.addTask(fromEmptyTask().withStatus(TaskStatus.NEW).build());
+
+        expectedString = expectedString.formatted(taskId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenUpdateTask() throws IOException {
+        final long taskId = manager.addTask(testTask);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %d,TASK,"%s",%s,"%s",%s,%s,
+                """.formatted(taskId, modifiedTask.getTitle(), modifiedTask.getStatus(),
+                modifiedTask.getDescription(), modifiedTask.getDuration().toMinutes(), modifiedTask.getStartTime());
+        final Task update = fromModifiedTask().withId(taskId).build();
+
+        manager.updateTask(update);
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveTask() throws IOException {
+        final long taskId = manager.addTask(testTask);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                """;
+
+        manager.removeTask(taskId);
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenAddEpic() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                """.formatted(testEpic.getTitle(), testEpic.getDescription());
+
+        final long epicId = manager.addEpic(testEpic);
+
+        expectedString = expectedString.formatted(epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenAddEpicAndFieldsNull() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %d,EPIC,null,,null,,,
+                """;
+
+        final long epicId = manager.addEpic(fromEmptyEpic().build());
+
+        expectedString = expectedString.formatted(epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenUpdateEpic() throws IOException {
+        final long epicId = manager.addEpic(testEpic);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %d,EPIC,"%s",,"%s",,,
+                """.formatted(epicId, modifiedEpic.getTitle(), modifiedEpic.getDescription());
+        final Epic update = fromModifiedEpic().withId(epicId).build();
+
+        manager.updateEpic(update);
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveEpic() throws IOException {
+        final long epicId = manager.addEpic(testEpic);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                """;
+
+        manager.removeEpic(epicId);
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenAddSubtask() throws IOException {
+        final Subtask expectedSubtask = fromTestSubtask().build();
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
+                """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
+                expectedSubtask.getStatus(), expectedSubtask.getDescription(),
+                expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+
+        final long subtaskId = manager.addSubtask(subtask);
+
+        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenAddSubtaskAndFieldsNull() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                %%d,SUBTASK,null,NEW,null,null,null,%%d
+                """.formatted(testEpic.getTitle(), testEpic.getDescription());
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromEmptySubtask().withEpicId(epicId).withStatus(TaskStatus.NEW).build();
+
+        final long subtaskId = manager.addSubtask(subtask);
+
+        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenUpdateSubtask() throws IOException {
+        final Subtask expectedSubtask = fromModifiedSubtask().build();
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                %%d,SUBTASK,"%s",%s,"%s",%s,%s,%%d
+                """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
+                expectedSubtask.getStatus(), expectedSubtask.getDescription(),
+                expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(subtask);
+        final Subtask update = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
+
+        manager.updateSubtask(update);
+
+        expectedString = expectedString.formatted(epicId, subtaskId, epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveSubtask() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                """.formatted(testEpic.getTitle(), testEpic.getDescription());
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.addSubtask(subtask);
+
+        manager.removeSubtask(subtaskId);
+
+        expectedString = expectedString.formatted(epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveTasks() throws IOException {
+        manager.addTask(testTask);
+        manager.addTask(modifiedTask);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                """;
+
+        manager.removeTasks();
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveEpics() throws IOException {
+        manager.addEpic(testEpic);
+        manager.addEpic(modifiedEpic);
+        final String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                """;
+
+        manager.removeEpics();
+
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
+    }
+
+    @Test
+    public void shouldSaveWhenRemoveSubtasks() throws IOException {
+        String expectedString = """
+                id,type,name,status,description,duration,start,epic
+                %%d,EPIC,"%s",,"%s",,,
+                """.formatted(testEpic.getTitle(), testEpic.getDescription());
+        final long epicId = manager.addEpic(testEpic);
+        final Subtask subtaskA = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final Subtask subtaskB = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        manager.addSubtask(subtaskA);
+        manager.addSubtask(subtaskB);
+
+        manager.removeSubtasks();
+
+        expectedString = expectedString.formatted(epicId);
+        final String actualString = Files.readString(path);
+        assertEquals(expectedString, actualString, WRONG_FILE_FORMAT);
     }
 
     protected void fillTestFileWithData(String data) throws IOException {
