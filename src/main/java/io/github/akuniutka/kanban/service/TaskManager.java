@@ -9,39 +9,39 @@ import java.util.List;
 public interface TaskManager {
     List<Task> getTasks();
 
-    void removeTasks();
+    void deleteTasks();
 
-    Task getTask(long id);
+    Task getTaskById(long id);
 
-    long addTask(Task task);
+    long createTask(Task task);
 
     void updateTask(Task task);
 
-    void removeTask(long id);
+    void deleteTask(long id);
 
     List<Epic> getEpics();
 
-    void removeEpics();
+    void deleteEpics();
 
-    Epic getEpic(long id);
+    Epic getEpicById(long id);
 
-    long addEpic(Epic epic);
+    long createEpic(Epic epic);
 
     void updateEpic(Epic epic);
 
-    void removeEpic(long id);
+    void deleteEpic(long id);
 
     List<Subtask> getSubtasks();
 
-    void removeSubtasks();
+    void deleteSubtasks();
 
-    Subtask getSubtask(long id);
+    Subtask getSubtaskById(long id);
 
-    long addSubtask(Subtask subtask);
+    long createSubtask(Subtask subtask);
 
     void updateSubtask(Subtask subtask);
 
-    void removeSubtask(long id);
+    void deleteSubtask(long id);
 
     List<Subtask> getEpicSubtasks(long epicId);
 

@@ -33,14 +33,14 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public void removeTasks() {
-        super.removeTasks();
+    public void deleteTasks() {
+        super.deleteTasks();
         save();
     }
 
     @Override
-    public long addTask(Task task) {
-        final long taskId = super.addTask(task);
+    public long createTask(Task task) {
+        final long taskId = super.createTask(task);
         save();
         return taskId;
     }
@@ -52,20 +52,20 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public void removeTask(long id) {
-        super.removeTask(id);
+    public void deleteTask(long id) {
+        super.deleteTask(id);
         save();
     }
 
     @Override
-    public void removeEpics() {
-        super.removeEpics();
+    public void deleteEpics() {
+        super.deleteEpics();
         save();
     }
 
     @Override
-    public long addEpic(Epic epic) {
-        final long epicId = super.addEpic(epic);
+    public long createEpic(Epic epic) {
+        final long epicId = super.createEpic(epic);
         save();
         return epicId;
     }
@@ -77,20 +77,20 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public void removeEpic(long id) {
-        super.removeEpic(id);
+    public void deleteEpic(long id) {
+        super.deleteEpic(id);
         save();
     }
 
     @Override
-    public void removeSubtasks() {
-        super.removeSubtasks();
+    public void deleteSubtasks() {
+        super.deleteSubtasks();
         save();
     }
 
     @Override
-    public long addSubtask(Subtask subtask) {
-        final long subtaskId = super.addSubtask(subtask);
+    public long createSubtask(Subtask subtask) {
+        final long subtaskId = super.createSubtask(subtask);
         save();
         return subtaskId;
     }
@@ -102,8 +102,8 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public void removeSubtask(long id) {
-        super.removeSubtask(id);
+    public void deleteSubtask(long id) {
+        super.deleteSubtask(id);
         save();
     }
 
@@ -149,9 +149,9 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     .forEach(task -> {
                         try {
                             switch (task) {
-                                case Subtask subtask -> addSubtask(subtask);
-                                case Epic epic -> addEpic(epic);
-                                default -> addTask(task);
+                                case Subtask subtask -> createSubtask(subtask);
+                                case Epic epic -> createEpic(epic);
+                                default -> this.createTask(task);
                             }
                         } catch (ManagerValidationException exception) {
                             throw new ManagerLoadException(exception.getMessage() + " for id=" + task.getId());

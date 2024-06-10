@@ -35,21 +35,21 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeTasks() {
+    public void deleteTasks() {
         tasks.values().forEach(this::removeFromPrioritizedIfPresent);
         tasks.keySet().forEach(historyManager::remove);
         tasks.clear();
     }
 
     @Override
-    public Task getTask(long id) {
+    public Task getTaskById(long id) {
         final Task task = requireTaskExists(id);
         historyManager.add(task);
         return task;
     }
 
     @Override
-    public long addTask(Task task) {
+    public long createTask(Task task) {
         validate(task, Mode.CREATE);
         tasks.put(task.getId(), task);
         addToPrioritizedIfStartTimeNotNull(task);
@@ -66,7 +66,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeTask(long id) {
+    public void deleteTask(long id) {
         final Task savedTask = requireTaskExists(id);
         tasks.remove(id);
         historyManager.remove(id);
@@ -79,7 +79,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeEpics() {
+    public void deleteEpics() {
         subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
         subtasks.keySet().forEach(historyManager::remove);
         subtasks.clear();
@@ -88,14 +88,14 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Epic getEpic(long id) {
+    public Epic getEpicById(long id) {
         final Epic epic = requireEpicExists(id);
         historyManager.add(epic);
         return epic;
     }
 
     @Override
-    public long addEpic(Epic epic) {
+    public long createEpic(Epic epic) {
         validate(epic, Mode.CREATE);
         final long epicId = epic.getId();
         epics.put(epicId, epic);
@@ -111,7 +111,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeEpic(long id) {
+    public void deleteEpic(long id) {
         final Epic epic = requireEpicExists(id);
         epics.remove(id);
         epic.getSubtaskIds().stream()
@@ -127,7 +127,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeSubtasks() {
+    public void deleteSubtasks() {
         epics.values().forEach(epic -> epic.setSubtaskIds(new ArrayList<>()));
         epics.keySet().forEach(this::updateEpic);
         subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
@@ -136,14 +136,14 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Subtask getSubtask(long id) {
+    public Subtask getSubtaskById(long id) {
         final Subtask subtask = requireSubtaskExists(id);
         historyManager.add(subtask);
         return subtask;
     }
 
     @Override
-    public long addSubtask(Subtask subtask) {
+    public long createSubtask(Subtask subtask) {
         validate(subtask, Mode.CREATE);
         final long subtaskId = subtask.getId();
         final long epicId = subtask.getEpicId();
@@ -166,7 +166,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeSubtask(long id) {
+    public void deleteSubtask(long id) {
         final Subtask subtask = requireSubtaskExists(id);
         subtasks.remove(id);
         final long epicId = subtask.getEpicId();
@@ -196,7 +196,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     protected void validate(Task task, Mode mode) {
-        Objects.requireNonNull(task, mode == Mode.CREATE ? "cannot add null" : "cannot apply null update");
+        Objects.requireNonNull(task, mode == Mode.CREATE ? "cannot create from null" : "cannot apply null update");
         validateId(task, mode);
         validateSubtaskIds(task, mode);
         validateEpicId(task, mode);
