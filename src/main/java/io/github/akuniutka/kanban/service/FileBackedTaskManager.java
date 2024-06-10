@@ -1,6 +1,9 @@
 package io.github.akuniutka.kanban.service;
 
-import io.github.akuniutka.kanban.exception.*;
+import io.github.akuniutka.kanban.exception.CSVParsingException;
+import io.github.akuniutka.kanban.exception.ManagerLoadException;
+import io.github.akuniutka.kanban.exception.ManagerSaveException;
+import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import io.github.akuniutka.kanban.model.*;
 import io.github.akuniutka.kanban.util.CSVLineParser;
 
@@ -146,19 +149,18 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             lines.stream()
                     .skip(1L)
                     .map(this::fromString)
+                    .peek(task -> requireNoDuplicateId(task.getId()))
                     .forEach(task -> {
                         try {
                             switch (task) {
-                                case Subtask subtask -> createSubtask(subtask);
-                                case Epic epic -> createEpic(epic);
-                                default -> this.createTask(task);
+                                case Subtask subtask -> updateSubtask(subtask);
+                                case Epic epic -> updateEpic(epic);
+                                default -> this.updateTask(task);
                             }
                         } catch (ManagerValidationException exception) {
                             throw new ManagerLoadException(exception.getMessage() + " for id=" + task.getId());
                         }
                     });
-        } catch (TaskNotFoundException | DuplicateIdException exception) {
-            throw new ManagerLoadException(exception.getMessage());
         } catch (IOException exception) {
             throw new ManagerLoadException("cannot load from file \"%s\"".formatted(path), exception);
         }
@@ -302,6 +304,12 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     private void requireNoMoreData(CSVLineParser parser) {
         if (parser.hasNext()) {
             throw new CSVParsingException("unexpected data");
+        }
+    }
+
+    private void requireNoDuplicateId(long id) {
+        if (getTaskTypeById(id) != null) {
+            throw new ManagerLoadException("duplicate id=" + id);
         }
     }
 }
