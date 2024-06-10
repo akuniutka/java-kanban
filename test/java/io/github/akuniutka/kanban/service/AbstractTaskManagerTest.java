@@ -1,6 +1,5 @@
 package io.github.akuniutka.kanban.service;
 
-import io.github.akuniutka.kanban.exception.DuplicateIdException;
 import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
 import io.github.akuniutka.kanban.model.Epic;
@@ -63,19 +62,10 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotCreateTaskWhenNull() {
-        final String expectedMessage = "cannot create from null";
+        final String expectedMessage = "cannot create null task";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.createTask(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotCreateTaskWhenIdExists() {
-        final long taskId = manager.createTask(testTask);
-        final Task dublicateTask = fromModifiedTask().withId(taskId).build();
-
-        final Exception exception = assertThrows(DuplicateIdException.class, () -> manager.createTask(dublicateTask));
-        assertEquals("duplicate id=" + taskId, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -126,29 +116,6 @@ abstract class AbstractTaskManagerTest {
         final Task expectedTask = fromTestTask().withId(taskId).build();
         final List<Task> expectedTasks = List.of(expectedTask);
         assertAll("task saved with errors",
-                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
-                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
-                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
-        );
-    }
-
-    @Test
-    public void shouldCreateTaskWhenIdSetButNotExist() {
-        final Task task = fromTestTask().withId(ANOTHER_TEST_ID).build();
-        final Task nextTask = fromModifiedTask().withId(null).build();
-
-        final long taskId = manager.createTask(task);
-        final long nextId = manager.createTask(nextTask);
-        final Task savedTask = manager.getTaskById(taskId);
-        final List<Task> tasks = manager.getTasks();
-        final List<Task> prioritized = manager.getPrioritizedTasks();
-
-        final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
-        final Task expectedNextTask = fromModifiedTask().withId(nextId).build();
-        final List<Task> expectedTasks = List.of(expectedTask, expectedNextTask);
-        assertAll("task saved with errors",
-                () -> assertEquals(ANOTHER_TEST_ID, taskId, "task saved with errors"),
-                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "task saved with errors"),
                 () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
@@ -331,19 +298,31 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateTaskWhenIdNull() {
-        final String expectedMessage = "no task with id=null";
+        final String expectedMessage = "id cannot be null";
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateTask(testTask));
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateTask(testTask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldNotUpdateTaskWhenNotExist() {
-        final long taskId = -1L;
-        final String expectedMessage = "no task with id=" + taskId;
-        final Task update = fromTestTask().withId(taskId).build();
+    public void shouldNotUpdateTaskWhenEpicIdAsId() {
+        final long epicId = manager.createEpic(testEpic);
+        final String expectedMessage = "wrong task type";
+        final Task update = fromTestTask().withId(epicId).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateTask(update));
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateTask(update));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateTaskWhenSubtaskIdAsId() {
+        final long epicId = manager.createEpic(testEpic);
+        final Subtask subtask = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.createSubtask(subtask);
+        final String expectedMessage = "wrong task type";
+        final Task update = fromTestTask().withId(subtaskId).build();
+
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateTask(update));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -404,6 +383,29 @@ abstract class AbstractTaskManagerTest {
 
         assertAll("task saved with errors",
                 () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateTaskWhenIdNotExist() {
+        final Task update = fromTestTask().withId(ANOTHER_TEST_ID).build();
+        final Task expectedTask = fromTestTask().withId(ANOTHER_TEST_ID).build();
+        final Task expectedNextTask = fromModifiedTask().withId(ANOTHER_TEST_ID + 1).build();
+        final List<Task> expectedTasks = List.of(expectedTask, expectedNextTask);
+
+        manager.updateTask(update);
+        final long nextId = manager.createTask(modifiedTask);
+        final Task savedTask = manager.getTaskById(ANOTHER_TEST_ID);
+        final Task nextTask = manager.getTaskById(nextId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        assertAll("task saved with errors",
+                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "task saved with errors"),
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertTaskEquals(expectedNextTask, nextTask, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
         );
@@ -698,19 +700,10 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotCreateEpicWhenNull() {
-        final String expectedMessage = "cannot create from null";
+        final String expectedMessage = "cannot create null epic";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.createEpic(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
-    public void shouldNotCreateEpicWhenIdExists() {
-        final long epicId = manager.createEpic(testEpic);
-        final Epic duplicateEpic = fromModifiedEpic().withId(epicId).build();
-
-        final Exception exception = assertThrows(DuplicateIdException.class, () -> manager.createEpic(duplicateEpic));
-        assertEquals("duplicate id=" + epicId, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
@@ -722,27 +715,6 @@ abstract class AbstractTaskManagerTest {
         final Epic expectedEpic = fromTestEpic().withId(epicId).withStatus(TaskStatus.NEW).build();
         final List<Epic> expectedEpics = List.of(expectedEpic);
         assertAll("epic saved with errors",
-                () -> assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors"),
-                () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
-        );
-    }
-
-    @Test
-    public void shouldCreateEpicWhenIdSetButNotExist() {
-        final Epic epic = fromTestEpic().withId(ANOTHER_TEST_ID).build();
-        final Epic nextEpic = fromModifiedEpic().withId(null).build();
-
-        final long epicId = manager.createEpic(epic);
-        final long nextId = manager.createEpic(nextEpic);
-        final Epic savedEpic = manager.getEpicById(epicId);
-        final List<Epic> epics = manager.getEpics();
-
-        final Epic expectedEpic = fromTestEpic().withId(ANOTHER_TEST_ID).withStatus(TaskStatus.NEW).build();
-        final Epic expectedNextEpic = fromModifiedEpic().withId(nextId).withStatus(TaskStatus.NEW).build();
-        final List<Epic> expectedEpics = List.of(expectedEpic, expectedNextEpic);
-        assertAll("epic saved with errors",
-                () -> assertEquals(ANOTHER_TEST_ID, epicId, "epic saved with errors"),
-                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "epic saved with errors"),
                 () -> assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors"),
                 () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
         );
@@ -772,19 +744,31 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateEpicWhenIdNull() {
-        final String expectedMessage = "no epic with id=null";
+        final String expectedMessage = "id cannot be null";
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateEpic(testEpic));
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateEpic(testEpic));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldNotUpdateEpicWhenNotExist() {
-        final long epicId = -1L;
-        final String expectedMessage = "no epic with id=" + epicId;
-        final Epic epic = fromTestEpic().withId(epicId).build();
+    public void shouldNotUpdateEpicWhenTaskIdAsId() {
+        final long taskId = manager.createTask(testTask);
+        final String expectedMessage = "wrong task type";
+        final Epic epic = fromModifiedEpic().withId(taskId).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateEpic(epic));
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateEpic(epic));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateEpicWhenSubtaskIdAsId() {
+        final long anotherEpicId = manager.createEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(anotherEpicId).build();
+        final long subtaskId = manager.createSubtask(subtask);
+        final String expectedMessage = "wrong task type";
+        final Epic epic = fromModifiedEpic().withId(subtaskId).build();
+
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateEpic(epic));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -801,6 +785,27 @@ abstract class AbstractTaskManagerTest {
 
         assertAll("epic saved with errors",
                 () -> assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors"),
+                () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateEpicWhenIdNotExist() {
+        final Epic update = fromTestEpic().withId(ANOTHER_TEST_ID).build();
+        final Epic expectedEpic = fromTestEpic().withId(ANOTHER_TEST_ID).withStatus(TaskStatus.NEW).build();
+        final Epic expectedNextEpic = fromModifiedEpic().withId(ANOTHER_TEST_ID + 1).withStatus(TaskStatus.NEW).build();
+        final List<Epic> expectedEpics = List.of(expectedEpic, expectedNextEpic);
+
+        manager.updateEpic(update);
+        final long nextId = manager.createEpic(modifiedEpic);
+        final Epic savedEpic = manager.getEpicById(ANOTHER_TEST_ID);
+        final Epic nextEpic = manager.getEpicById(nextId);
+        final List<Epic> epics = manager.getEpics();
+
+        assertAll("epic saved with errors",
+                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "epic saved with errors"),
+                () -> assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors"),
+                () -> assertTaskEquals(expectedNextEpic, nextEpic, "epic saved with errors"),
                 () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
         );
     }
@@ -884,50 +889,41 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotCreateSubtaskWhenNull() {
-        final String expectedMessage = "cannot create from null";
+        final String expectedMessage = "cannot create null subtask";
 
         final Exception exception = assertThrows(NullPointerException.class, () -> manager.createSubtask(null));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldNotCreateSubtaskWhenIdExists() {
-        final long anotherEpicId = manager.createEpic(testEpic);
-        final Subtask anotherSubtask = fromTestSubtask().withId(null).withEpicId(anotherEpicId).build();
-        final long subtaskId = manager.createSubtask(anotherSubtask);
-        final long epicId = manager.createEpic(modifiedEpic);
-        final Subtask subtask = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
-
-        final Exception exception = assertThrows(DuplicateIdException.class, () -> manager.createSubtask(subtask));
-        assertEquals("duplicate id=" + subtaskId, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
-    }
-
-    @Test
     public void shouldNotCreateSubtaskWhenEpicIdNull() {
-        final String expectedMessage = "no epic with id=null";
+        final String expectedMessage = "wrong epic id";
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(null).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.createSubtask(subtask));
+        final Exception exception = assertThrows(ManagerValidationException.class,
+                () -> manager.createSubtask(subtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotCreateSubtaskWhenEpicNotExist() {
         final long epicId = -1L;
-        final String expectedMessage = "no epic with id=" + epicId;
+        final String expectedMessage = "wrong epic id";
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.createSubtask(subtask));
+        final Exception exception = assertThrows(ManagerValidationException.class,
+                () -> manager.createSubtask(subtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
     public void shouldNotCreateSubtaskWhenTaskIdAsEpicId() {
         final long taskId = manager.createTask(testTask);
-        final String expectedMessage = "no epic with id=" + taskId;
+        final String expectedMessage = "wrong epic id";
         final Subtask subtask = fromModifiedSubtask().withId(null).withEpicId(taskId).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.createSubtask(subtask));
+        final Exception exception = assertThrows(ManagerValidationException.class,
+                () -> manager.createSubtask(subtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -936,10 +932,11 @@ abstract class AbstractTaskManagerTest {
         final long epicId = manager.createEpic(testEpic);
         final Subtask anotherSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
         final long subtaskId = manager.createSubtask(anotherSubtask);
-        final String expectedMessage = "no epic with id=" + subtaskId;
+        final String expectedMessage = "wrong epic id";
         final Subtask subtask = fromModifiedSubtask().withId(null).withEpicId(subtaskId).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.createSubtask(subtask));
+        final Exception exception = assertThrows(ManagerValidationException.class,
+                () -> manager.createSubtask(subtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -1003,32 +1000,6 @@ abstract class AbstractTaskManagerTest {
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         assertAll("subtask saved with errors",
-                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
-                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
-                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
-                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
-        );
-    }
-
-    @Test
-    public void shouldCreateSubtaskWhenIdSetButNotExist() {
-        final long epicId = manager.createEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
-        final Subtask nextSubtask = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
-
-        final long subtaskId = manager.createSubtask(subtask);
-        final long nextId = manager.createSubtask(nextSubtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
-        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
-        final List<Subtask> subtasks = manager.getSubtasks();
-        final List<Task> prioritized = manager.getPrioritizedTasks();
-
-        final Subtask expectedSubtask = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
-        final Subtask expectedNextSubtask = fromModifiedSubtask().withId(nextId).withEpicId(epicId).build();
-        final List<Subtask> expectedSubtasks = List.of(expectedSubtask, expectedNextSubtask);
-        assertAll("subtask saved with errors",
-                () -> assertEquals(ANOTHER_TEST_ID, subtaskId, "new subtask should have new id"),
-                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "new subtask should have new id"),
                 () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
@@ -1241,22 +1212,73 @@ abstract class AbstractTaskManagerTest {
 
     @Test
     public void shouldNotUpdateSubtaskWhenIdNull() {
-        final String expectedMessage = "no subtask with id=null";
+        final String expectedMessage = "id cannot be null";
         final long epicId = manager.createEpic(testEpic);
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateSubtask(subtask));
+        final Exception exception = assertThrows(ManagerValidationException.class,
+                () -> manager.updateSubtask(subtask));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
     @Test
-    public void shouldNotUpdateSubtaskWhenNotExist() {
-        final long subtaskId = -1L;
-        final String expectedMessage = "no subtask with id=" + subtaskId;
+    public void shouldNotUpdateSubtaskWhenTaskIdAsId() {
+        final long taskId = manager.createTask(modifiedTask);
+        final String expectedMessage = "wrong task type";
         final long epicId = manager.createEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final Subtask update = fromTestSubtask().withId(taskId).withEpicId(epicId).build();
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.updateSubtask(subtask));
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateSubtask(update));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenEpicIdAsId() {
+        final String expectedMessage = "wrong task type";
+        final long epicId = manager.createEpic(testEpic);
+        final Subtask update = fromTestSubtask().withId(epicId).withEpicId(epicId).build();
+
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateSubtask(update));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenIdNotExistAndEpicIdNull() {
+        final String expectedMessage = "wrong epic id";
+        final Subtask update = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(null).build();
+
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateSubtask(update));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenIdNotExistAndEpicNotExist() {
+        final String expectedMessage = "wrong epic id";
+        final Subtask update = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(ANOTHER_TEST_ID).build();
+
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateSubtask(update));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenIdNotExistAndTaskIdAsEpicId() {
+        final long taskId = manager.createTask(modifiedTask);
+        final String expectedMessage = "wrong epic id";
+        final Subtask update = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(taskId).build();
+
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateSubtask(update));
+        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+    }
+
+    @Test
+    public void shouldNotUpdateSubtaskWhenIdNotExistAndSubtaskIdAsEpicId() {
+        final long epicId = manager.createEpic(testEpic);
+        final Subtask anotherSubtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long subtaskId = manager.createSubtask(anotherSubtask);
+        final String expectedMessage = "wrong epic id";
+        final Subtask update = fromModifiedSubtask().withId(ANOTHER_TEST_ID).withEpicId(subtaskId).build();
+
+        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateSubtask(update));
         assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -1327,6 +1349,33 @@ abstract class AbstractTaskManagerTest {
 
         assertAll("subtask saved with errors",
                 () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldUpdateSubtaskWhenIdNotExist() {
+        final long epicId = manager.createEpic(testEpic);
+        final Subtask update = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
+        final Subtask nextSubtask = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+
+        manager.updateSubtask(update);
+        final long nextId = manager.createSubtask(nextSubtask);
+        final Subtask savedSubtask = manager.getSubtaskById(ANOTHER_TEST_ID);
+        final Subtask savedNextSubtask = manager.getSubtaskById(nextId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Subtask expectedSubtask = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
+        final Subtask expectedNextSubtask = fromModifiedSubtask().withId(nextId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask, expectedNextSubtask);
+        assertAll("subtask saved with errors",
+                () -> assertEquals(ANOTHER_TEST_ID + 1, nextId, "subtask saved with errors"),
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertTaskEquals(expectedNextSubtask, savedNextSubtask, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
@@ -1660,6 +1709,146 @@ abstract class AbstractTaskManagerTest {
                         "subtask removed with errors"),
                 () -> assertTrue(subtasks.isEmpty(), "subtask removed with errors"),
                 () -> assertTrue(prioritized.isEmpty(), "subtask removed with errors")
+        );
+    }
+
+    @Test
+    public void shouldAssignTaskNewIdWhenCreateTaskAndIdNotNullAndIdNotExist() {
+        final Task task = fromTestTask().withId(ANOTHER_TEST_ID).build();
+
+        final long taskId = manager.createTask(task);
+        final Task savedTask = manager.getTaskById(taskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Task expectedTask = fromTestTask().withId(taskId).build();
+        final List<Task> expectedTasks = List.of(expectedTask);
+        assertAll("task saved with errors",
+                () -> assertNotEquals(ANOTHER_TEST_ID, taskId, "task saved with errors"),
+                () -> assertThrows(TaskNotFoundException.class, () -> manager.getTaskById(ANOTHER_TEST_ID),
+                        "task saved with errors"),
+                () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAssignTaskNewIdWhenCreateTaskAndIdNotNullAndIdExist() {
+        final long oldTaskId = manager.createTask(testTask);
+        final Task task = fromModifiedTask().withId(oldTaskId).build();
+
+        final long newTaskId = manager.createTask(task);
+        final Task oldTask = manager.getTaskById(oldTaskId);
+        final Task newTask = manager.getTaskById(newTaskId);
+        final List<Task> tasks = manager.getTasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Task expectedOldTask = fromTestTask().withId(oldTaskId).build();
+        final Task expectedNewtask = fromModifiedTask().withId(newTaskId).build();
+        final List<Task> expectedTasks = List.of(expectedOldTask, expectedNewtask);
+        assertAll("task saved with errors",
+                () -> assertNotEquals(oldTaskId, newTaskId, "task saved with errors"),
+                () -> assertTaskEquals(expectedOldTask, oldTask, "task saved with errors"),
+                () -> assertTaskEquals(expectedNewtask, newTask, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
+                () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAssignEpicNewIdWhenCreateEpicAndIdNotNullAndIdNotExist() {
+        final Epic epic = fromTestEpic().withId(ANOTHER_TEST_ID).build();
+
+        final long epicId = manager.createEpic(epic);
+        final Epic savedEpic = manager.getEpicById(epicId);
+        final List<Epic> epics = manager.getEpics();
+
+        final Epic expectedEpic = fromTestEpic().withId(epicId).withStatus(TaskStatus.NEW).build();
+        final List<Epic> expectedEpics = List.of(expectedEpic);
+        assertAll("epic saved with errors",
+                () -> assertNotEquals(ANOTHER_TEST_ID, epicId, "epic saved with errors"),
+                () -> assertThrows(TaskNotFoundException.class, () -> manager.getEpicById(ANOTHER_TEST_ID),
+                        "epic saved with errors"),
+                () -> assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors"),
+                () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAssignEpicNewIdWhenCreateEpicAndIdNotNullAndIdExist() {
+        final long oldEpicId = manager.createEpic(testEpic);
+        final Epic epic = fromModifiedEpic().withId(oldEpicId).build();
+
+        final long newEpicId = manager.createEpic(epic);
+        final Epic oldEpic = manager.getEpicById(oldEpicId);
+        final Epic newEpic = manager.getEpicById(newEpicId);
+        final List<Epic> epics = manager.getEpics();
+
+        final Epic expectedOldEpic = fromTestEpic().withId(oldEpicId).withStatus(TaskStatus.NEW).build();
+        final Epic expecedNewEpic = fromModifiedEpic().withId(newEpicId).withStatus(TaskStatus.NEW).build();
+        final List<Epic> expectedEpics = List.of(expectedOldEpic, expecedNewEpic);
+        assertAll("epic saved with errors",
+                () -> assertNotEquals(oldEpicId, newEpicId, "epic saved with errors"),
+                () -> assertTaskEquals(expectedOldEpic, oldEpic, "epic saved with errors"),
+                () -> assertTaskEquals(expecedNewEpic, newEpic, "epic saved with errors"),
+                () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAssignSubtaskNewIdWhenCreateSubtaskAndIdNotNullAndIdNotExist() {
+        final long epicId = manager.createEpic(testEpic);
+        final Subtask subtask = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
+
+        final long subtaskId = manager.createSubtask(subtask);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
+        assertAll("subtask saved with errors",
+                () -> assertNotEquals(ANOTHER_TEST_ID, subtaskId, "subtask saved with errors"),
+                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(ANOTHER_TEST_ID),
+                        "subtask saved with errors"),
+                () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
+        );
+    }
+
+    @Test
+    public void shouldAssignSubtaskNewIdWhenCreateSubtaskAndIdNotNullAndIdExist() {
+        final long anotherEpicId = manager.createEpic(testEpic);
+        final Subtask anotherSubtask = fromTestSubtask().withId(null).withEpicId(anotherEpicId).build();
+        final long oldSubtaskId = manager.createSubtask(anotherSubtask);
+        final long epicId = manager.createEpic(modifiedEpic);
+        final Subtask subtask = fromModifiedSubtask().withId(oldSubtaskId).withEpicId(epicId).build();
+
+        final long newSubtaskId = manager.createSubtask(subtask);
+        final Subtask oldSubtask = manager.getSubtaskById(oldSubtaskId);
+        final Subtask newSubtask = manager.getSubtaskById(newSubtaskId);
+        final List<Subtask> anotherEpicSubtasks = manager.getEpicSubtasks(anotherEpicId);
+        final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
+        final List<Subtask> subtasks = manager.getSubtasks();
+        final List<Task> prioritized = manager.getPrioritizedTasks();
+
+        final Subtask expectedOldSubtask = fromTestSubtask().withId(oldSubtaskId).withEpicId(anotherEpicId).build();
+        final Subtask expectedNewSubtask = fromModifiedSubtask().withId(newSubtaskId).withEpicId(epicId).build();
+        final List<Subtask> expectedAnotherEpicSubtasks = List.of(expectedOldSubtask);
+        final List<Subtask> expectedEpicSubtasks = List.of(expectedNewSubtask);
+        final List<Subtask> expectedSubtasks = List.of(expectedOldSubtask, expectedNewSubtask);
+        assertAll("subtask saved with errors",
+                () -> assertNotEquals(oldSubtaskId, newSubtaskId, "subtask saved with errors"),
+                () -> assertTaskEquals(expectedOldSubtask, oldSubtask, "subtask saved with errors"),
+                () -> assertTaskEquals(expectedNewSubtask, newSubtask, "subtask saved with errors"),
+                () -> assertListEquals(expectedAnotherEpicSubtasks, anotherEpicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedEpicSubtasks, epicSubtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
+                () -> assertListEquals(expectedSubtasks, prioritized, "subtask saved with errors")
         );
     }
 

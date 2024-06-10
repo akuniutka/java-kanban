@@ -1,6 +1,5 @@
 package io.github.akuniutka.kanban.service;
 
-import io.github.akuniutka.kanban.exception.DuplicateIdException;
 import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
 import io.github.akuniutka.kanban.model.*;
@@ -36,7 +35,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteTasks() {
-        tasks.values().forEach(this::removeFromPrioritizedIfPresent);
+        tasks.values().forEach(this::removeFromPrioritizedTasks);
         tasks.keySet().forEach(historyManager::remove);
         tasks.clear();
     }
@@ -50,19 +49,18 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public long createTask(Task task) {
-        validate(task, Mode.CREATE);
-        tasks.put(task.getId(), task);
-        addToPrioritizedIfStartTimeNotNull(task);
+        Objects.requireNonNull(task, "cannot create null task");
+        task.setId(generateId());
+        updateTask(task);
         return task.getId();
     }
 
     @Override
     public void updateTask(Task task) {
-        validate(task, Mode.UPDATE);
-        final Task savedTask = tasks.get(task.getId());
-        removeFromPrioritizedIfPresent(savedTask);
-        tasks.put(task.getId(), task);
-        addToPrioritizedIfStartTimeNotNull(task);
+        Objects.requireNonNull(task, "cannot apply null update");
+        validate(task);
+        final Task savedTask = tasks.put(task.getId(), task);
+        replaceInPrioritizedTasksIfAppropriate(savedTask, task);
     }
 
     @Override
@@ -70,7 +68,7 @@ public class InMemoryTaskManager implements TaskManager {
         final Task savedTask = requireTaskExists(id);
         tasks.remove(id);
         historyManager.remove(id);
-        removeFromPrioritizedIfPresent(savedTask);
+        removeFromPrioritizedTasks(savedTask);
     }
 
     @Override
@@ -80,7 +78,7 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteEpics() {
-        subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
+        subtasks.values().forEach(this::removeFromPrioritizedTasks);
         subtasks.keySet().forEach(historyManager::remove);
         subtasks.clear();
         epics.keySet().forEach(historyManager::remove);
@@ -96,16 +94,16 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public long createEpic(Epic epic) {
-        validate(epic, Mode.CREATE);
-        final long epicId = epic.getId();
-        epics.put(epicId, epic);
-        updateEpic(epicId);
-        return epicId;
+        Objects.requireNonNull(epic, "cannot create null epic");
+        epic.setId(generateId());
+        updateEpic(epic);
+        return epic.getId();
     }
 
     @Override
     public void updateEpic(Epic epic) {
-        validate(epic, Mode.UPDATE);
+        Objects.requireNonNull(epic, "cannot apply null update");
+        validate(epic);
         epics.put(epic.getId(), epic);
         updateEpic(epic.getId());
     }
@@ -115,7 +113,7 @@ public class InMemoryTaskManager implements TaskManager {
         final Epic epic = requireEpicExists(id);
         epics.remove(id);
         epic.getSubtaskIds().stream()
-                .peek(subtaskId -> removeFromPrioritizedIfPresent(subtasks.get(subtaskId)))
+                .peek(subtaskId -> removeFromPrioritizedTasks(subtasks.get(subtaskId)))
                 .peek(historyManager::remove)
                 .forEach(subtasks::remove);
         historyManager.remove(id);
@@ -130,7 +128,7 @@ public class InMemoryTaskManager implements TaskManager {
     public void deleteSubtasks() {
         epics.values().forEach(epic -> epic.setSubtaskIds(new ArrayList<>()));
         epics.keySet().forEach(this::updateEpic);
-        subtasks.values().forEach(this::removeFromPrioritizedIfPresent);
+        subtasks.values().forEach(this::removeFromPrioritizedTasks);
         subtasks.keySet().forEach(historyManager::remove);
         subtasks.clear();
     }
@@ -144,24 +142,22 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public long createSubtask(Subtask subtask) {
-        validate(subtask, Mode.CREATE);
-        final long subtaskId = subtask.getId();
-        final long epicId = subtask.getEpicId();
-        final Epic epic = epics.get(epicId);
-        subtasks.put(subtaskId, subtask);
-        epic.getSubtaskIds().add(subtaskId);
-        updateEpic(epicId);
-        addToPrioritizedIfStartTimeNotNull(subtask);
-        return subtaskId;
+        Objects.requireNonNull(subtask, "cannot create null subtask");
+        subtask.setId(generateId());
+        updateSubtask(subtask);
+        return subtask.getId();
     }
 
     @Override
     public void updateSubtask(Subtask subtask) {
-        validate(subtask, Mode.UPDATE);
-        final Subtask savedSubtask = subtasks.get(subtask.getId());
-        removeFromPrioritizedIfPresent(savedSubtask);
-        subtasks.put(subtask.getId(), subtask);
-        addToPrioritizedIfStartTimeNotNull(subtask);
+        Objects.requireNonNull(subtask, "cannot apply null update");
+        Mode mode = validate(subtask);
+        final Subtask savedSubtask = subtasks.put(subtask.getId(), subtask);
+        replaceInPrioritizedTasksIfAppropriate(savedSubtask, subtask);
+        if (mode == Mode.CREATE) {
+            final Epic epic = epics.get(subtask.getEpicId());
+            epic.getSubtaskIds().add(subtask.getId());
+        }
         updateEpic(subtask.getEpicId());
     }
 
@@ -174,7 +170,7 @@ public class InMemoryTaskManager implements TaskManager {
         epic.getSubtaskIds().remove(id);
         updateEpic(epicId);
         historyManager.remove(id);
-        removeFromPrioritizedIfPresent(subtask);
+        removeFromPrioritizedTasks(subtask);
     }
 
     @Override
@@ -195,35 +191,35 @@ public class InMemoryTaskManager implements TaskManager {
         return new ArrayList<>(prioritizedTasks);
     }
 
-    protected void validate(Task task, Mode mode) {
-        Objects.requireNonNull(task, mode == Mode.CREATE ? "cannot create from null" : "cannot apply null update");
-        validateId(task, mode);
+    protected long generateId() {
+        return ++lastUsedId;
+    }
+
+    protected Mode validate(Task task) {
+        Mode mode = validateId(task);
         validateSubtaskIds(task, mode);
         validateEpicId(task, mode);
         validateDurationAndStartTime(task);
         validateStatus(task);
+        return mode;
     }
 
-    protected void validateId(Task task, Mode mode) {
-        if (mode == Mode.CREATE) {
-            if (task.getId() == null) {
-                task.setId(++lastUsedId);
-            } else {
-                requireIdNotExist(task.getId());
-                lastUsedId = Long.max(lastUsedId, task.getId());
-            }
-        } else if (task.getType() == TaskType.TASK && !tasks.containsKey(task.getId())) {
-            throw new TaskNotFoundException("no task with id=" + task.getId());
-        } else if (task.getType() == TaskType.EPIC && !epics.containsKey(task.getId())) {
-            throw new TaskNotFoundException("no epic with id=" + task.getId());
-        } else if (task.getType() == TaskType.SUBTASK && !subtasks.containsKey(task.getId())) {
-            throw new TaskNotFoundException("no subtask with id=" + task.getId());
+    protected Mode validateId(Task task) {
+        if (task.getId() == null) {
+            throw new ManagerValidationException("id cannot be null");
         }
+        final TaskType type = getTaskTypeById(task.getId());
+        if (type == null) {
+            lastUsedId = Long.max(lastUsedId, task.getId());
+        } else if (task.getType() != type) {
+            throw new ManagerValidationException("wrong task type");
+        }
+        return type == null ? Mode.CREATE : Mode.UPDATE;
     }
 
     protected void validateSubtaskIds(Task task, Mode mode) {
         if (task.getType() == TaskType.EPIC) {
-            Epic epic = (Epic) task;
+            final Epic epic = (Epic) task;
             if (mode == Mode.CREATE) {
                 epic.setSubtaskIds(new ArrayList<>());
             } else {
@@ -234,11 +230,11 @@ public class InMemoryTaskManager implements TaskManager {
 
     protected void validateEpicId(Task task, Mode mode) {
         if (task.getType() == TaskType.SUBTASK) {
-            Subtask subtask = (Subtask) task;
+            final Subtask subtask = (Subtask) task;
             if (mode == Mode.UPDATE) {
                 subtask.setEpicId(subtasks.get(subtask.getId()).getEpicId());
             } else if (!epics.containsKey(subtask.getEpicId())) {
-                throw new TaskNotFoundException("no epic with id=" + subtask.getEpicId());
+                throw new ManagerValidationException("wrong epic id");
             }
         }
     }
@@ -264,10 +260,15 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    protected void requireIdNotExist(Long id) {
-        if (tasks.containsKey(id) || epics.containsKey(id) || subtasks.containsKey(id)) {
-            throw new DuplicateIdException("duplicate id=" + id);
+    protected TaskType getTaskTypeById(long id) {
+        Task task = tasks.get(id);
+        if (task == null) {
+            task = epics.get(id);
         }
+        if (task == null) {
+            task = subtasks.get(id);
+        }
+        return task == null ? null : task.getType();
     }
 
     protected Task requireTaskExists(Long id) {
@@ -308,14 +309,18 @@ public class InMemoryTaskManager implements TaskManager {
         }
     }
 
-    protected void addToPrioritizedIfStartTimeNotNull(Task task) {
-        Objects.requireNonNull(task, "cannot add null to list of prioritized tasks");
-        if (task.getStartTime() != null) {
+    protected void replaceInPrioritizedTasksIfAppropriate(Task previousVersion, Task currentVersion) {
+        removeFromPrioritizedTasks(previousVersion);
+        addToPrioritizedTasksIfAppropriate(currentVersion);
+    }
+
+    protected void addToPrioritizedTasksIfAppropriate(Task task) {
+        if (task != null && task.getStartTime() != null) {
             prioritizedTasks.add(task);
         }
     }
 
-    protected void removeFromPrioritizedIfPresent(Task task) {
+    protected void removeFromPrioritizedTasks(Task task) {
         if (task != null && task.getStartTime() != null) {
             prioritizedTasks.remove(task);
         }

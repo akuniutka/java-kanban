@@ -1270,7 +1270,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 1,EPIC,"Epic",,"Epic description",,,
                 2,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,3
                 """);
-        final String expectedMessage = "no epic with id=3";
+        final String expectedMessage = "wrong epic id for id=2";
 
         final Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(path, historyManager));
@@ -1285,7 +1285,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 2,EPIC,"Epic",,"Epic description",,,
                 3,SUBTASK,"Subtask",NEW,"Subtask description",30,2000-05-01T13:30,1
                 """);
-        final String expectedMessage = "no epic with id=1";
+        final String expectedMessage = "wrong epic id for id=3";
 
         final Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(path, historyManager));
@@ -1300,7 +1300,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 2,SUBTASK,"Subtask A",NEW,"Subtask A description",90,2000-05-01T15:00,1
                 3,SUBTASK,"Subtask B",NEW,"Subtask B description",30,2000-05-01T13:30,2
                 """);
-        String expectedMessage = "no epic with id=2";
+        String expectedMessage = "wrong epic id for id=3";
 
         Exception exception = assertThrows(ManagerLoadException.class,
                 () -> FileBackedTaskManager.loadFromFile(path, historyManager));
