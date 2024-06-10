@@ -147,19 +147,19 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeTasks() {
+    public void deleteTasks() {
         assertNotNull(removeTasks, "method removeTasks() should not be called");
         removeTasks.run();
     }
 
     @Override
-    public Task getTask(long id) {
+    public Task getTaskById(long id) {
         assertNotNull(getTask, "method getTask() should not be called");
         return getTask.apply(id);
     }
 
     @Override
-    public long addTask(Task task) {
+    public long createTask(Task task) {
         assertNotNull(addTask, "method addTask() should not be called");
         return addTask.apply(task);
     }
@@ -171,7 +171,7 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeTask(long id) {
+    public void deleteTask(long id) {
         assertNotNull(removeTask, "method removeTask() should not be called");
         removeTask.accept(id);
     }
@@ -183,19 +183,19 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeEpics() {
+    public void deleteEpics() {
         assertNotNull(removeEpics, "method removeEpics() should not be called");
         removeEpics.run();
     }
 
     @Override
-    public Epic getEpic(long id) {
+    public Epic getEpicById(long id) {
         assertNotNull(getEpic, "method getEpic() should not be called");
         return getEpic.apply(id);
     }
 
     @Override
-    public long addEpic(Epic epic) {
+    public long createEpic(Epic epic) {
         assertNotNull(addEpic, "method addEpic() should not be called");
         return addEpic.apply(epic);
     }
@@ -207,7 +207,7 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeEpic(long id) {
+    public void deleteEpic(long id) {
         assertNotNull(removeEpic, "method removeEpic() should not be called");
         removeEpic.accept(id);
     }
@@ -219,19 +219,19 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeSubtasks() {
+    public void deleteSubtasks() {
         assertNotNull(removeSubtasks, "method removeSubtasks() should not be called");
         removeSubtasks.run();
     }
 
     @Override
-    public Subtask getSubtask(long id) {
+    public Subtask getSubtaskById(long id) {
         assertNotNull(getSubtask, "method getSubtask() should not be called");
         return getSubtask.apply(id);
     }
 
     @Override
-    public long addSubtask(Subtask subtask) {
+    public long createSubtask(Subtask subtask) {
         assertNotNull(addSubtask, "method addSubtask() should not be called");
         return addSubtask.apply(subtask);
     }
@@ -243,7 +243,7 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public void removeSubtask(long id) {
+    public void deleteSubtask(long id) {
         assertNotNull(removeSubtask, "method removeSubtask() should not be called");
         removeSubtask.accept(id);
     }
