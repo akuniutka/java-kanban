@@ -6,6 +6,7 @@ import io.github.akuniutka.kanban.model.Task;
 import io.github.akuniutka.kanban.service.TaskManager;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -14,23 +15,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class MockTaskManager implements TaskManager {
     private Supplier<List<Task>> getTasks;
-    private Runnable removeTasks;
-    private Function<Long, Task> getTask;
-    private Function<Task, Long> addTask;
+    private Runnable deleteTasks;
+    private Function<Long, Optional<Task>> getTaskById;
+    private Function<Task, Long> createTask;
     private Consumer<Task> updateTask;
-    private Consumer<Long> removeTask;
+    private Consumer<Long> deleteTask;
     private Supplier<List<Epic>> getEpics;
-    private Runnable removeEpics;
-    private Function<Long, Epic> getEpic;
-    private Function<Epic, Long> addEpic;
+    private Runnable deleteEpics;
+    private Function<Long, Optional<Epic>> getEpicById;
+    private Function<Epic, Long> createEpic;
     private Consumer<Epic> updateEpic;
-    private Consumer<Long> removeEpic;
+    private Consumer<Long> deleteEpic;
     private Supplier<List<Subtask>> getSubtasks;
-    private Runnable removeSubtasks;
-    private Function<Long, Subtask> getSubtask;
-    private Function<Subtask, Long> addSubtask;
+    private Runnable deleteSubtasks;
+    private Function<Long, Optional<Subtask>> getSubtaskById;
+    private Function<Subtask, Long> createSubtask;
     private Consumer<Subtask> updateSubtask;
-    private Consumer<Long> removeSubtask;
+    private Consumer<Long> deleteSubtask;
     private Supplier<List<Subtask>> getEpicSubtasks;
     private Supplier<List<Task>> getHistory;
     private Supplier<List<Task>> getPrioritizedTasks;
@@ -40,18 +41,18 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withRemoveTasks(Runnable removeTasks) {
-        this.removeTasks = removeTasks;
+    public MockTaskManager withDeleteTasks(Runnable deleteTasks) {
+        this.deleteTasks = deleteTasks;
         return this;
     }
 
-    public MockTaskManager withGetTask(Function<Long, Task> getTask) {
-        this.getTask = getTask;
+    public MockTaskManager withGetTaskById(Function<Long, Optional<Task>> getTaskById) {
+        this.getTaskById = getTaskById;
         return this;
     }
 
-    public MockTaskManager withAddTask(Function<Task, Long> addTask) {
-        this.addTask = addTask;
+    public MockTaskManager withCreateTask(Function<Task, Long> createTask) {
+        this.createTask = createTask;
         return this;
     }
 
@@ -60,8 +61,8 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withRemoveTask(Consumer<Long> removeTask) {
-        this.removeTask = removeTask;
+    public MockTaskManager withDeleteTask(Consumer<Long> deleteTask) {
+        this.deleteTask = deleteTask;
         return this;
     }
 
@@ -70,18 +71,18 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withRemoveEpics(Runnable removeEpics) {
-        this.removeEpics = removeEpics;
+    public MockTaskManager withDeleteEpics(Runnable deleteEpics) {
+        this.deleteEpics = deleteEpics;
         return this;
     }
 
-    public MockTaskManager withGetEpic(Function<Long, Epic> getEpic) {
-        this.getEpic = getEpic;
+    public MockTaskManager withGetEpicById(Function<Long, Optional<Epic>> getEpicById) {
+        this.getEpicById = getEpicById;
         return this;
     }
 
-    public MockTaskManager withAddEpic(Function<Epic, Long> addEpic) {
-        this.addEpic = addEpic;
+    public MockTaskManager withCreateEpic(Function<Epic, Long> createEpic) {
+        this.createEpic = createEpic;
         return this;
     }
 
@@ -90,8 +91,8 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withRemoveEpic(Consumer<Long> removeEpic) {
-        this.removeEpic = removeEpic;
+    public MockTaskManager withDeleteEpic(Consumer<Long> deleteEpic) {
+        this.deleteEpic = deleteEpic;
         return this;
     }
 
@@ -100,18 +101,18 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withRemoveSubtasks(Runnable removeSubtasks) {
-        this.removeSubtasks = removeSubtasks;
+    public MockTaskManager withDeleteSubtasks(Runnable deleteSubtasks) {
+        this.deleteSubtasks = deleteSubtasks;
         return this;
     }
 
-    public MockTaskManager withGetSubtask(Function<Long, Subtask> getSubtask) {
-        this.getSubtask = getSubtask;
+    public MockTaskManager withGetSubtaskById(Function<Long, Optional<Subtask>> getSubtaskById) {
+        this.getSubtaskById = getSubtaskById;
         return this;
     }
 
-    public MockTaskManager withAddSubtask(Function<Subtask, Long> addSubtask) {
-        this.addSubtask = addSubtask;
+    public MockTaskManager withCreateSubtask(Function<Subtask, Long> createSubtask) {
+        this.createSubtask = createSubtask;
         return this;
     }
 
@@ -120,8 +121,8 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withRemoveSubtask(Consumer<Long> removeSubtask) {
-        this.removeSubtask = removeSubtask;
+    public MockTaskManager withDeleteSubtask(Consumer<Long> deleteSubtask) {
+        this.deleteSubtask = deleteSubtask;
         return this;
     }
 
@@ -148,20 +149,20 @@ public class MockTaskManager implements TaskManager {
 
     @Override
     public void deleteTasks() {
-        assertNotNull(removeTasks, "method removeTasks() should not be called");
-        removeTasks.run();
+        assertNotNull(deleteTasks, "method deleteTasks() should not be called");
+        deleteTasks.run();
     }
 
     @Override
-    public Task getTaskById(long id) {
-        assertNotNull(getTask, "method getTask() should not be called");
-        return getTask.apply(id);
+    public Optional<Task> getTaskById(long id) {
+        assertNotNull(getTaskById, "method getTaskById() should not be called");
+        return getTaskById.apply(id);
     }
 
     @Override
     public long createTask(Task task) {
-        assertNotNull(addTask, "method addTask() should not be called");
-        return addTask.apply(task);
+        assertNotNull(createTask, "method createTask() should not be called");
+        return createTask.apply(task);
     }
 
     @Override
@@ -172,8 +173,8 @@ public class MockTaskManager implements TaskManager {
 
     @Override
     public void deleteTask(long id) {
-        assertNotNull(removeTask, "method removeTask() should not be called");
-        removeTask.accept(id);
+        assertNotNull(deleteTask, "method deleteTask() should not be called");
+        deleteTask.accept(id);
     }
 
     @Override
@@ -184,20 +185,20 @@ public class MockTaskManager implements TaskManager {
 
     @Override
     public void deleteEpics() {
-        assertNotNull(removeEpics, "method removeEpics() should not be called");
-        removeEpics.run();
+        assertNotNull(deleteEpics, "method deleteEpics() should not be called");
+        deleteEpics.run();
     }
 
     @Override
-    public Epic getEpicById(long id) {
-        assertNotNull(getEpic, "method getEpic() should not be called");
-        return getEpic.apply(id);
+    public Optional<Epic> getEpicById(long id) {
+        assertNotNull(getEpicById, "method getEpicById() should not be called");
+        return getEpicById.apply(id);
     }
 
     @Override
     public long createEpic(Epic epic) {
-        assertNotNull(addEpic, "method addEpic() should not be called");
-        return addEpic.apply(epic);
+        assertNotNull(createEpic, "method createEpic() should not be called");
+        return createEpic.apply(epic);
     }
 
     @Override
@@ -208,8 +209,8 @@ public class MockTaskManager implements TaskManager {
 
     @Override
     public void deleteEpic(long id) {
-        assertNotNull(removeEpic, "method removeEpic() should not be called");
-        removeEpic.accept(id);
+        assertNotNull(deleteEpic, "method deleteEpic() should not be called");
+        deleteEpic.accept(id);
     }
 
     @Override
@@ -220,20 +221,20 @@ public class MockTaskManager implements TaskManager {
 
     @Override
     public void deleteSubtasks() {
-        assertNotNull(removeSubtasks, "method removeSubtasks() should not be called");
-        removeSubtasks.run();
+        assertNotNull(deleteSubtasks, "method deleteSubtasks() should not be called");
+        deleteSubtasks.run();
     }
 
     @Override
-    public Subtask getSubtaskById(long id) {
-        assertNotNull(getSubtask, "method getSubtask() should not be called");
-        return getSubtask.apply(id);
+    public Optional<Subtask> getSubtaskById(long id) {
+        assertNotNull(getSubtaskById, "method getSubtaskById() should not be called");
+        return getSubtaskById.apply(id);
     }
 
     @Override
     public long createSubtask(Subtask subtask) {
-        assertNotNull(addSubtask, "method addSubtask() should not be called");
-        return addSubtask.apply(subtask);
+        assertNotNull(createSubtask, "method createSubtask() should not be called");
+        return createSubtask.apply(subtask);
     }
 
     @Override
@@ -244,8 +245,8 @@ public class MockTaskManager implements TaskManager {
 
     @Override
     public void deleteSubtask(long id) {
-        assertNotNull(removeSubtask, "method removeSubtask() should not be called");
-        removeSubtask.accept(id);
+        assertNotNull(deleteSubtask, "method deleteSubtask() should not be called");
+        deleteSubtask.accept(id);
     }
 
     @Override

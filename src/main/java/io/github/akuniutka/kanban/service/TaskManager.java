@@ -5,13 +5,14 @@ import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TaskManager {
     List<Task> getTasks();
 
     void deleteTasks();
 
-    Task getTaskById(long id);
+    Optional<Task> getTaskById(long id);
 
     long createTask(Task task);
 
@@ -23,7 +24,7 @@ public interface TaskManager {
 
     void deleteEpics();
 
-    Epic getEpicById(long id);
+    Optional<Epic> getEpicById(long id);
 
     long createEpic(Epic epic);
 
@@ -35,7 +36,7 @@ public interface TaskManager {
 
     void deleteSubtasks();
 
-    Subtask getSubtaskById(long id);
+    Optional<Subtask> getSubtaskById(long id);
 
     long createSubtask(Subtask subtask);
 
