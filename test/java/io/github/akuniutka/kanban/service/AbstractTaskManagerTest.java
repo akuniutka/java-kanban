@@ -44,10 +44,8 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldNotGetTaskByIdWhenNotExist() {
         final long taskId = -1L;
-        final String expectedMessage = "no task with id=" + taskId;
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.getTaskById(taskId));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        assertTrue(manager.getTaskById(taskId).isEmpty(), "there should be no task with id=" + taskId);
     }
 
     @Test
@@ -55,7 +53,7 @@ abstract class AbstractTaskManagerTest {
         final long taskId = manager.createTask(testTask);
         final Task expectedTask = fromTestTask().withId(taskId).build();
 
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
 
         assertTaskEquals(expectedTask, savedTask, "task saved with errors");
     }
@@ -109,7 +107,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldCreateTaskWhenDurationNotNullAndStartTimeNotNull() {
         final long taskId = manager.createTask(testTask);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -126,7 +124,7 @@ abstract class AbstractTaskManagerTest {
     public void shouldCreateTaskWithDurationTruncatedToMinutes() {
         final Task task = fromTestTask().withId(null).withDuration(TEST_DURATION.plusSeconds(25L)).build();
         final long taskId = manager.createTask(task);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -143,7 +141,7 @@ abstract class AbstractTaskManagerTest {
     public void shouldCreateTaskWithStartTimeTruncatedToMinutes() {
         final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
         final long taskId = manager.createTask(task);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -161,7 +159,7 @@ abstract class AbstractTaskManagerTest {
         final Task task = fromTestTask().withId(null).withDuration(null).withStartTime(null).build();
 
         final long taskId = manager.createTask(task);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -177,7 +175,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldCreateTaskWhenFieldsNull() {
         final long taskId = manager.createTask(emptyTask);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -198,7 +196,7 @@ abstract class AbstractTaskManagerTest {
         final long subtaskId = manager.createSubtask(subtask);
 
         final long taskId = manager.createTask(testTask);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -223,7 +221,7 @@ abstract class AbstractTaskManagerTest {
         final Task task = fromTestTask().withId(null).withDuration(TEST_DURATION.plusSeconds(25L)).build();
 
         final long taskId = manager.createTask(task);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -248,7 +246,7 @@ abstract class AbstractTaskManagerTest {
         final Task task = fromTestTask().withId(null).withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
 
         final long taskId = manager.createTask(task);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -272,7 +270,7 @@ abstract class AbstractTaskManagerTest {
         final long subtaskId = manager.createSubtask(subtask);
 
         final long taskId = manager.createTask(testTask);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -377,7 +375,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -397,8 +395,8 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateTask(update);
         final long nextId = manager.createTask(modifiedTask);
-        final Task savedTask = manager.getTaskById(ANOTHER_TEST_ID);
-        final Task nextTask = manager.getTaskById(nextId);
+        final Task savedTask = manager.getTaskById(ANOTHER_TEST_ID).orElse(null);
+        final Task nextTask = manager.getTaskById(nextId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -420,7 +418,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -440,7 +438,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -461,7 +459,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -487,7 +485,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -513,7 +511,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -539,7 +537,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -565,7 +563,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -584,7 +582,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -604,7 +602,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -624,7 +622,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -643,7 +641,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
 
         manager.updateTask(update);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -671,21 +669,18 @@ abstract class AbstractTaskManagerTest {
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        assertAll("task removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getTaskById(taskId),
-                        "task removed with errors"),
-                () -> assertTrue(tasks.isEmpty(), "task removed with errors"),
-                () -> assertTrue(prioritized.isEmpty(), "task removed with errors")
+        assertAll("task deleted with errors",
+                () -> assertTrue(manager.getTaskById(taskId).isEmpty(), "task deleted with errors"),
+                () -> assertTrue(tasks.isEmpty(), "task deleted with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "task deleted with errors")
         );
     }
 
     @Test
     public void shouldNotGetEpicByIdWhenNotExist() {
         final long epicId = -1L;
-        final String expectedMessage = "no epic with id=" + epicId;
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.getEpicById(epicId));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        assertTrue(manager.getEpicById(epicId).isEmpty(), "there should be no epic with id=" + epicId);
     }
 
     @Test
@@ -693,7 +688,7 @@ abstract class AbstractTaskManagerTest {
         final long epicId = manager.createEpic(testEpic);
         final Epic expectedEpic = fromTestEpic().withId(epicId).withStatus(TaskStatus.NEW).build();
 
-        final Epic savedEpic = manager.getEpicById(epicId);
+        final Epic savedEpic = manager.getEpicById(epicId).orElse(null);
 
         assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors");
     }
@@ -709,7 +704,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldCreateEpic() {
         final long epicId = manager.createEpic(testEpic);
-        final Epic savedEpic = manager.getEpicById(epicId);
+        final Epic savedEpic = manager.getEpicById(epicId).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         final Epic expectedEpic = fromTestEpic().withId(epicId).withStatus(TaskStatus.NEW).build();
@@ -723,7 +718,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldCreateEpicWhenFieldsNull() {
         final long epicId = manager.createEpic(emptyEpic);
-        final Epic savedEpic = manager.getEpicById(epicId);
+        final Epic savedEpic = manager.getEpicById(epicId).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         final Epic expectedEpic = fromEmptyEpic().withId(epicId).withStatus(TaskStatus.NEW).build();
@@ -780,7 +775,7 @@ abstract class AbstractTaskManagerTest {
         final List<Epic> expectedEpics = List.of(expectedEpic);
 
         manager.updateEpic(update);
-        final Epic savedEpic = manager.getEpicById(epicId);
+        final Epic savedEpic = manager.getEpicById(epicId).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         assertAll("epic saved with errors",
@@ -798,8 +793,8 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateEpic(update);
         final long nextId = manager.createEpic(modifiedEpic);
-        final Epic savedEpic = manager.getEpicById(ANOTHER_TEST_ID);
-        final Epic nextEpic = manager.getEpicById(nextId);
+        final Epic savedEpic = manager.getEpicById(ANOTHER_TEST_ID).orElse(null);
+        final Epic nextEpic = manager.getEpicById(nextId).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         assertAll("epic saved with errors",
@@ -818,7 +813,7 @@ abstract class AbstractTaskManagerTest {
         final List<Epic> expectedEpics = List.of(expectedEpic);
 
         manager.updateEpic(update);
-        final Epic savedEpic = manager.getEpicById(epicId);
+        final Epic savedEpic = manager.getEpicById(epicId).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         assertAll("epic saved with errors",
@@ -838,7 +833,7 @@ abstract class AbstractTaskManagerTest {
                 .withStatus(TaskStatus.IN_PROGRESS).build();
 
         manager.updateEpic(update);
-        final Epic savedEpic = manager.getEpicById(epicId);
+        final Epic savedEpic = manager.getEpicById(epicId).orElse(null);
 
         assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors");
     }
@@ -859,20 +854,17 @@ abstract class AbstractTaskManagerTest {
         manager.deleteEpic(epicId);
         final List<Epic> epics = manager.getEpics();
 
-        assertAll("epic removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getEpicById(epicId),
-                        "epic removed with errors"),
-                () -> assertTrue(epics.isEmpty(), "epic removed with errors")
+        assertAll("epic deleted with errors",
+                () -> assertTrue(manager.getEpicById(epicId).isEmpty(), "epic deleted with errors"),
+                () -> assertTrue(epics.isEmpty(), "epic deleted with errors")
         );
     }
 
     @Test
     public void shouldNotGetSubtaskByIdWhenNotExist() {
         final long subtaskId = -1L;
-        final String expectedMessage = "no subtask with id=" + subtaskId;
 
-        final Exception exception = assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(subtaskId));
-        assertEquals(expectedMessage, exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
+        assertTrue(manager.getSubtaskById(subtaskId).isEmpty(), "there should be no subtask with id=");
     }
 
     @Test
@@ -882,7 +874,7 @@ abstract class AbstractTaskManagerTest {
         final long subtaskId = manager.createSubtask(subtask);
         final Subtask expectedSubtask = fromTestSubtask().withId(subtaskId).withEpicId(epicId).build();
 
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
 
         assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors");
     }
@@ -992,7 +984,7 @@ abstract class AbstractTaskManagerTest {
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1014,7 +1006,7 @@ abstract class AbstractTaskManagerTest {
                 .withDuration(TEST_DURATION.plusSeconds(25L)).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1036,7 +1028,7 @@ abstract class AbstractTaskManagerTest {
                 .withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1058,7 +1050,7 @@ abstract class AbstractTaskManagerTest {
                 .build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1080,7 +1072,7 @@ abstract class AbstractTaskManagerTest {
         final Subtask subtask = fromEmptySubtask().withEpicId(epicId).withStatus(TaskStatus.NEW).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1104,7 +1096,7 @@ abstract class AbstractTaskManagerTest {
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1131,7 +1123,7 @@ abstract class AbstractTaskManagerTest {
                 .withDuration(TEST_DURATION.plusSeconds(25L)).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1158,7 +1150,7 @@ abstract class AbstractTaskManagerTest {
                 .withStartTime(TEST_START_TIME.plusSeconds(25L)).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1184,7 +1176,7 @@ abstract class AbstractTaskManagerTest {
         final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1342,7 +1334,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1363,8 +1355,8 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(update);
         final long nextId = manager.createSubtask(nextSubtask);
-        final Subtask savedSubtask = manager.getSubtaskById(ANOTHER_TEST_ID);
-        final Subtask savedNextSubtask = manager.getSubtaskById(nextId);
+        final Subtask savedSubtask = manager.getSubtaskById(ANOTHER_TEST_ID).orElse(null);
+        final Subtask savedNextSubtask = manager.getSubtaskById(nextId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1393,7 +1385,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1417,7 +1409,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1442,7 +1434,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1470,7 +1462,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1498,7 +1490,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1527,7 +1519,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedSubtask, expectedTask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1555,7 +1547,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedPrioritized = List.of(expectedTask, expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1579,7 +1571,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1603,7 +1595,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1628,7 +1620,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1652,7 +1644,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
 
         manager.updateSubtask(update);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1685,12 +1677,11 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        assertAll("subtask removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(subtaskId),
-                        "subtask removed with errors"),
-                () -> assertTrue(epicSubtasks.isEmpty(), "subtask removed with errors"),
-                () -> assertTrue(subtasks.isEmpty(), "subtask removed with errors"),
-                () -> assertTrue(prioritized.isEmpty(), "subtask removed with errors")
+        assertAll("subtask deleted with errors",
+                () -> assertTrue(manager.getSubtaskById(subtaskId).isEmpty(), "subtask deleted with errors"),
+                () -> assertTrue(epicSubtasks.isEmpty(), "subtask deleted with errors"),
+                () -> assertTrue(subtasks.isEmpty(), "subtask deleted with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "subtask deleted with errors")
         );
     }
 
@@ -1704,11 +1695,10 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        assertAll("subtask removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(subtaskId),
-                        "subtask removed with errors"),
-                () -> assertTrue(subtasks.isEmpty(), "subtask removed with errors"),
-                () -> assertTrue(prioritized.isEmpty(), "subtask removed with errors")
+        assertAll("subtask deleted with errors",
+                () -> assertTrue(manager.getSubtaskById(subtaskId).isEmpty(), "subtask deleted with errors"),
+                () -> assertTrue(subtasks.isEmpty(), "subtask deleted with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "subtask deleted with errors")
         );
     }
 
@@ -1717,7 +1707,7 @@ abstract class AbstractTaskManagerTest {
         final Task task = fromTestTask().withId(ANOTHER_TEST_ID).build();
 
         final long taskId = manager.createTask(task);
-        final Task savedTask = manager.getTaskById(taskId);
+        final Task savedTask = manager.getTaskById(taskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -1725,8 +1715,7 @@ abstract class AbstractTaskManagerTest {
         final List<Task> expectedTasks = List.of(expectedTask);
         assertAll("task saved with errors",
                 () -> assertNotEquals(ANOTHER_TEST_ID, taskId, "task saved with errors"),
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getTaskById(ANOTHER_TEST_ID),
-                        "task saved with errors"),
+                () -> assertTrue(manager.getTaskById(ANOTHER_TEST_ID).isEmpty(), "task saved with errors"),
                 () -> assertTaskEquals(expectedTask, savedTask, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, tasks, "task saved with errors"),
                 () -> assertListEquals(expectedTasks, prioritized, "task saved with errors")
@@ -1739,8 +1728,8 @@ abstract class AbstractTaskManagerTest {
         final Task task = fromModifiedTask().withId(oldTaskId).build();
 
         final long newTaskId = manager.createTask(task);
-        final Task oldTask = manager.getTaskById(oldTaskId);
-        final Task newTask = manager.getTaskById(newTaskId);
+        final Task oldTask = manager.getTaskById(oldTaskId).orElse(null);
+        final Task newTask = manager.getTaskById(newTaskId).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -1761,15 +1750,14 @@ abstract class AbstractTaskManagerTest {
         final Epic epic = fromTestEpic().withId(ANOTHER_TEST_ID).build();
 
         final long epicId = manager.createEpic(epic);
-        final Epic savedEpic = manager.getEpicById(epicId);
+        final Epic savedEpic = manager.getEpicById(epicId).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         final Epic expectedEpic = fromTestEpic().withId(epicId).withStatus(TaskStatus.NEW).build();
         final List<Epic> expectedEpics = List.of(expectedEpic);
         assertAll("epic saved with errors",
                 () -> assertNotEquals(ANOTHER_TEST_ID, epicId, "epic saved with errors"),
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getEpicById(ANOTHER_TEST_ID),
-                        "epic saved with errors"),
+                () -> assertTrue(manager.getEpicById(ANOTHER_TEST_ID).isEmpty(), "epic saved with errors"),
                 () -> assertTaskEquals(expectedEpic, savedEpic, "epic saved with errors"),
                 () -> assertListEquals(expectedEpics, epics, "epic saved with errors")
         );
@@ -1781,8 +1769,8 @@ abstract class AbstractTaskManagerTest {
         final Epic epic = fromModifiedEpic().withId(oldEpicId).build();
 
         final long newEpicId = manager.createEpic(epic);
-        final Epic oldEpic = manager.getEpicById(oldEpicId);
-        final Epic newEpic = manager.getEpicById(newEpicId);
+        final Epic oldEpic = manager.getEpicById(oldEpicId).orElse(null);
+        final Epic newEpic = manager.getEpicById(newEpicId).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         final Epic expectedOldEpic = fromTestEpic().withId(oldEpicId).withStatus(TaskStatus.NEW).build();
@@ -1802,7 +1790,7 @@ abstract class AbstractTaskManagerTest {
         final Subtask subtask = fromTestSubtask().withId(ANOTHER_TEST_ID).withEpicId(epicId).build();
 
         final long subtaskId = manager.createSubtask(subtask);
-        final Subtask savedSubtask = manager.getSubtaskById(subtaskId);
+        final Subtask savedSubtask = manager.getSubtaskById(subtaskId).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1811,8 +1799,7 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> expectedSubtasks = List.of(expectedSubtask);
         assertAll("subtask saved with errors",
                 () -> assertNotEquals(ANOTHER_TEST_ID, subtaskId, "subtask saved with errors"),
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(ANOTHER_TEST_ID),
-                        "subtask saved with errors"),
+                () -> assertTrue(manager.getSubtaskById(ANOTHER_TEST_ID).isEmpty(), "subtask saved with errors"),
                 () -> assertTaskEquals(expectedSubtask, savedSubtask, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, epicSubtasks, "subtask saved with errors"),
                 () -> assertListEquals(expectedSubtasks, subtasks, "subtask saved with errors"),
@@ -1829,8 +1816,8 @@ abstract class AbstractTaskManagerTest {
         final Subtask subtask = fromModifiedSubtask().withId(oldSubtaskId).withEpicId(epicId).build();
 
         final long newSubtaskId = manager.createSubtask(subtask);
-        final Subtask oldSubtask = manager.getSubtaskById(oldSubtaskId);
-        final Subtask newSubtask = manager.getSubtaskById(newSubtaskId);
+        final Subtask oldSubtask = manager.getSubtaskById(oldSubtaskId).orElse(null);
+        final Subtask newSubtask = manager.getSubtaskById(newSubtaskId).orElse(null);
         final List<Subtask> anotherEpicSubtasks = manager.getEpicSubtasks(anotherEpicId);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(epicId);
         final List<Subtask> subtasks = manager.getSubtasks();
@@ -1855,7 +1842,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldSetEpicDurationNullWhenCreateEpicAndDurationNull() {
         final long epicId = manager.createEpic(testEpic);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1865,7 +1852,7 @@ abstract class AbstractTaskManagerTest {
         final Epic epic = fromTestEpic().withId(null).withDuration(TEST_DURATION).build();
 
         final long epicId = manager.createEpic(epic);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1882,7 +1869,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskC);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1897,7 +1884,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskC);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), duration, "wrong epic duration");
     }
@@ -1916,7 +1903,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateB);
         manager.updateSubtask(updateC);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1937,7 +1924,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateB);
         manager.updateSubtask(updateC);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), duration, "wrong epic duration");
     }
@@ -1955,7 +1942,7 @@ abstract class AbstractTaskManagerTest {
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskBId);
         manager.deleteSubtask(subtaskCId);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1972,7 +1959,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskBId);
         manager.deleteSubtask(subtaskCId);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1988,7 +1975,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
 
         manager.deleteSubtask(subtaskAId);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), duration, "wrong epic duration");
     }
@@ -2005,7 +1992,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskBId);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertEquals(MODIFIED_DURATION, duration, "wrong epic duration");
     }
@@ -2024,7 +2011,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).withDuration(TEST_DURATION).build();
 
         manager.updateEpic(update);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -2041,7 +2028,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).build();
 
         manager.updateEpic(update);
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), duration, "wrong epic duration");
     }
@@ -2059,7 +2046,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
 
         manager.deleteSubtasks();
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -2075,7 +2062,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
 
         manager.deleteSubtasks();
-        final Duration duration = manager.getEpicById(epicId).getDuration();
+        final Duration duration = manager.getEpicById(epicId).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -2083,7 +2070,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldSetEpicStartTimeNullWhenCreateEpicAndStartTimeNull() {
         final long epicId = manager.createEpic(testEpic);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2093,7 +2080,7 @@ abstract class AbstractTaskManagerTest {
         final Epic epic = fromTestEpic().withId(null).withStartTime(TEST_START_TIME).build();
 
         final long epicId = manager.createEpic(epic);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2110,7 +2097,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskC);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2125,7 +2112,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskC);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -2140,7 +2127,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskA);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -2159,7 +2146,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateB);
         manager.updateSubtask(updateC);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2180,7 +2167,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateB);
         manager.updateSubtask(updateC);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -2201,7 +2188,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateC);
         manager.updateSubtask(updateB);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -2219,7 +2206,7 @@ abstract class AbstractTaskManagerTest {
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskBId);
         manager.deleteSubtask(subtaskCId);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2236,7 +2223,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskBId);
         manager.deleteSubtask(subtaskCId);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2253,7 +2240,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskCId);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -2270,7 +2257,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskBId);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertEquals(MODIFIED_START_TIME, startTime, "wrong epic start time");
     }
@@ -2289,7 +2276,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).withStartTime(TEST_START_TIME).build();
 
         manager.updateEpic(update);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2306,7 +2293,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).build();
 
         manager.updateEpic(update);
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -2324,7 +2311,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
 
         manager.deleteSubtasks();
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2340,7 +2327,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
 
         manager.deleteSubtasks();
-        final LocalDateTime startTime = manager.getEpicById(epicId).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(epicId).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -2348,7 +2335,7 @@ abstract class AbstractTaskManagerTest {
     @Test
     public void shouldSetEpicEndTimeNullWhenCreateEpicAndEndTimeNull() {
         final long epicId = manager.createEpic(testEpic);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2358,7 +2345,7 @@ abstract class AbstractTaskManagerTest {
         final Epic epic = fromTestEpic().withId(null).withEndTime(TEST_END_TIME).build();
 
         final long epicId = manager.createEpic(epic);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2375,7 +2362,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskC);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2390,7 +2377,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskC);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
@@ -2405,7 +2392,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskA);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
@@ -2424,7 +2411,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateB);
         manager.updateSubtask(updateC);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2445,7 +2432,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateB);
         manager.updateSubtask(updateC);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
@@ -2466,7 +2453,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateC);
         manager.updateSubtask(updateB);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
@@ -2484,7 +2471,7 @@ abstract class AbstractTaskManagerTest {
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskBId);
         manager.deleteSubtask(subtaskCId);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2501,7 +2488,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskBId);
         manager.deleteSubtask(subtaskCId);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2518,7 +2505,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskBId);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
@@ -2535,7 +2522,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.deleteSubtask(subtaskAId);
         manager.deleteSubtask(subtaskCId);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertEquals(TEST_END_TIME, endTime, "wrong epic end time");
     }
@@ -2554,7 +2541,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).withEndTime(MODIFIED_END_TIME).build();
 
         manager.updateEpic(update);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2571,7 +2558,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).build();
 
         manager.updateEpic(update);
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
@@ -2589,7 +2576,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
 
         manager.deleteSubtasks();
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2605,7 +2592,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskC);
 
         manager.deleteSubtasks();
-        final LocalDateTime endTime = manager.getEpicById(epicId).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(epicId).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -2617,7 +2604,7 @@ abstract class AbstractTaskManagerTest {
         final Epic epic = fromTestEpic().withId(null).withStatus(status).build();
 
         final long epicId = manager.createEpic(epic);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(TaskStatus.NEW, actualStatus, "wrong epic status");
     }
@@ -2633,7 +2620,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(expectedStatus, actualStatus, "wrong epic status");
     }
@@ -2648,7 +2635,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
         manager.createSubtask(subtaskC);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "wrong epic status");
     }
@@ -2666,7 +2653,7 @@ abstract class AbstractTaskManagerTest {
         final TaskStatus expectedStatus = statusA == statusB ? statusA : TaskStatus.IN_PROGRESS;
 
         manager.updateSubtask(update);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(expectedStatus, actualStatus, "wrong epic status");
     }
@@ -2686,7 +2673,7 @@ abstract class AbstractTaskManagerTest {
 
         manager.updateSubtask(updateB);
         manager.updateSubtask(updateC);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "wrong epic status");
     }
@@ -2705,7 +2692,7 @@ abstract class AbstractTaskManagerTest {
         final TaskStatus expectedStatus = statusA == statusB ? statusA : TaskStatus.IN_PROGRESS;
 
         manager.deleteSubtask(subtaskAId);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(expectedStatus, actualStatus, "wrong epic status");
     }
@@ -2723,7 +2710,7 @@ abstract class AbstractTaskManagerTest {
         final long subtaskDId = manager.createSubtask(subtaskD);
 
         manager.deleteSubtask(subtaskDId);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "wrong epic status");
     }
@@ -2737,7 +2724,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).build();
 
         manager.updateEpic(update);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(status, actualStatus, "wrong epic status");
     }
@@ -2752,7 +2739,7 @@ abstract class AbstractTaskManagerTest {
         final Epic update = fromModifiedEpic().withId(epicId).withStatus(statusB).build();
 
         manager.updateEpic(update);
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(statusA, actualStatus, "wrong epic status");
     }
@@ -2765,7 +2752,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(subtask);
 
         manager.deleteSubtasks();
-        final TaskStatus actualStatus = manager.getEpicById(epicId).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(epicId).orElseThrow().getStatus();
 
         assertEquals(TaskStatus.NEW, actualStatus, "wrong epic status");
     }
@@ -2826,13 +2813,11 @@ abstract class AbstractTaskManagerTest {
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        assertAll("tasks removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getTaskById(taskAId),
-                        "tasks removed with errors"),
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getTaskById(taskBId),
-                        "tasks removed with errors"),
-                () -> assertTrue(tasks.isEmpty(), "tasks removed with errors"),
-                () -> assertTrue(prioritized.isEmpty(), "tasks removed with errors")
+        assertAll("tasks deleted with errors",
+                () -> assertTrue(manager.getTaskById(taskAId).isEmpty(), "tasks deleted with errors"),
+                () -> assertTrue(manager.getTaskById(taskBId).isEmpty(), "tasks deleted with errors"),
+                () -> assertTrue(tasks.isEmpty(), "tasks deleted with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "tasks deleted with errors")
         );
     }
 
@@ -2859,12 +2844,10 @@ abstract class AbstractTaskManagerTest {
         manager.deleteEpics();
         final List<Epic> epics = manager.getEpics();
 
-        assertAll("epics removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getEpicById(epicAId),
-                        "epics removed with errors"),
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getEpicById(epicBId),
-                        "epics removed with errors"),
-                () -> assertTrue(epics.isEmpty(), "epics removed with errors")
+        assertAll("epics deleted with errors",
+                () -> assertTrue(manager.getEpicById(epicAId).isEmpty(), "epics deleted with errors"),
+                () -> assertTrue(manager.getEpicById(epicBId).isEmpty(), "epics deleted with errors"),
+                () -> assertTrue(epics.isEmpty(), "epics deleted with errors")
         );
     }
 
@@ -2908,15 +2891,13 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        assertAll("subtasks removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(subtaskAId),
-                        "subtasks removed with errors"),
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(subtaskBId),
-                        "subtasks removed with errors"),
-                () -> assertTrue(epicSubtasks.isEmpty(), "subtasks removed with errors"),
-                () -> assertTrue(anotherEpicSubtasks.isEmpty(), "subtasks removed with errors"),
-                () -> assertTrue(subtasks.isEmpty(), "subtasks removed with errors"),
-                () -> assertTrue(prioritized.isEmpty(), "subtasks removed with errors")
+        assertAll("subtasks deleted with errors",
+                () -> assertTrue(manager.getSubtaskById(subtaskAId).isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(manager.getSubtaskById(subtaskBId).isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(epicSubtasks.isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(anotherEpicSubtasks.isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(subtasks.isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "subtasks deleted with errors")
         );
     }
 
@@ -2933,13 +2914,11 @@ abstract class AbstractTaskManagerTest {
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
-        assertAll("subtasks removed with errors",
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(subtaskAId),
-                        "subtasks removed with errors"),
-                () -> assertThrows(TaskNotFoundException.class, () -> manager.getSubtaskById(subtaskBId),
-                        "subtasks removed with errors"),
-                () -> assertTrue(subtasks.isEmpty(), "subtasks removed with errors"),
-                () -> assertTrue(prioritized.isEmpty(), "subtasks removed with errors")
+        assertAll("subtasks deleted with errors",
+                () -> assertTrue(manager.getSubtaskById(subtaskAId).isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(manager.getSubtaskById(subtaskBId).isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(subtasks.isEmpty(), "subtasks deleted with errors"),
+                () -> assertTrue(prioritized.isEmpty(), "subtasks deleted with errors")
         );
     }
 

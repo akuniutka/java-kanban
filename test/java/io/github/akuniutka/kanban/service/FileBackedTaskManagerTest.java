@@ -480,7 +480,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Task savedTask = manager.getTaskById(1L);
+        final Task savedTask = manager.getTaskById(1L).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -501,7 +501,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Task savedTask = manager.getTaskById(1L);
+        final Task savedTask = manager.getTaskById(1L).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -522,7 +522,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Task savedTask = manager.getTaskById(1L);
+        final Task savedTask = manager.getTaskById(1L).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -543,7 +543,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Task savedTask = manager.getTaskById(1L);
+        final Task savedTask = manager.getTaskById(1L).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -568,7 +568,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Task savedTask = manager.getTaskById(1000L);
+        final Task savedTask = manager.getTaskById(1000L).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -593,7 +593,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Task savedTask = manager.getTaskById(1000L);
+        final Task savedTask = manager.getTaskById(1000L).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -618,7 +618,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Task savedTask = manager.getTaskById(1000L);
+        final Task savedTask = manager.getTaskById(1000L).orElse(null);
         final List<Task> tasks = manager.getTasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
 
@@ -865,7 +865,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Epic savedEpic = manager.getEpicById(2L);
+        final Epic savedEpic = manager.getEpicById(2L).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         assertAll("task loaded with errors",
@@ -884,7 +884,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Epic savedEpic = manager.getEpicById(2L);
+        final Epic savedEpic = manager.getEpicById(2L).orElse(null);
         final List<Epic> epics = manager.getEpics();
 
         assertAll("task loaded with errors",
@@ -1318,7 +1318,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Subtask savedSubtask = manager.getSubtaskById(3L);
+        final Subtask savedSubtask = manager.getSubtaskById(3L).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1342,7 +1342,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Subtask savedSubtask = manager.getSubtaskById(3L);
+        final Subtask savedSubtask = manager.getSubtaskById(3L).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1366,7 +1366,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Subtask savedSubtask = manager.getSubtaskById(3L);
+        final Subtask savedSubtask = manager.getSubtaskById(3L).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1391,7 +1391,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Subtask savedSubtask = manager.getSubtaskById(3L);
+        final Subtask savedSubtask = manager.getSubtaskById(3L).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1418,7 +1418,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Subtask savedSubtask = manager.getSubtaskById(3L);
+        final Subtask savedSubtask = manager.getSubtaskById(3L).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1445,7 +1445,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Subtask savedSubtask = manager.getSubtaskById(3L);
+        final Subtask savedSubtask = manager.getSubtaskById(3L).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1472,7 +1472,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Subtask savedSubtask = manager.getSubtaskById(3L);
+        final Subtask savedSubtask = manager.getSubtaskById(3L).orElse(null);
         final List<Subtask> epicSubtasks = manager.getEpicSubtasks(2L);
         final List<Subtask> subtasks = manager.getSubtasks();
         final List<Task> prioritized = manager.getPrioritizedTasks();
@@ -1493,7 +1493,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Duration duration = manager.getEpicById(1L).getDuration();
+        final Duration duration = manager.getEpicById(1L).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1509,7 +1509,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Duration duration = manager.getEpicById(1L).getDuration();
+        final Duration duration = manager.getEpicById(1L).orElseThrow().getDuration();
 
         assertNull(duration, "wrong epic duration");
     }
@@ -1525,7 +1525,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final Duration duration = manager.getEpicById(1L).getDuration();
+        final Duration duration = manager.getEpicById(1L).orElseThrow().getDuration();
 
         assertEquals(TEST_DURATION.plus(MODIFIED_DURATION), duration, "wrong epic duration");
     }
@@ -1538,7 +1538,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime startTime = manager.getEpicById(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(1L).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -1554,7 +1554,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime startTime = manager.getEpicById(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(1L).orElseThrow().getStartTime();
 
         assertNull(startTime, "wrong epic start time");
     }
@@ -1570,7 +1570,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime startTime = manager.getEpicById(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(1L).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -1587,7 +1587,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime startTime = manager.getEpicById(1L).getStartTime();
+        final LocalDateTime startTime = manager.getEpicById(1L).orElseThrow().getStartTime();
 
         assertEquals(TEST_START_TIME, startTime, "wrong epic start time");
     }
@@ -1600,7 +1600,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime endTime = manager.getEpicById(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(1L).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -1616,7 +1616,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime endTime = manager.getEpicById(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(1L).orElseThrow().getEndTime();
 
         assertNull(endTime, "wrong epic end time");
     }
@@ -1632,7 +1632,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime endTime = manager.getEpicById(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(1L).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic end time");
     }
@@ -1648,7 +1648,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final LocalDateTime endTime = manager.getEpicById(1L).getEndTime();
+        final LocalDateTime endTime = manager.getEpicById(1L).orElseThrow().getEndTime();
 
         assertEquals(MODIFIED_END_TIME, endTime, "wrong epic start time");
     }
@@ -1661,7 +1661,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final TaskStatus actualStatus = manager.getEpicById(1L).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(1L).orElseThrow().getStatus();
 
         assertEquals(TaskStatus.NEW, actualStatus, "wrong epic status");
     }
@@ -1679,7 +1679,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
         final TaskStatus expectedStatus = statusA == statusB ? statusA : TaskStatus.IN_PROGRESS;
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final TaskStatus actualStatus = manager.getEpicById(1L).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(1L).orElseThrow().getStatus();
 
         assertEquals(expectedStatus, actualStatus, "wrong epic status");
     }
@@ -1695,7 +1695,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final TaskStatus actualStatus = manager.getEpicById(1L).getStatus();
+        final TaskStatus actualStatus = manager.getEpicById(1L).orElseThrow().getStatus();
 
         assertEquals(TaskStatus.IN_PROGRESS, actualStatus, "wrong epic status");
     }

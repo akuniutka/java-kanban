@@ -41,9 +41,9 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Task getTaskById(long id) {
-        final Task task = requireTaskExists(id);
-        historyManager.add(task);
+    public Optional<Task> getTaskById(long id) {
+        final Optional<Task> task = Optional.ofNullable(tasks.get(id));
+        task.ifPresent(historyManager::add);
         return task;
     }
 
@@ -86,9 +86,9 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Epic getEpicById(long id) {
-        final Epic epic = requireEpicExists(id);
-        historyManager.add(epic);
+    public Optional<Epic> getEpicById(long id) {
+        final Optional<Epic> epic = Optional.ofNullable(epics.get(id));
+        epic.ifPresent(historyManager::add);
         return epic;
     }
 
@@ -134,9 +134,9 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public Subtask getSubtaskById(long id) {
-        final Subtask subtask = requireSubtaskExists(id);
-        historyManager.add(subtask);
+    public Optional<Subtask> getSubtaskById(long id) {
+        final Optional<Subtask> subtask = Optional.ofNullable(subtasks.get(id));
+        subtask.ifPresent(historyManager::add);
         return subtask;
     }
 
