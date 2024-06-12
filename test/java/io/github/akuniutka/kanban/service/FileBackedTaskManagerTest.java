@@ -1708,7 +1708,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """);
 
         manager = FileBackedTaskManager.loadFromFile(path, historyManager);
-        final long taskId = manager.createTask(modifiedTask);
+        final long taskId = manager.createTask(modifiedTask).getId();
 
         assertEquals(1001, taskId, "last used id loaded incorrectly");
     }
@@ -1737,7 +1737,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """.formatted(testTask.getTitle(), testTask.getStatus(), testTask.getDescription(),
                 testTask.getDuration().toMinutes(), testTask.getStartTime());
 
-        final long taskId = manager.createTask(testTask);
+        final long taskId = manager.createTask(testTask).getId();
 
         expectedString = expectedString.formatted(taskId);
         final String actualString = Files.readString(path);
@@ -1750,8 +1750,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 id,type,name,status,description,duration,start,epic
                 %d,TASK,null,NEW,null,null,null,
                 """;
+        final Task task = fromEmptyTask().withStatus(TaskStatus.NEW).build();
 
-        final long taskId = manager.createTask(fromEmptyTask().withStatus(TaskStatus.NEW).build());
+        final long taskId = manager.createTask(task).getId();
 
         expectedString = expectedString.formatted(taskId);
         final String actualString = Files.readString(path);
@@ -1760,7 +1761,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldSaveWhenUpdateTask() throws IOException {
-        final long taskId = manager.createTask(testTask);
+        final long taskId = manager.createTask(testTask).getId();
         final String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 %d,TASK,"%s",%s,"%s",%s,%s,
@@ -1776,7 +1777,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldSaveWhenDeleteTask() throws IOException {
-        final long taskId = manager.createTask(testTask);
+        final long taskId = manager.createTask(testTask).getId();
         final String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 """;
@@ -1794,7 +1795,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 %%d,EPIC,"%s",,"%s",,,
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
 
-        final long epicId = manager.createEpic(testEpic);
+        final long epicId = manager.createEpic(testEpic).getId();
 
         expectedString = expectedString.formatted(epicId);
         final String actualString = Files.readString(path);
@@ -1808,7 +1809,8 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 %d,EPIC,null,,null,,,
                 """;
 
-        final long epicId = manager.createEpic(fromEmptyEpic().build());
+        final Epic epic = manager.createEpic(fromEmptyEpic().build());
+        final long epicId = epic.getId();
 
         expectedString = expectedString.formatted(epicId);
         final String actualString = Files.readString(path);
@@ -1817,7 +1819,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldSaveWhenUpdateEpic() throws IOException {
-        final long epicId = manager.createEpic(testEpic);
+        final long epicId = manager.createEpic(testEpic).getId();
         final String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 %d,EPIC,"%s",,"%s",,,
@@ -1832,7 +1834,7 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
 
     @Test
     public void shouldSaveWhenDeleteEpic() throws IOException {
-        final long epicId = manager.createEpic(testEpic);
+        final long epicId = manager.createEpic(testEpic).getId();
         final String expectedString = """
                 id,type,name,status,description,duration,start,epic
                 """;
@@ -1853,10 +1855,10 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
                 expectedSubtask.getStatus(), expectedSubtask.getDescription(),
                 expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
-        final long epicId = manager.createEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
+        final long epicId = manager.createEpic(testEpic).getId();
+        final Subtask subtask = fromTestSubtask(epicId).build();
 
-        final long subtaskId = manager.createSubtask(subtask);
+        final long subtaskId = manager.createSubtask(subtask).getId();
 
         expectedString = expectedString.formatted(epicId, subtaskId, epicId);
         final String actualString = Files.readString(path);
@@ -1870,10 +1872,10 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 %%d,EPIC,"%s",,"%s",,,
                 %%d,SUBTASK,null,NEW,null,null,null,%%d
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        final long epicId = manager.createEpic(testEpic);
+        final long epicId = manager.createEpic(testEpic).getId();
         final Subtask subtask = fromEmptySubtask().withEpicId(epicId).withStatus(TaskStatus.NEW).build();
 
-        final long subtaskId = manager.createSubtask(subtask);
+        final long subtaskId = manager.createSubtask(subtask).getId();
 
         expectedString = expectedString.formatted(epicId, subtaskId, epicId);
         final String actualString = Files.readString(path);
@@ -1890,10 +1892,10 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 """.formatted(testEpic.getTitle(), testEpic.getDescription(), expectedSubtask.getTitle(),
                 expectedSubtask.getStatus(), expectedSubtask.getDescription(),
                 expectedSubtask.getDuration().toMinutes(), expectedSubtask.getStartTime());
-        final long epicId = manager.createEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
-        final long subtaskId = manager.createSubtask(subtask);
-        final Subtask update = fromModifiedSubtask().withId(subtaskId).withEpicId(epicId).build();
+        final long epicId = manager.createEpic(testEpic).getId();
+        final Subtask subtask = fromTestSubtask(epicId).build();
+        final long subtaskId = manager.createSubtask(subtask).getId();
+        final Subtask update = fromModifiedSubtask(epicId).withId(subtaskId).build();
 
         manager.updateSubtask(update);
 
@@ -1908,9 +1910,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 id,type,name,status,description,duration,start,epic
                 %%d,EPIC,"%s",,"%s",,,
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        final long epicId = manager.createEpic(testEpic);
-        final Subtask subtask = fromTestSubtask().withId(null).withEpicId(epicId).build();
-        final long subtaskId = manager.createSubtask(subtask);
+        final long epicId = manager.createEpic(testEpic).getId();
+        final Subtask subtask = fromTestSubtask(epicId).build();
+        final long subtaskId = manager.createSubtask(subtask).getId();
 
         manager.deleteSubtask(subtaskId);
 
@@ -1953,9 +1955,9 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
                 id,type,name,status,description,duration,start,epic
                 %%d,EPIC,"%s",,"%s",,,
                 """.formatted(testEpic.getTitle(), testEpic.getDescription());
-        final long epicId = manager.createEpic(testEpic);
-        final Subtask subtaskA = fromTestSubtask().withId(null).withEpicId(epicId).build();
-        final Subtask subtaskB = fromModifiedSubtask().withId(null).withEpicId(epicId).build();
+        final long epicId = manager.createEpic(testEpic).getId();
+        final Subtask subtaskA = fromTestSubtask(epicId).build();
+        final Subtask subtaskB = fromModifiedSubtask(epicId).build();
         manager.createSubtask(subtaskA);
         manager.createSubtask(subtaskB);
 

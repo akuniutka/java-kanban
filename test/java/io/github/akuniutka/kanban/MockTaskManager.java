@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -17,20 +18,20 @@ public class MockTaskManager implements TaskManager {
     private Supplier<List<Task>> getTasks;
     private Runnable deleteTasks;
     private Function<Long, Optional<Task>> getTaskById;
-    private Function<Task, Long> createTask;
-    private Consumer<Task> updateTask;
+    private UnaryOperator<Task> createTask;
+    private UnaryOperator<Task> updateTask;
     private Consumer<Long> deleteTask;
     private Supplier<List<Epic>> getEpics;
     private Runnable deleteEpics;
     private Function<Long, Optional<Epic>> getEpicById;
-    private Function<Epic, Long> createEpic;
-    private Consumer<Epic> updateEpic;
+    private UnaryOperator<Epic> createEpic;
+    private UnaryOperator<Epic> updateEpic;
     private Consumer<Long> deleteEpic;
     private Supplier<List<Subtask>> getSubtasks;
     private Runnable deleteSubtasks;
     private Function<Long, Optional<Subtask>> getSubtaskById;
-    private Function<Subtask, Long> createSubtask;
-    private Consumer<Subtask> updateSubtask;
+    private UnaryOperator<Subtask> createSubtask;
+    private UnaryOperator<Subtask> updateSubtask;
     private Consumer<Long> deleteSubtask;
     private Supplier<List<Subtask>> getEpicSubtasks;
     private Supplier<List<Task>> getHistory;
@@ -51,12 +52,12 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withCreateTask(Function<Task, Long> createTask) {
+    public MockTaskManager withCreateTask(UnaryOperator<Task> createTask) {
         this.createTask = createTask;
         return this;
     }
 
-    public MockTaskManager withUpdateTask(Consumer<Task> updateTask) {
+    public MockTaskManager withUpdateTask(UnaryOperator<Task> updateTask) {
         this.updateTask = updateTask;
         return this;
     }
@@ -81,12 +82,12 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withCreateEpic(Function<Epic, Long> createEpic) {
+    public MockTaskManager withCreateEpic(UnaryOperator<Epic> createEpic) {
         this.createEpic = createEpic;
         return this;
     }
 
-    public MockTaskManager withUpdateEpic(Consumer<Epic> updateEpic) {
+    public MockTaskManager withUpdateEpic(UnaryOperator<Epic> updateEpic) {
         this.updateEpic = updateEpic;
         return this;
     }
@@ -111,12 +112,12 @@ public class MockTaskManager implements TaskManager {
         return this;
     }
 
-    public MockTaskManager withCreateSubtask(Function<Subtask, Long> createSubtask) {
+    public MockTaskManager withCreateSubtask(UnaryOperator<Subtask> createSubtask) {
         this.createSubtask = createSubtask;
         return this;
     }
 
-    public MockTaskManager withUpdateSubtask(Consumer<Subtask> updateSubtask) {
+    public MockTaskManager withUpdateSubtask(UnaryOperator<Subtask> updateSubtask) {
         this.updateSubtask = updateSubtask;
         return this;
     }
@@ -160,15 +161,15 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public long createTask(Task task) {
+    public Task createTask(Task task) {
         assertNotNull(createTask, "method createTask() should not be called");
         return createTask.apply(task);
     }
 
     @Override
-    public void updateTask(Task task) {
+    public Task updateTask(Task task) {
         assertNotNull(updateTask, "method updateTask() should not be called");
-        updateTask.accept(task);
+        return updateTask.apply(task);
     }
 
     @Override
@@ -196,15 +197,15 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public long createEpic(Epic epic) {
+    public Epic createEpic(Epic epic) {
         assertNotNull(createEpic, "method createEpic() should not be called");
         return createEpic.apply(epic);
     }
 
     @Override
-    public void updateEpic(Epic epic) {
+    public Epic updateEpic(Epic epic) {
         assertNotNull(updateEpic, "method updateEpic() should not be called");
-        updateEpic.accept(epic);
+        return updateEpic.apply(epic);
     }
 
     @Override
@@ -232,15 +233,15 @@ public class MockTaskManager implements TaskManager {
     }
 
     @Override
-    public long createSubtask(Subtask subtask) {
+    public Subtask createSubtask(Subtask subtask) {
         assertNotNull(createSubtask, "method createSubtask() should not be called");
         return createSubtask.apply(subtask);
     }
 
     @Override
-    public void updateSubtask(Subtask subtask) {
+    public Subtask updateSubtask(Subtask subtask) {
         assertNotNull(updateSubtask, "method updateSubtask() should not be called");
-        updateSubtask.accept(subtask);
+        return updateSubtask.apply(subtask);
     }
 
     @Override

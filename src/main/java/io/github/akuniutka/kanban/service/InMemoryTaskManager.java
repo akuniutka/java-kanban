@@ -48,19 +48,19 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public long createTask(Task task) {
+    public Task createTask(Task task) {
         Objects.requireNonNull(task, "cannot create null task");
         task.setId(generateId());
-        updateTask(task);
-        return task.getId();
+        return updateTask(task);
     }
 
     @Override
-    public void updateTask(Task task) {
+    public Task updateTask(Task task) {
         Objects.requireNonNull(task, "cannot apply null update");
         validate(task);
         final Task savedTask = tasks.put(task.getId(), task);
         replaceInPrioritizedTasksIfAppropriate(savedTask, task);
+        return task;
     }
 
     @Override
@@ -93,19 +93,19 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public long createEpic(Epic epic) {
+    public Epic createEpic(Epic epic) {
         Objects.requireNonNull(epic, "cannot create null epic");
         epic.setId(generateId());
-        updateEpic(epic);
-        return epic.getId();
+        return updateEpic(epic);
     }
 
     @Override
-    public void updateEpic(Epic epic) {
+    public Epic updateEpic(Epic epic) {
         Objects.requireNonNull(epic, "cannot apply null update");
         validate(epic);
         epics.put(epic.getId(), epic);
         updateEpic(epic.getId());
+        return epic;
     }
 
     @Override
@@ -141,15 +141,14 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     @Override
-    public long createSubtask(Subtask subtask) {
+    public Subtask createSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot create null subtask");
         subtask.setId(generateId());
-        updateSubtask(subtask);
-        return subtask.getId();
+        return updateSubtask(subtask);
     }
 
     @Override
-    public void updateSubtask(Subtask subtask) {
+    public Subtask updateSubtask(Subtask subtask) {
         Objects.requireNonNull(subtask, "cannot apply null update");
         Mode mode = validate(subtask);
         final Subtask savedSubtask = subtasks.put(subtask.getId(), subtask);
@@ -159,6 +158,7 @@ public class InMemoryTaskManager implements TaskManager {
             epic.getSubtaskIds().add(subtask.getId());
         }
         updateEpic(subtask.getEpicId());
+        return subtask;
     }
 
     @Override

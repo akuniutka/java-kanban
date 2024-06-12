@@ -14,9 +14,9 @@ public interface TaskManager {
 
     Optional<Task> getTaskById(long id);
 
-    long createTask(Task task);
+    Task createTask(Task task);
 
-    void updateTask(Task task);
+    Task updateTask(Task task);
 
     void deleteTask(long id);
 
@@ -26,9 +26,9 @@ public interface TaskManager {
 
     Optional<Epic> getEpicById(long id);
 
-    long createEpic(Epic epic);
+    Epic createEpic(Epic epic);
 
-    void updateEpic(Epic epic);
+    Epic updateEpic(Epic epic);
 
     void deleteEpic(long id);
 
@@ -38,9 +38,9 @@ public interface TaskManager {
 
     Optional<Subtask> getSubtaskById(long id);
 
-    long createSubtask(Subtask subtask);
+    Subtask createSubtask(Subtask subtask);
 
-    void updateSubtask(Subtask subtask);
+    Subtask updateSubtask(Subtask subtask);
 
     void deleteSubtask(long id);
 

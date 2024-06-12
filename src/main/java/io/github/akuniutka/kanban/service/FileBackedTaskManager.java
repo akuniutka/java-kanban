@@ -42,16 +42,17 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public long createTask(Task task) {
-        final long taskId = super.createTask(task);
+    public Task createTask(Task task) {
+        final Task savedTask = super.createTask(task);
         save();
-        return taskId;
+        return savedTask;
     }
 
     @Override
-    public void updateTask(Task task) {
-        super.updateTask(task);
+    public Task updateTask(Task task) {
+        final Task savedTask = super.updateTask(task);
         save();
+        return savedTask;
     }
 
     @Override
@@ -67,16 +68,17 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public long createEpic(Epic epic) {
-        final long epicId = super.createEpic(epic);
+    public Epic createEpic(Epic epic) {
+        final Epic savedEpic = super.createEpic(epic);
         save();
-        return epicId;
+        return savedEpic;
     }
 
     @Override
-    public void updateEpic(Epic epic) {
-        super.updateEpic(epic);
+    public Epic updateEpic(Epic epic) {
+        final Epic savedEpic = super.updateEpic(epic);
         save();
+        return savedEpic;
     }
 
     @Override
@@ -92,16 +94,17 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
     }
 
     @Override
-    public long createSubtask(Subtask subtask) {
-        final long subtaskId = super.createSubtask(subtask);
+    public Subtask createSubtask(Subtask subtask) {
+        final Subtask savedSubtask = super.createSubtask(subtask);
         save();
-        return subtaskId;
+        return savedSubtask;
     }
 
     @Override
-    public void updateSubtask(Subtask subtask) {
-        super.updateSubtask(subtask);
+    public Subtask updateSubtask(Subtask subtask) {
+        final Subtask savedSubtask = super.updateSubtask(subtask);
         save();
+        return savedSubtask;
     }
 
     @Override
