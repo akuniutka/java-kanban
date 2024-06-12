@@ -64,16 +64,28 @@ public final class TestModels {
         return new SubtaskBuilder();
     }
 
+    public static SubtaskBuilder fromEmptySubtask(Long epicId) {
+        return fromEmptySubtask().withEpicId(epicId).withStatus(TaskStatus.NEW);
+    }
+
     public static SubtaskBuilder fromTestSubtask() {
         return new SubtaskBuilder().withId(TEST_SUBTASK_ID).withEpicId(TEST_EPIC_ID).withTitle(TEST_TITLE)
                 .withDescription(TEST_DESCRIPTION).withDuration(TEST_DURATION).withStartTime(TEST_START_TIME)
                 .withStatus(TEST_STATUS);
     }
 
+    public static SubtaskBuilder fromTestSubtask(Long epicId) {
+        return fromTestSubtask().withId(null).withEpicId(epicId);
+    }
+
     public static SubtaskBuilder fromModifiedSubtask() {
         return new SubtaskBuilder().withId(TEST_SUBTASK_ID).withEpicId(TEST_EPIC_ID).withTitle(MODIFIED_TITLE)
                 .withDescription(MODIFIED_DESCRIPTION).withDuration(MODIFIED_DURATION)
                 .withStartTime(MODIFIED_START_TIME).withStatus(MODIFIED_STATUS);
+    }
+
+    public static SubtaskBuilder fromModifiedSubtask(Long epicId) {
+        return fromModifiedSubtask().withId(null).withEpicId(epicId);
     }
 
     public static void assertTaskEquals(Task expected, Task actual, String message) {
