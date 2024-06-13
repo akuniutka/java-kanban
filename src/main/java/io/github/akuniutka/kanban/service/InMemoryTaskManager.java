@@ -65,10 +65,12 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteTask(long id) {
-        final Task savedTask = requireTaskExists(id);
-        tasks.remove(id);
+        final Task task = tasks.remove(id);
+        if (task == null) {
+            throw new TaskNotFoundException("no task with id=" + id);
+        }
         historyManager.remove(id);
-        removeFromPrioritizedTasks(savedTask);
+        removeFromPrioritizedTasks(task);
     }
 
     @Override
@@ -110,8 +112,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteEpic(long id) {
-        final Epic epic = requireEpicExists(id);
-        epics.remove(id);
+        final Epic epic = epics.remove(id);
+        if (epic == null) {
+            throw new TaskNotFoundException("no epic with id=" + id);
+        }
         epic.getSubtaskIds().stream()
                 .peek(subtaskId -> removeFromPrioritizedTasks(subtasks.get(subtaskId)))
                 .peek(historyManager::remove)
@@ -163,8 +167,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public void deleteSubtask(long id) {
-        final Subtask subtask = requireSubtaskExists(id);
-        subtasks.remove(id);
+        final Subtask subtask = subtasks.remove(id);
+        if (subtask == null) {
+            throw new TaskNotFoundException("no subtask with id=" + id);
+        }
         final long epicId = subtask.getEpicId();
         final Epic epic = epics.get(epicId);
         epic.getSubtaskIds().remove(id);
@@ -175,7 +181,10 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<Subtask> getEpicSubtasks(long epicId) {
-        final Epic epic = requireEpicExists(epicId);
+        final Epic epic = epics.get(epicId);
+        if (epic == null) {
+            throw new TaskNotFoundException("no epic with id=" + epicId);
+        }
         return epic.getSubtaskIds().stream()
                 .map(subtasks::get)
                 .toList();
@@ -269,30 +278,6 @@ public class InMemoryTaskManager implements TaskManager {
             task = subtasks.get(id);
         }
         return task == null ? null : task.getType();
-    }
-
-    protected Task requireTaskExists(Long id) {
-        final Task task = tasks.get(id);
-        if (task == null) {
-            throw new TaskNotFoundException("no task with id=" + id);
-        }
-        return task;
-    }
-
-    protected Epic requireEpicExists(Long id) {
-        final Epic epic = epics.get(id);
-        if (epic == null) {
-            throw new TaskNotFoundException("no epic with id=" + id);
-        }
-        return epic;
-    }
-
-    protected Subtask requireSubtaskExists(Long id) {
-        final Subtask subtask = subtasks.get(id);
-        if (subtask == null) {
-            throw new TaskNotFoundException("no subtask with id=" + id);
-        }
-        return subtask;
     }
 
     protected void requireDoesNotOverlapOtherTasks(Task task) {
