@@ -2,6 +2,7 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
+import io.github.akuniutka.kanban.exception.TaskOverlapException;
 import io.github.akuniutka.kanban.model.Epic;
 import io.github.akuniutka.kanban.model.Subtask;
 import io.github.akuniutka.kanban.model.Task;
@@ -92,7 +93,7 @@ abstract class AbstractTaskManagerTest {
                 .build();
         manager.createSubtask(overlappingSubtask);
 
-        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.createTask(testTask));
+        final Exception exception = assertThrows(TaskOverlapException.class, () -> manager.createTask(testTask));
         assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -368,7 +369,7 @@ abstract class AbstractTaskManagerTest {
         manager.createSubtask(overlappingSubtask);
         final Task update = fromTestTask().withId(taskId).build();
 
-        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateTask(update));
+        final Exception exception = assertThrows(TaskOverlapException.class, () -> manager.updateTask(update));
         assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -984,8 +985,7 @@ abstract class AbstractTaskManagerTest {
         final long epicId = manager.createEpic(testEpic).getId();
         final Subtask subtask = fromTestSubtask(epicId).build();
 
-        final Exception exception = assertThrows(ManagerValidationException.class,
-                () -> manager.createSubtask(subtask));
+        final Exception exception = assertThrows(TaskOverlapException.class, () -> manager.createSubtask(subtask));
         assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 
@@ -1342,7 +1342,7 @@ abstract class AbstractTaskManagerTest {
         final long subtaskId = manager.createSubtask(oldSubtask).getId();
         final Subtask update = fromTestSubtask().withId(subtaskId).build();
 
-        final Exception exception = assertThrows(ManagerValidationException.class, () -> manager.updateSubtask(update));
+        final Exception exception = assertThrows(TaskOverlapException.class, () -> manager.updateSubtask(update));
         assertEquals("conflict with another task for time slot", exception.getMessage(), WRONG_EXCEPTION_MESSAGE);
     }
 

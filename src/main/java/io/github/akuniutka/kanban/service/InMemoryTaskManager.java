@@ -2,6 +2,7 @@ package io.github.akuniutka.kanban.service;
 
 import io.github.akuniutka.kanban.exception.ManagerValidationException;
 import io.github.akuniutka.kanban.exception.TaskNotFoundException;
+import io.github.akuniutka.kanban.exception.TaskOverlapException;
 import io.github.akuniutka.kanban.model.*;
 
 import java.time.Duration;
@@ -283,14 +284,14 @@ public class InMemoryTaskManager implements TaskManager {
     protected void requireDoesNotOverlapOtherTasks(Task task) {
         final Task taskBefore = prioritizedTasks.floor(task);
         if (taskBefore != null && !task.equals(taskBefore) && task.getStartTime().isBefore(taskBefore.getEndTime())) {
-            throw new ManagerValidationException("conflict with another task for time slot");
+            throw new TaskOverlapException("conflict with another task for time slot");
         }
         Task taskAfter = prioritizedTasks.higher(task);
         if (task.equals(taskAfter)) {
             taskAfter = prioritizedTasks.higher(taskAfter);
         }
         if (taskAfter != null && task.getEndTime().isAfter(taskAfter.getStartTime())) {
-            throw new ManagerValidationException("conflict with another task for time slot");
+            throw new TaskOverlapException("conflict with another task for time slot");
         }
     }
 
