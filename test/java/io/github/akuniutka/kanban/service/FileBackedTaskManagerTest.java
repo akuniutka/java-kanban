@@ -1716,7 +1716,8 @@ class FileBackedTaskManagerTest extends AbstractTaskManagerTest {
     @Test
     public void shouldImmediatelyThrowWhenFileReadOnly() throws IOException {
         if (Files.getFileStore(path).supportsFileAttributeView(DosFileAttributeView.class)) {
-            Files.setAttribute(path, "dos:readonly", true);
+            assertTrue(path.toFile().setReadOnly(), "file should be set to read-only");
+//            Files.setAttribute(path, "dos:readonly", true);
         } else if (Files.getFileStore(path).supportsFileAttributeView(PosixFileAttributeView.class)) {
             Files.setPosixFilePermissions(path, Set.of(PosixFilePermission.OWNER_READ));
         } else {
