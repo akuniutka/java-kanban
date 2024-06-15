@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -128,7 +129,9 @@ public class HttpRequestHandler<T extends Task> implements HttpHandler {
             }
         } else if (update != null && "PUT".equals(method)) {
             final T element = getBody(exchange);
-            element.setId(id);
+            if (!Objects.equals(id, element.getId())) {
+                throw new ManagerValidationException("wrong id in update");
+            }
             respond(exchange, CREATED, update.apply(element));
         } else if (delete != null && "DELETE".equals(method)) {
             delete.accept(id);
@@ -150,11 +153,11 @@ public class HttpRequestHandler<T extends Task> implements HttpHandler {
     }
 
     protected long extractId(String idString) {
-        if (!idString.matches("\\d+")) {
+        if (!idString.matches("\\d+/?")) {
             throw new TaskNotFoundException("no element with id=" + idString);
         }
         try {
-            return Long.parseLong(idString);
+            return Long.parseLong(idString.endsWith("/") ? idString.substring(0, idString.length() - 1) : idString);
         } catch (NumberFormatException exception) {
             throw new TaskNotFoundException("no element with id=" + idString);
         }
