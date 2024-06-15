@@ -59,9 +59,9 @@ public class HttpTaskServer {
                 taskManager::createSubtask,
                 taskManager::updateSubtask,
                 taskManager::deleteSubtask));
-        addHandler(new HttpRequestHandler<>("/api/v1/getHistory", Task.class,
+        addHandler(new HttpRequestHandler<>("/api/v1/history", Task.class,
                 taskManager::getHistory));
-        addHandler(new HttpRequestHandler<>("/api/v1/getPrioritizedTasks", Task.class,
+        addHandler(new HttpRequestHandler<>("/api/v1/prioritized", Task.class,
                 taskManager::getPrioritizedTasks));
     }
 
